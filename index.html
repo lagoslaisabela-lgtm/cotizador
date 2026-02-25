@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lagos La Isabela — Cotizaciones</title>
+<title>Lagos La Isabela — Ordenes</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -275,7 +275,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 64px;
+    min-height: 64px;
+    padding: 10px 0;
     gap: 16px;
   }
 
@@ -293,6 +294,21 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
+  }
+
+  .logo-fish {
+    display: inline-block;
+    animation: fish-swim 2.4s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes fish-swim {
+    0%   { transform: translateX(0px)  rotate(0deg)  scaleY(1);    }
+    18%  { transform: translateX(3px)  rotate(7deg)  scaleY(1.1);  }
+    36%  { transform: translateX(0px)  rotate(0deg)  scaleY(1);    }
+    54%  { transform: translateX(-3px) rotate(-7deg) scaleY(1.1);  }
+    72%  { transform: translateX(0px)  rotate(0deg)  scaleY(1);    }
+    86%  { transform: translateX(2px)  rotate(4deg)  scaleY(1.05); }
+    100% { transform: translateX(0px)  rotate(0deg)  scaleY(1);    }
   }
 
   .logo-text {
@@ -1360,19 +1376,19 @@
 
 <header>
   <div class="header-inner">
-    <a class="logo" href="#">
-      <div class="logo-icon">🐟</div>
-      <span class="logo-text">LAGOS <span>LA ISABELA</span></span>
-    </a>
-    <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end">
-      <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+      <a class="logo" href="#">
+        <div class="logo-icon"><span class="logo-fish">🐟</span></div>
+        <span class="logo-text">LAGOS <span>LA ISABELA</span></span>
+      </a>
+      <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()" style="margin-left:46px">
         <span class="drive-dot"></span>
         <span id="drive-status-text">Conectar Drive</span>
       </button>
-      <div class="header-time">
-        <strong id="clock-time">--:--:--</strong>
-        <span id="clock-date">-- de --- de ----</span>
-      </div>
+    </div>
+    <div class="header-time">
+      <strong id="clock-time">--:--:--</strong>
+      <span id="clock-date">-- de --- de ----</span>
     </div>
   </div>
 </header>
@@ -1380,7 +1396,7 @@
 <nav>
   <div class="nav-inner">
     <button class="tab-btn active" onclick="showTab('cotizar')" data-tab="cotizar">
-      📋 Nueva Cotización
+      📋 Nueva Orden
     </button>
     <button class="tab-btn" onclick="showTab('historial')" data-tab="historial">
       📂 Historial
@@ -1453,7 +1469,7 @@
     <div class="section">
       <div class="total-box">
         <div>
-          <div class="total-label">Total Cotización</div>
+          <div class="total-label">Total Orden</div>
           <div class="total-amount" id="total-display">$0</div>
           <div class="total-details" id="total-details">— libras · Eviscerado: $0</div>
         </div>
@@ -1464,7 +1480,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             WhatsApp
           </button>
-          <button class="btn btn-success" onclick="guardarCotizacion()">💾 Guardar</button>
+          <button class="btn btn-success" onclick="guardarOrden()">💾 Guardar</button>
         </div>
       </div>
     </div>
@@ -1475,7 +1491,7 @@
   <div class="page" id="page-historial">
 
     <div class="card section">
-      <div class="card-title">🔍 Buscar Cotizaciones</div>
+      <div class="card-title">🔍 Buscar Ordenes</div>
       <div class="search-row">
         <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
         <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
@@ -1484,7 +1500,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">📂 Registro de Cotizaciones</div>
+      <div class="card-title">📂 Registro de Ordenes</div>
       <div class="table-wrapper">
         <table id="historial-table">
           <thead>
@@ -1507,7 +1523,7 @@
         </table>
         <div class="empty-state" id="historial-empty">
           <div class="icon">📭</div>
-          <p>No hay cotizaciones guardadas todavía.<br>¡Crea tu primera cotización!</p>
+          <p>No hay ordenes guardadas todavía.<br>¡Crea tu primera orden!</p>
         </div>
       </div>
     </div>
@@ -1542,7 +1558,7 @@
       <div class="stat-card blue">
         <div class="stat-icon">📋</div>
         <div class="stat-value" id="stat-total-cot">0</div>
-        <div class="stat-label">Cotizaciones</div>
+        <div class="stat-label">Ordenes</div>
         <div class="stat-sublabel" id="stat-period-label-1">—</div>
       </div>
       <div class="stat-card green">
@@ -1581,7 +1597,7 @@
         <div class="card-title">💰 Resumen Financiero <span id="finance-period-tag" style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:6px"></span></div>
         <div id="financial-summary">
           <div class="quote-items-preview">
-            <div class="quote-item-row"><span>Total cotizaciones</span><span id="fs-total-cot">0</span></div>
+            <div class="quote-item-row"><span>Total ordenes</span><span id="fs-total-cot">0</span></div>
             <div class="quote-item-row"><span>Libras totales vendidas</span><span id="fs-libras">0 lb</span></div>
             <div class="quote-item-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
             <div class="quote-item-row highlight-row"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
@@ -1599,7 +1615,7 @@
 
     <div class="card section">
       <div class="card-title">🔪 Órdenes con Eviscerado</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Cotizaciones que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Ordenes que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
     </div>
 
     <!-- Pendientes -->
@@ -1738,7 +1754,7 @@
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-header">
-      <h3>✏️ Editar Cotización</h3>
+      <h3>✏️ Editar Orden</h3>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
@@ -1780,7 +1796,7 @@
 
       <!-- Agregar nueva especie -->
       <div class="add-item-box">
-        <div class="add-title">➕ Agregar especie a esta cotización</div>
+        <div class="add-title">➕ Agregar especie a esta orden</div>
         <div class="add-item-row">
           <div class="fg">
             <label>Especie</label>
@@ -1849,7 +1865,7 @@ const ESPECIES = [
 const EVISCERA_COSTO = 500;
 const STORAGE_KEY = 'aquacot_v1';
 
-let cotizaciones = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let ordenes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
 // ─────────────────────────────────────────────
 //  RELOJ
@@ -1975,7 +1991,7 @@ function getFormData() {
   return { nombre, tel, cc, items, totalPescado, totalEviscerado, totalLibras, total: totalPescado + totalEviscerado };
 }
 
-function guardarCotizacion() {
+function guardarOrden() {
   const data = getFormData();
   if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
   if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
@@ -1988,10 +2004,10 @@ function guardarCotizacion() {
     ...data
   };
 
-  cotizaciones.unshift(cot);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+  ordenes.unshift(cot);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   updateBadge();
-  toast('✅ Cotización guardada correctamente');
+  toast('✅ Orden guardada correctamente');
   renderDashboard();
   scheduleDriveSync();
   resetForm(true);
@@ -2004,8 +2020,8 @@ function generarPDF(cotId) {
   // Si se pasa un ID, genera PDF desde el historial; si no, desde el formulario activo
   let data;
   if (cotId !== undefined) {
-    const cot = cotizaciones.find(c => c.id === cotId);
-    if (!cot) { toast('Cotización no encontrada', true); return; }
+    const cot = ordenes.find(c => c.id === cotId);
+    if (!cot) { toast('Orden no encontrada', true); return; }
     data = { ...cot };
   } else {
     data = getFormData();
@@ -2034,7 +2050,7 @@ function generarPDF(cotId) {
   doc.setTextColor(144, 180, 196);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('Gestión de Cotizaciones de Pescado', M, 26);
+  doc.text('Gestión de Ordenes de Pescado', M, 26);
   doc.text(`Fecha: ${data.fecha || new Date().toLocaleString('es-CO')}`, M, 33);
 
   y = 58;
@@ -2123,7 +2139,7 @@ function generarPDF(cotId) {
   doc.setFontSize(9);
   doc.text('Gracias por su preferencia — Lagos La Isabela', M, y);
 
-  doc.save(`cotizacion_${data.nombre.replace(/\s/g,'_')}_${Date.now()}.pdf`);
+  doc.save(`orden_${data.nombre.replace(/\s/g,'_')}_${Date.now()}.pdf`);
   toast('📄 PDF generado correctamente');
 }
 
@@ -2136,7 +2152,7 @@ function renderHistorial(filter = '') {
   const tbody  = document.getElementById('historial-tbody');
   const empty  = document.getElementById('historial-empty');
 
-  let lista = cotizaciones.filter(c => {
+  let lista = ordenes.filter(c => {
     return (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
            (!tel    || c.tel.includes(tel));
   });
@@ -2150,7 +2166,7 @@ function renderHistorial(filter = '') {
 
   tbody.innerHTML = lista.map((c, i) => `
     <tr>
-      <td><span class="badge badge-teal">${cotizaciones.length - cotizaciones.indexOf(c)}</span></td>
+      <td><span class="badge badge-teal">${ordenes.length - ordenes.indexOf(c)}</span></td>
       <td style="font-size:12px;color:var(--text-secondary)">${c.fecha}</td>
       <td><strong>${c.nombre}</strong></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.cc || '—'}</td>
@@ -2174,12 +2190,12 @@ function renderHistorial(filter = '') {
 function filtrarHistorial() { renderHistorial(); }
 
 function eliminarCot(id) {
-  if (!confirm('¿Eliminar esta cotización?')) return;
-  cotizaciones = cotizaciones.filter(c => c.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+  if (!confirm('¿Eliminar esta orden?')) return;
+  ordenes = ordenes.filter(c => c.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   updateBadge();
   renderHistorial();
-  toast('Cotización eliminada');
+  toast('Orden eliminada');
   scheduleDriveSync();
 }
 
@@ -2187,15 +2203,15 @@ function eliminarCot(id) {
 //  EXPORTAR EXCEL
 // ─────────────────────────────────────────────
 function exportarExcel() {
-  if (cotizaciones.length === 0) { toast('No hay cotizaciones para exportar', true); return; }
+  if (ordenes.length === 0) { toast('No hay ordenes para exportar', true); return; }
 
   const rows = [];
-  rows.push(['#', 'Fecha', 'Cliente', 'Celular', 'Especie', 'Cantidad (lb)', 'Precio/lb', 'Eviscerado', 'Subtotal Pescado', 'Subtotal Eviscerado', 'Total Especie', 'Total Cotización']);
+  rows.push(['#', 'Fecha', 'Cliente', 'Celular', 'Especie', 'Cantidad (lb)', 'Precio/lb', 'Eviscerado', 'Subtotal Pescado', 'Subtotal Eviscerado', 'Total Especie', 'Total Orden']);
 
-  cotizaciones.forEach((c, idx) => {
+  ordenes.forEach((c, idx) => {
     c.items.forEach((item, iItem) => {
       rows.push([
-        iItem === 0 ? cotizaciones.length - idx : '',
+        iItem === 0 ? ordenes.length - idx : '',
         iItem === 0 ? c.fecha : '',
         iItem === 0 ? c.nombre : '',
         iItem === 0 ? c.tel : '',
@@ -2215,7 +2231,7 @@ function exportarExcel() {
   ws['!cols'] = rows[0].map(() => ({ wch: 18 }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Cotizaciones');
+  XLSX.utils.book_append_sheet(wb, ws, 'Ordenes');
 
   // Hoja resumen
   const resumen = buildExcelResumen();
@@ -2229,7 +2245,7 @@ function exportarExcel() {
 function buildExcelResumen() {
   const rows = [['Especie', 'Total Libras', 'Ingresos Pescado', 'Ingresos Eviscerado', 'Total']];
   const map = {};
-  cotizaciones.forEach(c => {
+  ordenes.forEach(c => {
     c.items.forEach(item => {
       if (!map[item.especie]) map[item.especie] = { lb:0, pescado:0, ev:0 };
       map[item.especie].lb      += item.qty;
@@ -2274,14 +2290,14 @@ function applyCustomRange() {
   renderDashboard();
 }
 
-function getFilteredCotizaciones() {
+function getFilteredOrdenes() {
   const now   = new Date();
   const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
   switch (activePeriod) {
     case 'today':
-      return cotizaciones.filter(c => {
+      return ordenes.filter(c => {
         const d = new Date(c.fechaObj);
         return d >= hoy0 && d <= hoy23;
       });
@@ -2291,7 +2307,7 @@ function getFilteredCotizaciones() {
       const diff = (day === 0) ? 6 : day - 1; // lunes = inicio
       const lunes  = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
       const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
-      return cotizaciones.filter(c => {
+      return ordenes.filter(c => {
         const d = new Date(c.fechaObj);
         return d >= lunes && d <= domingo;
       });
@@ -2300,17 +2316,17 @@ function getFilteredCotizaciones() {
     case 'month': {
       const inicio = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
       const fin    = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      return cotizaciones.filter(c => {
+      return ordenes.filter(c => {
         const d = new Date(c.fechaObj);
         return d >= inicio && d <= fin;
       });
     }
 
     case 'custom': {
-      if (!customDesde || !customHasta) return cotizaciones;
+      if (!customDesde || !customHasta) return ordenes;
       const desde = new Date(customDesde + 'T00:00:00');
       const hasta = new Date(customHasta + 'T23:59:59');
-      return cotizaciones.filter(c => {
+      return ordenes.filter(c => {
         const d = new Date(c.fechaObj);
         return d >= desde && d <= hasta;
       });
@@ -2318,7 +2334,7 @@ function getFilteredCotizaciones() {
 
     case 'all':
     default:
-      return cotizaciones;
+      return ordenes;
   }
 }
 
@@ -2347,7 +2363,7 @@ function getPeriodLabel() {
 }
 
 function renderDashboard() {
-  const lista       = getFilteredCotizaciones();
+  const lista       = getFilteredOrdenes();
   const periodLabel = getPeriodLabel();
 
   // Pill y etiquetas de período
@@ -2438,7 +2454,7 @@ function resetForm(silent = false) {
 }
 
 function updateBadge() {
-  document.getElementById('badge-count').textContent = cotizaciones.length;
+  document.getElementById('badge-count').textContent = ordenes.length;
   updateEvBadge();
 }
 
@@ -2450,8 +2466,8 @@ function toast(msg, isError = false) {
 }
 
 function clearAllData() {
-  if (!confirm('¿Borrar TODAS las cotizaciones? Esta acción es irreversible.')) return;
-  cotizaciones = [];
+  if (!confirm('¿Borrar TODAS las ordenes? Esta acción es irreversible.')) return;
+  ordenes = [];
   localStorage.removeItem(STORAGE_KEY);
   updateBadge();
   renderDashboard();
@@ -2466,7 +2482,7 @@ let editingId = null;
 let editItems = [];
 
 function abrirEdicion(id) {
-  const cot = cotizaciones.find(c => c.id === id);
+  const cot = ordenes.find(c => c.id === id);
   if (!cot) return;
 
   editingId = id;
@@ -2632,11 +2648,11 @@ function guardarEdicion() {
     totalLibras     += item.qty;
   });
 
-  const idx = cotizaciones.findIndex(c => c.id === editingId);
-  if (idx === -1) { toast('Cotización no encontrada', true); return; }
+  const idx = ordenes.findIndex(c => c.id === editingId);
+  if (idx === -1) { toast('Orden no encontrada', true); return; }
 
-  cotizaciones[idx] = {
-    ...cotizaciones[idx],
+  ordenes[idx] = {
+    ...ordenes[idx],
     nombre,
     tel,
     cc,
@@ -2648,11 +2664,11 @@ function guardarEdicion() {
     editadoEn: new Date().toLocaleString('es-CO')
   };
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   closeModal();
   renderHistorial();
   renderDashboard();
-  toast('✅ Cotización actualizada correctamente');
+  toast('✅ Orden actualizada correctamente');
   scheduleDriveSync();
 }
 
@@ -2801,17 +2817,17 @@ async function initDriveSync() {
     if (driveFileId) {
       // Descargar datos remotos
       const remoteData = await downloadDriveFile();
-      if (remoteData && remoteData.cotizaciones) {
+      if (remoteData && remoteData.ordenes) {
         // Merge: combinar datos remotos con locales, sin duplicar por id
-        const localIds  = new Set(cotizaciones.map(c => c.id));
-        const merged    = [...cotizaciones];
-        remoteData.cotizaciones.forEach(c => {
+        const localIds  = new Set(ordenes.map(c => c.id));
+        const merged    = [...ordenes];
+        remoteData.ordenes.forEach(c => {
           if (!localIds.has(c.id)) merged.push(c);
         });
         // Ordenar por fecha descendente
         merged.sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
-        cotizaciones = merged;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+        ordenes = merged;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
         updateBadge();
         renderHistorial();
         renderDashboard();
@@ -2878,7 +2894,7 @@ async function downloadDriveFile() {
 
 async function uploadDriveFile() {
   const payload = JSON.stringify({
-    cotizaciones,
+    ordenes,
     evDone: [...getEvDone()],
     lastUpdated: new Date().toISOString(),
     version: '1.0'
@@ -2933,17 +2949,17 @@ async function autoSync() {
   try {
     const remoteData = await downloadDriveFile();
     if (!remoteData) return;
-    const remoteIds = new Set(remoteData.cotizaciones?.map(c => c.id) || []);
-    const localIds  = new Set(cotizaciones.map(c => c.id));
+    const remoteIds = new Set(remoteData.ordenes?.map(c => c.id) || []);
+    const localIds  = new Set(ordenes.map(c => c.id));
     // ¿Hay datos nuevos remotamente?
     let hasNew = false;
-    remoteData.cotizaciones?.forEach(c => { if (!localIds.has(c.id)) hasNew = true; });
+    remoteData.ordenes?.forEach(c => { if (!localIds.has(c.id)) hasNew = true; });
     if (hasNew) {
-      const merged = [...cotizaciones];
-      remoteData.cotizaciones.forEach(c => { if (!localIds.has(c.id)) merged.push(c); });
+      const merged = [...ordenes];
+      remoteData.ordenes.forEach(c => { if (!localIds.has(c.id)) merged.push(c); });
       merged.sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
-      cotizaciones = merged;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+      ordenes = merged;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
       updateBadge();
       renderHistorial();
       renderDashboard();
@@ -2984,8 +3000,8 @@ function parseJwt(token) {
 function enviarWhatsApp(cotId) {
   let data;
   if (cotId !== undefined) {
-    const cot = cotizaciones.find(c => c.id === cotId);
-    if (!cot) { toast('Cotización no encontrada', true); return; }
+    const cot = ordenes.find(c => c.id === cotId);
+    if (!cot) { toast('Orden no encontrada', true); return; }
     data = { ...cot };
   } else {
     data = getFormData();
@@ -3008,7 +3024,7 @@ function enviarWhatsApp(cotId) {
 
   const msg = [
     `🐟 *Lagos La Isabela*`,
-    `📋 *Cotización para ${data.nombre}*`,
+    `📋 *Orden para ${data.nombre}*`,
     data.cc ? `🪪 CC/NIT: ${data.cc}` : null,
     `📅 ${data.fecha || new Date().toLocaleString('es-CO')}`,
     ``,
@@ -3033,7 +3049,7 @@ function getClientesSugeridos(query) {
 
   // Agrupar clientes únicos del historial
   const mapa = {};
-  cotizaciones.forEach(c => {
+  ordenes.forEach(c => {
     if (!c.nombre) return;
     const key = c.nombre.toLowerCase();
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', count: 0 };
@@ -3152,7 +3168,7 @@ function getClientesPorTel(query) {
   if (!query || query.length < 3) return [];
   const q = query.trim();
   const mapa = {};
-  cotizaciones.forEach(c => {
+  ordenes.forEach(c => {
     if (!c.tel) return;
     const key = c.tel;
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel, cc: c.cc || '', count: 0 };
@@ -3253,7 +3269,7 @@ function getClientesPorCC(query) {
   if (!query || query.length < 3) return [];
   const q = query.trim();
   const mapa = {};
-  cotizaciones.forEach(c => {
+  ordenes.forEach(c => {
     if (!c.cc) return;
     const key = c.cc;
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc, count: 0 };
@@ -3370,7 +3386,7 @@ function toggleEvDone(cotId) {
 
 function updateEvBadge() {
   const done    = getEvDone();
-  const total   = cotizaciones.filter(c => c.totalEviscerado > 0);
+  const total   = ordenes.filter(c => c.totalEviscerado > 0);
   const pending = total.filter(c => !done.has(c.id)).length;
   document.getElementById('badge-ev').textContent = pending;
 }
@@ -3378,8 +3394,8 @@ function updateEvBadge() {
 function renderEviscerado() {
   const done = getEvDone();
 
-  // Todas las cotizaciones con eviscerado, de más antigua a más reciente
-  const conEv = cotizaciones
+  // Todas las ordenes con eviscerado, de más antigua a más reciente
+  const conEv = ordenes
     .filter(c => c.totalEviscerado > 0)
     .sort((a, b) => new Date(a.fechaObj) - new Date(b.fechaObj));
 
@@ -3432,7 +3448,7 @@ function buildEvCard(c, isDone) {
     ? `<div class="ev-done-badge">✅ Eviscerado completado</div>
        <button class="btn-ev-undo" onclick="toggleEvDone(${c.id})" title="Desmarcar">↩</button>`
     : `<button class="btn-ev-done" onclick="toggleEvDone(${c.id})">
-         ✓ MARCAR COMPLETADO
+         ✓ Marcar como completado
        </button>`;
 
   return `
@@ -3451,16 +3467,14 @@ function buildEvCard(c, isDone) {
       </div>
 
       <div class="ev-card-body">
-      
-        <div class="ev-card-row">
-          <span class="label">Libras a eviscerar</span>
-          <span class="val">${totalLbsEv.toFixed(1)} lb</span>
-        </div>      
         <div class="ev-card-row">
           <span class="label">Total libras (orden)</span>
-          <span class="val big">${totalLbsAll.toFixed(1)} lb</span>
+          <span class="val">${totalLbsAll.toFixed(1)} lb</span>
         </div>
-
+        <div class="ev-card-row">
+          <span class="label">Libras a eviscerar</span>
+          <span class="val big">${totalLbsEv.toFixed(1)} lb</span>
+        </div>
       </div>
 
       <div class="ev-species-list">${pills}</div>
