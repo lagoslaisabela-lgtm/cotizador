@@ -297,7 +297,7 @@
 
   .logo-fish {
     display: inline-block;
-    animation: fish-swim 4.4s ease-in-out infinite;
+    animation: fish-swim 7.4s ease-in-out infinite;
     transform-origin: center left;
   }
   @keyframes fish-swim {
@@ -313,12 +313,12 @@
   }
   50% {
     /* Punto máximo de la ondulación lateral */
-    transform: translateX(-25px) translateY(0) rotate(0deg) scale(1);
+    transform: translateX(-15px) translateY(0) rotate(0deg) scale(1);
     animation-timing-function: ease-in-out;
   }
   75% {
     /* El pez baja levemente y se inclina */
-    transform: translateX(20px) translateY(5px) rotate(5deg) scale(1.02);
+    transform: translateX(10px) translateY(5px) rotate(5deg) scale(1.02);
     animation-timing-function: ease-in-out;
   }
   100% {
@@ -434,7 +434,7 @@
     font-family: 'Syne', sans-serif;
     font-size: 16px;
     font-weight: 700;
-    color: var(--teal-pale);
+    color: var(--text-primary);
     margin-bottom: 20px;
     display: flex;
     align-items: center;
@@ -2848,10 +2848,10 @@ async function initDriveSync() {
       await uploadDriveFile();
     }
     const now = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
-    setDriveStatus('connected', '✓ Drive sincronizado', now);
-    // Setup auto-sync cada 60s
+    setDriveStatus('connected', '✓ Sincronizado', now);
+    // Setup auto-sync cada 30s
     if (syncTimer) clearInterval(syncTimer);
-    syncTimer = setInterval(autoSync, 60000);
+    syncTimer = setInterval(autoSync, 30000);
   } catch(e) {
     console.error('Drive sync error:', e);
     setDriveStatus('error', 'Error al sincronizar');
