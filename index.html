@@ -3451,14 +3451,16 @@ function buildEvCard(c, isDone) {
       </div>
 
       <div class="ev-card-body">
+      
+        <div class="ev-card-row">
+          <span class="label">Libras a eviscerar</span>
+          <span class="val">${totalLbsEv.toFixed(1)} lb</span>
+        </div>      
         <div class="ev-card-row">
           <span class="label">Total libras (orden)</span>
           <span class="val big">${totalLbsAll.toFixed(1)} lb</span>
         </div>
-        <div class="ev-card-row">
-          <span class="label">Libras a eviscerar</span>
-          <span class="val">${totalLbsEv.toFixed(1)} lb</span>
-        </div>
+
       </div>
 
       <div class="ev-species-list">${pills}</div>
