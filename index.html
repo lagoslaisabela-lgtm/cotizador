@@ -1711,15 +1711,24 @@ function guardarCotizacion() {
   toast('✅ Cotización guardada correctamente');
   renderDashboard();
   scheduleDriveSync();
+  resetForm(true);
 }
 
 // ─────────────────────────────────────────────
 //  GENERAR PDF
 // ─────────────────────────────────────────────
-function generarPDF() {
-  const data = getFormData();
-  if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
-  if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
+function generarPDF(cotId) {
+  // Si se pasa un ID, genera PDF desde el historial; si no, desde el formulario activo
+  let data;
+  if (cotId !== undefined) {
+    const cot = cotizaciones.find(c => c.id === cotId);
+    if (!cot) { toast('Cotización no encontrada', true); return; }
+    data = { ...cot };
+  } else {
+    data = getFormData();
+    if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
+    if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
+  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -1743,7 +1752,7 @@ function generarPDF() {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.text('Gestión de Cotizaciones de Pescado', M, 26);
-  doc.text(`Fecha: ${new Date().toLocaleString('es-CO')}`, M, 33);
+  doc.text(`Fecha: ${data.fecha || new Date().toLocaleString('es-CO')}`, M, 33);
 
   y = 58;
 
@@ -1867,8 +1876,9 @@ function renderHistorial(filter = '') {
       <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
       <td style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" onclick="abrirEdicion(${c.id})" style="margin-right:6px">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="eliminarCot(${c.id})">🗑</button>
+        <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" style="margin-right:6px" title="Generar PDF">📄</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdicion(${c.id})" style="margin-right:6px" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarCot(${c.id})" title="Eliminar">🗑</button>
       </td>
     </tr>
   `).join('');
@@ -2123,7 +2133,7 @@ function fmtShort(n) {
   return fmt(n);
 }
 
-function resetForm() {
+function resetForm(silent = false) {
   document.getElementById('cliente-nombre').value = '';
   document.getElementById('cliente-tel').value = '';
   ESPECIES.forEach(e => {
@@ -2136,7 +2146,7 @@ function resetForm() {
   });
   document.getElementById('total-display').textContent = '$0';
   document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
-  toast('Formulario limpiado');
+  if (!silent) toast('Formulario limpiado');
 }
 
 function updateBadge() {
