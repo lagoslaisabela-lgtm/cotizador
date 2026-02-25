@@ -267,6 +267,7 @@
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--card-border);
     padding: 0 24px;
+    overflow: hidden;
   }
 
   .header-inner {
@@ -274,10 +275,11 @@
     margin: 0 auto;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     min-height: 64px;
     padding: 10px 0;
     gap: 16px;
+    width: 100%;
   }
 
   .logo {
@@ -295,36 +297,15 @@
     flex-shrink: 0;
   }
 
-  .logo-fish {
-    display: inline-block;
-    animation: fish-swim 7.4s ease-in-out infinite;
-    transform-origin: center left;
-  }
-  @keyframes fish-swim {
-
-0% {
-    transform: translateX(0) rotate(0deg) scale(1);
-    animation-timing-function: ease-in-out;
-  }
-  25% {
-    /* El pez se inclina hacia arriba y avanza */
-    transform: translateX(5px) translateY(-5px) rotate(-5deg) scale(1.02);
-    animation-timing-function: ease-in-out;
-  }
-  50% {
-    /* Punto máximo de la ondulación lateral */
-    transform: translateX(-15px) translateY(0) rotate(0deg) scale(1);
-    animation-timing-function: ease-in-out;
-  }
-  75% {
-    /* El pez baja levemente y se inclina */
-    transform: translateX(10px) translateY(5px) rotate(5deg) scale(1.02);
-    animation-timing-function: ease-in-out;
-  }
-  100% {
-    transform: translateX(0) rotate(0deg) scale(1);
-    animation-timing-function: ease-in-out;
-  }
+  /* Pez nadando libre por todo el header */
+  #fish-swimmer {
+    position: absolute;
+    font-size: 22px;
+    pointer-events: none;
+    z-index: 0;
+    will-change: transform, left, top;
+    user-select: none;
+    line-height: 1;
   }
 
   .logo-text {
@@ -333,22 +314,27 @@
     font-size: 20px;
     color: var(--text-primary);
     letter-spacing: 0.5px;
+    position: relative;
+    z-index: 1;
   }
 
   .logo-text span { color: var(--teal); }
 
   .header-time {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-secondary);
     text-align: right;
-    line-height: 3;
+    line-height: 2.6;
+    position: relative;
+    z-index: 1;
   }
 
   .header-time strong {
     display: block;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     color: var(--text-primary);
+    letter-spacing: 0.5px;
   }
 
   /* ──────────────── NAV TABS ──────────────── */
@@ -1391,18 +1377,20 @@
 <body>
 
 <header>
+  <!-- Pez nadador libre -->
+  <span id="fish-swimmer">🐠</span>
+
   <div class="header-inner">
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
-        <div class="logo-icon"><span class="logo-fish">🐠</span></div>
         <span class="logo-text">LAGOS LA ISABELA</span>
       </a>
-      <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()" style="margin-left:46px">
+      <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
         <span class="drive-dot"></span>
         <span id="drive-status-text">CONECTAR</span>
       </button>
     </div>
-    <div class="header-time">
+    <div class="header-time" style="position:relative;z-index:1;margin-left:auto;text-align:right">
       <strong id="clock-time">--:--:--</strong>
       <span id="clock-date">-- de --- de ----</span>
     </div>
@@ -1506,6 +1494,7 @@
       <div class="search-row">
         <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
         <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
+        <input type="text" id="search-cc" placeholder="Buscar por identificación…" oninput="filtrarHistorial()">
         <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Exportar Excel</button>
       </div>
     </div>
@@ -1627,6 +1616,26 @@
     <div class="card section">
       <div class="card-title">🔪 Órdenes con Eviscerado</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Ordenes que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
+    </div>
+
+    <!-- Filtro fechas eviscerado -->
+    <div class="filter-bar">
+      <span class="filter-bar-label">📅 Período</span>
+      <div class="period-btns">
+        <button class="period-btn active" onclick="setEvPeriod('all')"    data-evperiod="all">Todo</button>
+        <button class="period-btn"        onclick="setEvPeriod('today')"  data-evperiod="today">Hoy</button>
+        <button class="period-btn"        onclick="setEvPeriod('week')"   data-evperiod="week">Esta semana</button>
+        <button class="period-btn"        onclick="setEvPeriod('month')"  data-evperiod="month">Este mes</button>
+        <button class="period-btn"        onclick="setEvPeriod('custom')" data-evperiod="custom">Rango…</button>
+      </div>
+      <div class="date-range-inputs" id="ev-custom-range" style="display:none">
+        <input type="date" id="ev-date-desde" onchange="applyEvCustomRange()">
+        <span class="sep">→</span>
+        <input type="date" id="ev-date-hasta" onchange="applyEvCustomRange()">
+      </div>
+      <div class="filter-period-indicator">
+        <span class="period-pill" id="ev-period-pill">Todo</span>
+      </div>
     </div>
 
     <!-- Pendientes -->
@@ -2160,12 +2169,14 @@ function generarPDF(cotId) {
 function renderHistorial(filter = '') {
   const nombre = document.getElementById('search-nombre')?.value.toLowerCase() || '';
   const tel    = document.getElementById('search-tel')?.value.toLowerCase() || '';
+  const cc     = document.getElementById('search-cc')?.value.toLowerCase() || '';
   const tbody  = document.getElementById('historial-tbody');
   const empty  = document.getElementById('historial-empty');
 
   let lista = ordenes.filter(c => {
     return (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
-           (!tel    || c.tel.includes(tel));
+           (!tel    || (c.tel || '').includes(tel)) &&
+           (!cc     || (c.cc  || '').toLowerCase().includes(cc));
   });
 
   if (lista.length === 0) {
@@ -3402,22 +3413,102 @@ function updateEvBadge() {
   document.getElementById('badge-ev').textContent = pending;
 }
 
+// ─────────────────────────────────────────────
+//  EVISCERADO — FILTRO DE FECHAS
+// ─────────────────────────────────────────────
+let activeEvPeriod  = 'all';
+let evCustomDesde   = null;
+let evCustomHasta   = null;
+
+function setEvPeriod(period) {
+  activeEvPeriod = period;
+  document.querySelectorAll('[data-evperiod]').forEach(b => {
+    b.classList.toggle('active', b.dataset.evperiod === period);
+  });
+  const rangeEl = document.getElementById('ev-custom-range');
+  rangeEl.style.display = period === 'custom' ? 'flex' : 'none';
+  if (period !== 'custom') renderEviscerado();
+}
+
+function applyEvCustomRange() {
+  const desde = document.getElementById('ev-date-desde').value;
+  const hasta = document.getElementById('ev-date-hasta').value;
+  if (!desde || !hasta) return;
+  evCustomDesde = desde;
+  evCustomHasta = hasta;
+  renderEviscerado();
+}
+
+function getEvFiltered() {
+  const now  = new Date();
+  const hoy0 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const hoy23= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  let lista = ordenes.filter(c => c.totalEviscerado > 0);
+
+  switch (activeEvPeriod) {
+    case 'today':
+      lista = lista.filter(c => { const d = new Date(c.fechaObj); return d >= hoy0 && d <= hoy23; });
+      break;
+    case 'week': {
+      const day  = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const lunes   = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
+      lista = lista.filter(c => { const d = new Date(c.fechaObj); return d >= lunes && d <= domingo; });
+      break;
+    }
+    case 'month': {
+      const ini = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      lista = lista.filter(c => { const d = new Date(c.fechaObj); return d >= ini && d <= fin; });
+      break;
+    }
+    case 'custom': {
+      if (!evCustomDesde || !evCustomHasta) break;
+      const desde = new Date(evCustomDesde + 'T00:00:00');
+      const hasta  = new Date(evCustomHasta + 'T23:59:59');
+      lista = lista.filter(c => { const d = new Date(c.fechaObj); return d >= desde && d <= hasta; });
+      break;
+    }
+    default: break; // 'all'
+  }
+  return lista.sort((a, b) => new Date(a.fechaObj) - new Date(b.fechaObj));
+}
+
+function getEvPeriodLabel() {
+  const now = new Date();
+  const fd  = d => d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+  switch (activeEvPeriod) {
+    case 'today':  return `Hoy, ${fd(now)}`;
+    case 'week': {
+      const day  = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const lunes   = new Date(now); lunes.setDate(now.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+      return `${fd(lunes)} – ${fd(domingo)}`;
+    }
+    case 'month':  return now.toLocaleDateString('es-CO', { month:'long', year:'numeric' });
+    case 'custom': return evCustomDesde && evCustomHasta
+      ? `${fd(new Date(evCustomDesde+'T00:00:00'))} – ${fd(new Date(evCustomHasta+'T00:00:00'))}`
+      : 'Rango personalizado';
+    default: return 'Todo el historial';
+  }
+}
+
 function renderEviscerado() {
   const done = getEvDone();
+  const conEv = getEvFiltered();
 
-  // Todas las ordenes con eviscerado, de más antigua a más reciente
-  const conEv = ordenes
-    .filter(c => c.totalEviscerado > 0)
-    .sort((a, b) => new Date(a.fechaObj) - new Date(b.fechaObj));
+  // Actualizar pill de período
+  document.getElementById('ev-period-pill').textContent = getEvPeriodLabel();
 
   const pendientes  = conEv.filter(c => !done.has(c.id));
   const completadas = conEv.filter(c =>  done.has(c.id));
 
-  // Badges
   document.getElementById('ev-badge-pendientes').textContent  = pendientes.length;
   document.getElementById('ev-badge-completadas').textContent = completadas.length;
 
-  // Render pendientes
   const gridP  = document.getElementById('ev-cards-pendientes');
   const emptyP = document.getElementById('ev-empty-pendientes');
   if (pendientes.length === 0) {
@@ -3428,7 +3519,6 @@ function renderEviscerado() {
     gridP.innerHTML = pendientes.map(c => buildEvCard(c, false)).join('');
   }
 
-  // Render completadas
   const gridC  = document.getElementById('ev-cards-completadas');
   const emptyC = document.getElementById('ev-empty-completadas');
   if (completadas.length === 0) {
@@ -3494,6 +3584,97 @@ function buildEvCard(c, isDone) {
     </div>
   `;
 }
+
+// ─────────────────────────────────────────────
+//  PEZ NADADOR — nada horizontalmente con ondulación natural
+// ─────────────────────────────────────────────
+(function() {
+  const fish   = document.getElementById('fish-swimmer');
+  const header = fish.closest('header');
+
+  const PECES = ['🐠','🐟','🐡','🦈','🐬','🐳','🦐','🦑','🐙','🦞','🦀','🐊','🐋','🦭'];
+  let fishIdx = 0;
+
+  function nextFish() {
+    fishIdx = (fishIdx + 1) % PECES.length;
+    fish.textContent = PECES[fishIdx];
+  }
+
+  const fw = 26; // ancho emoji aprox
+  const fh = 24; // alto emoji aprox
+
+  // Posición horizontal y dirección
+  let x   = 80;
+  let dir = 1; // 1 = derecha, -1 = izquierda
+
+  // Velocidad base y variación
+  let speed     = 1.0;   // velocidad horizontal actual
+  let targetSpd = 1.0;   // velocidad objetivo (va cambiando)
+  let spdTimer  = 0;     // contador para cambiar velocidad objetivo
+
+  // Ondulación vertical: suma de dos senos con distintas frecuencias y amplitudes
+  let t = 0;
+
+  // Ángulo de inclinación suave
+  let angle = 0;
+
+  function loop() {
+    const hw = header.offsetWidth;
+    const hh = header.offsetHeight;
+
+    // — Cambio gradual de velocidad —
+    spdTimer++;
+    if (spdTimer > 120) { // cada ~2s a 60fps cambia el objetivo
+      targetSpd = 0.5 + Math.random() * 1.8; // entre 0.5 y 2.3
+      spdTimer  = 0;
+    }
+    speed += (targetSpd - speed) * 0.008; // suaviza hacia el objetivo
+
+    // — Avance horizontal —
+    x += dir * speed;
+
+    // — Rebotar: al llegar al borde cambia dirección y pez —
+    if (x >= hw - fw) {
+      x   = hw - fw;
+      dir = -1;
+      nextFish();
+    } else if (x <= 0) {
+      x   = 0;
+      dir = 1;
+      nextFish();
+    }
+
+    // — Oscilación vertical: mezcla de dos ondas —
+    t += 0.022;
+    const margin = 6; // margen del borde
+    const centerY   = (hh - fh) / 2;
+    const amplitude = (hh - fh) / 2 - margin;
+    // Onda principal lenta + onda secundaria más rápida y pequeña
+    const rawY = centerY
+      + Math.sin(t * 0.9)          * amplitude * 0.6
+      + Math.sin(t * 2.3 + 1.1)   * amplitude * 0.25
+      + Math.sin(t * 0.4 + 0.5)   * amplitude * 0.15;
+    const y = Math.max(margin, Math.min(hh - fh - margin, rawY));
+
+    // — Inclinación: sigue la derivada vertical (subiendo/bajando) —
+    const dy = Math.cos(t * 0.9)  * amplitude * 0.6  * 0.022 * 0.9
+             + Math.cos(t * 2.3 + 1.1) * amplitude * 0.25 * 0.022 * 2.3;
+    const targetAngle = dy * 180; // convierte a grados leve
+    angle += (targetAngle - angle) * 0.1;
+    const clampedAngle = Math.max(-18, Math.min(18, angle));
+
+    // — Espejo horizontal según dirección —
+    const scaleX = dir === 1 ? 1 : -1;
+
+    fish.style.left      = x + 'px';
+    fish.style.top       = y + 'px';
+    fish.style.transform = `scaleX(${scaleX}) rotate(${clampedAngle * scaleX}deg)`;
+
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+})();
 
 // ─────────────────────────────────────────────
 //  INIT
