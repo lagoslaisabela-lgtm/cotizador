@@ -1593,6 +1593,8 @@
               <th>Libras</th>
               <th>Eviscerado</th>
               <th>Total</th>
+              <th>Pago</th>
+              <th>Devuelta</th>
               <th></th>
             </tr>
           </thead>
@@ -2129,11 +2131,14 @@ function guardarOrden() {
   if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
 
   const now = new Date();
+  const pagoVal = parseInt((document.getElementById('pago-input').value || '0').replace(/\D/g,'')) || 0;
   const cot = {
     id: Date.now(),
     fecha: now.toLocaleString('es-CO'),
     fechaObj: now.toISOString(),
     lastUpdated: now.toISOString(),
+    pagoCon: pagoVal || null,
+    devuelta: pagoVal > 0 ? pagoVal - (data.totalPescado + data.totalEviscerado) : null,
     ...data
   };
 
@@ -2310,6 +2315,13 @@ function renderHistorial(filter = '') {
       <td>${c.totalLibras.toFixed(1)} lb</td>
       <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.pagoCon ? fmt(c.pagoCon) : '—'}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:600">${
+        c.devuelta == null ? '—'
+        : c.devuelta > 0  ? `<span style="color:var(--green)">${fmt(c.devuelta)}</span>`
+        : c.devuelta === 0 ? `<span style="color:var(--teal-bright)">Exacto</span>`
+        : `<span style="color:var(--coral)">Faltó ${fmt(Math.abs(c.devuelta))}</span>`
+      }</td>
       <td style="white-space:nowrap">
         <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" style="margin-right:6px" title="Generar PDF">📄</button>
         <button class="btn btn-whatsapp btn-sm" onclick="enviarWhatsApp(${c.id})" style="margin-right:6px" title="Enviar por WhatsApp">
@@ -2576,6 +2588,7 @@ function fmtShort(n) {
 }
 
 function resetForm(silent = false) {
+  if (!silent && !confirm('¿Limpiar el formulario? Se perderán los datos no guardados.')) return;
   document.getElementById('cliente-nombre').value = '';
   document.getElementById('cliente-tel').value = '';
   document.getElementById('cliente-cc').value = '';
@@ -3773,7 +3786,8 @@ function renderEviscerado() {
   document.getElementById('ev-period-pill').textContent = getEvPeriodLabel();
 
   const pendientes  = conEv.filter(c => !done.has(c.id));
-  const completadas = conEv.filter(c =>  done.has(c.id));
+  const completadas = conEv.filter(c =>  done.has(c.id))
+    .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj)); // más reciente primero
 
   document.getElementById('ev-badge-pendientes').textContent  = pendientes.length;
   document.getElementById('ev-badge-completadas').textContent = completadas.length;
