@@ -2047,6 +2047,39 @@
   </div>
 </div>
 
+<!-- ══════════════ MODAL: EDITAR CLIENTE ══════════════ -->
+<div class="modal-overlay" id="cli-modal-overlay" onclick="closeCLiModalOutside(event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>✏️ Editar Cliente</h3>
+      <button class="modal-close" onclick="closeCliModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2" style="gap:14px">
+        <div class="form-group" style="margin:0;grid-column:1/-1">
+          <label>Nombre completo</label>
+          <input type="text" id="cli-edit-nombre" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Celular</label>
+          <input type="tel" id="cli-edit-tel" placeholder="Ej: 3165266913">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>CC / NIT</label>
+          <input type="text" id="cli-edit-cc" placeholder="Ej: 66656526">
+        </div>
+      </div>
+      <div id="cli-edit-historial-note" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(0,180,216,0.07);border:1px solid rgba(0,180,216,0.2);border-radius:8px;font-size:12px;color:var(--text-secondary)">
+        ℹ️ Este cliente viene del historial. Los cambios se guardarán en el directorio y tendrán prioridad en el autocompletado.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCliModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarEdicionCliente()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- AUTOCOMPLETE FLOTANTE -->
 <div class="autocomplete-list" id="ac-list"></div>
 <div class="autocomplete-list" id="ac-tel-list"></div>
@@ -2831,6 +2864,73 @@ function eliminarCliente(id) {
   toast('Cliente eliminado');
 }
 
+let editingClienteId   = null;
+let editingClienteOrig = null; // 'directorio' | 'historial'
+
+function abrirEdicionCliente(id, nombre, tel, cc, origen) {
+  editingClienteId   = id;
+  editingClienteOrig = origen;
+
+  document.getElementById('cli-edit-nombre').value = nombre;
+  document.getElementById('cli-edit-tel').value    = tel;
+  document.getElementById('cli-edit-cc').value     = cc;
+  document.getElementById('cli-edit-historial-note').style.display =
+    origen === 'historial' ? 'block' : 'none';
+
+  document.getElementById('cli-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('cli-edit-nombre').focus();
+}
+
+function closeCliModal() {
+  document.getElementById('cli-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  editingClienteId   = null;
+  editingClienteOrig = null;
+}
+
+function closeCLiModalOutside(e) {
+  if (e.target === document.getElementById('cli-modal-overlay')) closeCliModal();
+}
+
+function guardarEdicionCliente() {
+  const nombre = document.getElementById('cli-edit-nombre').value.trim();
+  const tel    = document.getElementById('cli-edit-tel').value.trim();
+  const cc     = document.getElementById('cli-edit-cc').value.trim();
+
+  if (!nombre) { toast('El nombre es obligatorio', true); return; }
+
+  const now = new Date().toISOString();
+
+  if (editingClienteOrig === 'directorio') {
+    // Editar entrada existente en el directorio
+    const idx = clientes.findIndex(c => c.id === editingClienteId);
+    if (idx !== -1) {
+      clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
+      safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+    }
+  } else {
+    // Cliente del historial: promoverlo al directorio con los datos editados
+    // Verificar que no exista ya en directorio con ese nombre
+    const yaExiste = clientes.find(c =>
+      c.nombre.trim().toLowerCase() === nombre.toLowerCase()
+    );
+    if (yaExiste) {
+      toast('Ya existe un cliente con ese nombre en el directorio', true);
+      return;
+    }
+    const nuevo = { id: Date.now(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
+    clientes.unshift(nuevo);
+    safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  }
+
+  closeCliModal();
+  updateClientesBadge();
+  renderClientes();
+  scheduleDriveSync();
+  toast('✅ Cliente actualizado');
+}
+
 function renderClientes() {
   const q      = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
   const tbody  = document.getElementById('clientes-tbody');
@@ -2874,14 +2974,34 @@ function renderClientes() {
           ${c.origen === 'directorio' ? '📁 Directorio' : '🛒 Historial'}
         </span>
       </td>
-      <td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm cli-edit-btn"
+          data-id="${c.id}"
+          data-nombre="${encodeURIComponent(c.nombre)}"
+          data-tel="${encodeURIComponent(c.tel||'')}"
+          data-cc="${encodeURIComponent(c.cc||'')}"
+          data-origen="${c.origen}"
+          title="Editar">✏️</button>
         ${c.origen === 'directorio'
           ? `<button class="btn btn-danger btn-sm" onclick="eliminarCliente(${c.id})" title="Eliminar">🗑</button>`
-          : '<span style="font-size:11px;color:var(--text-muted)">Auto</span>'
+          : ''
         }
       </td>
     </tr>
   `).join('');
+
+  // Asignar evento a los botones de editar usando data attributes
+  tbody.querySelectorAll('.cli-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      abrirEdicionCliente(
+        isNaN(btn.dataset.id) ? btn.dataset.id : Number(btn.dataset.id),
+        decodeURIComponent(btn.dataset.nombre),
+        decodeURIComponent(btn.dataset.tel),
+        decodeURIComponent(btn.dataset.cc),
+        btn.dataset.origen
+      );
+    });
+  });
 }
 
 function toast(msg, isError = false) {
