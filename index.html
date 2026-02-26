@@ -616,6 +616,74 @@
     margin-top: 4px;
   }
 
+  /* ── Pago y devuelta ── */
+  .pago-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0,180,216,0.15);
+  }
+  .pago-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 180px;
+  }
+  .pago-input-wrap label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  #pago-input {
+    flex: 1;
+    padding: 9px 13px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(0,180,216,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+    max-width: 180px;
+  }
+  #pago-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.2);
+    background: rgba(0,180,216,0.06);
+  }
+  .devuelta-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .devuelta-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+  }
+  .devuelta-amount {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    transition: color 0.2s;
+  }
+  .devuelta-amount.ok      { color: var(--green); }
+  .devuelta-amount.exact   { color: var(--teal-bright); }
+  .devuelta-amount.falta   { color: var(--coral); }
+  .devuelta-amount.pending { color: var(--text-muted); }
+
   /* ──────────────── BUTTONS ──────────────── */
   .btn {
     display: inline-flex;
@@ -1476,6 +1544,17 @@
           <div class="text-primary">TOTAL</div>
           <div class="total-amount" id="total-display">$0</div>
           <div class="total-details" id="total-details">— libras · Eviscerado: $0</div>
+          <!-- Pago y devuelta -->
+          <div class="pago-row">
+            <div class="pago-input-wrap">
+              <label>💵 Pago con</label>
+              <input type="number" id="pago-input" placeholder="0" min="0" oninput="calcDevuelta()" onfocus="this.select()">
+            </div>
+            <div class="devuelta-box">
+              <span class="devuelta-label">Devuelta</span>
+              <span class="devuelta-amount pending" id="devuelta-display">—</span>
+            </div>
+          </div>
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetForm()">✨ Limpiar</button>
@@ -1983,6 +2062,36 @@ function calcular() {
   document.getElementById('total-display').textContent = fmt(total);
   document.getElementById('total-details').textContent =
     `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`;
+
+  // Recalcular devuelta si hay un valor de pago ingresado
+  calcDevuelta();
+}
+
+function calcDevuelta() {
+  const totalEl = document.getElementById('total-display').textContent;
+  // Limpiar formato: quitar $, puntos de miles
+  const total   = parseInt(totalEl.replace(/[$.,]/g, '').replace(/\s/g, '')) || 0;
+  const pago    = parseInt((document.getElementById('pago-input').value || '0').replace(/\D/g,'')) || 0;
+  const devEl   = document.getElementById('devuelta-display');
+
+  if (pago === 0 || total === 0) {
+    devEl.textContent = '—';
+    devEl.className   = 'devuelta-amount pending';
+    return;
+  }
+
+  const diff = pago - total;
+
+  if (diff > 0) {
+    devEl.textContent = fmt(diff);
+    devEl.className   = 'devuelta-amount ok';
+  } else if (diff === 0) {
+    devEl.textContent = '¡Exacto!';
+    devEl.className   = 'devuelta-amount exact';
+  } else {
+    devEl.textContent = `Falta ${fmt(Math.abs(diff))}`;
+    devEl.className   = 'devuelta-amount falta';
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -2480,6 +2589,10 @@ function resetForm(silent = false) {
   });
   document.getElementById('total-display').textContent = '$0';
   document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
+  document.getElementById('pago-input').value = '';
+  const dev = document.getElementById('devuelta-display');
+  dev.textContent = '—';
+  dev.className = 'devuelta-amount pending';
   if (!silent) toast('Formulario limpiado');
 }
 
