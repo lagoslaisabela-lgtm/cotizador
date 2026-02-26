@@ -259,13 +259,15 @@
   }
 
   /* ──────────────── HEADER ──────────────── */
-  header {
+  #top-bar {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
+  }
+
+  header {
     background: rgba(10,22,40,0.95);
     backdrop-filter: blur(20px);
-    border-bottom: 0px solid var(--card-border);
     padding: 0 24px;
     overflow: hidden;
   }
@@ -339,11 +341,10 @@
 
   /* ──────────────── NAV TABS ──────────────── */
   nav {
-    background: transparent;
-    position: sticky;
-    top: 64px;
-    z-index: 99;
-    padding: 12px 24px;
+    background: rgba(8,18,35,0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 10px 24px;
     display: flex;
     justify-content: center;
   }
@@ -353,13 +354,13 @@
     gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
-    background: rgba(6, 15, 30, 0.75);
-    backdrop-filter: saturate(160%) blur(20px);
-    -webkit-backdrop-filter: saturate(160%) blur(20px);
-    border: 1px solid rgba(0,180,216,0.15);
+    background: rgba(6, 15, 30, 0.82);
+    backdrop-filter: saturate(160%) blur(24px);
+    -webkit-backdrop-filter: saturate(160%) blur(24px);
+    border: 1px solid rgba(0,180,216,0.18);
     border-radius: 50px;
     padding: 5px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
   }
 
   .nav-inner::-webkit-scrollbar { display: none; }
@@ -1461,7 +1462,105 @@
   .ev-empty .icon { font-size: 36px; margin-bottom: 10px; }
   @media (max-width: 600px) { .ev-cards-grid { grid-template-columns: 1fr; } }
 
-  /* ──────────────── CLIENTES SECTION ──────────────── */
+  /* ──────────────── MAYORISTA ──────────────── */
+  .may-species-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .may-species-card.has-value {
+    border-color: rgba(0,198,160,0.45);
+    background: rgba(0,198,160,0.05);
+    box-shadow: 0 0 14px rgba(0,198,160,0.1);
+  }
+  .may-species-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .may-species-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .may-species-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .may-input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .may-input-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+  .may-input-wrap input {
+    padding: 7px 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .may-input-wrap input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.15);
+  }
+  .may-subtotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-top: 6px;
+    border-top: 1px solid rgba(0,180,216,0.08);
+  }
+  .may-subtotal span:last-child {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  /* Desglose detal/mayorista en dashboard */
+  .dash-desglose {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+  .dash-pill-detal {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(0,180,216,0.12);
+    border: 1px solid rgba(0,180,216,0.25);
+    color: var(--teal-bright);
+    font-weight: 600;
+  }
+  .dash-pill-mayor {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(6,214,160,0.12);
+    border: 1px solid rgba(6,214,160,0.25);
+    color: var(--green);
+    font-weight: 600;
+  }
   .clientes-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr auto;
@@ -1505,6 +1604,7 @@
 </head>
 <body>
 
+<div id="top-bar">
 <header>
   <!-- Pez nadador libre -->
   <span id="fish-swimmer">🐠</span>
@@ -1531,6 +1631,10 @@
     <button class="tab-btn active" onclick="showTab('cotizar')" data-tab="cotizar">
       📋 Nueva Orden
     </button>
+    <button class="tab-btn" onclick="showTab('mayorista')" data-tab="mayorista">
+      📦 Mayorista
+      <span class="tab-badge" id="badge-mayorista">0</span>
+    </button>
     <button class="tab-btn" onclick="showTab('historial')" data-tab="historial">
       🗂️ Historial
       <span class="tab-badge" id="badge-count">0</span>
@@ -1548,6 +1652,7 @@
     </button>
   </div>
 </nav>
+</div>
 
 <main>
 
@@ -1712,12 +1817,14 @@
         <div class="stat-value" id="stat-ventas-dia">$0</div>
         <div class="stat-label">Ventas</div>
         <div class="stat-sublabel" id="stat-period-label-2">—</div>
+        <div class="dash-desglose" id="stat-desglose-ventas"></div>
       </div>
       <div class="stat-card gold">
         <div class="stat-icon">⚖️</div>
         <div class="stat-value" id="stat-libras-dia">0 lb</div>
         <div class="stat-label">Libras</div>
         <div class="stat-sublabel" id="stat-period-label-3">—</div>
+        <div class="dash-desglose" id="stat-desglose-libras"></div>
       </div>
       <div class="stat-card coral">
         <div class="stat-icon">🔪</div>
@@ -1743,11 +1850,27 @@
         <div class="card-title">💰 Resumen Financiero <span id="finance-period-tag" style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:6px"></span></div>
         <div id="financial-summary">
           <div class="quote-items-preview">
-            <div class="quote-item-row"><span>Total ordenes</span><span id="fs-total-cot">0</span></div>
-            <div class="quote-item-row"><span>Libras totales vendidas</span><span id="fs-libras">0 lb</span></div>
+            <div class="quote-item-row"><span>Total ordenes detal</span><span id="fs-total-cot">0</span></div>
+            <div class="quote-item-row"><span>Libras detal</span><span id="fs-libras">0 lb</span></div>
             <div class="quote-item-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
             <div class="quote-item-row highlight-row"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
-            <div class="quote-item-row highlight-row total-row"><span>TOTAL RECAUDADO</span><span id="fs-total">$0</span></div>
+            <div class="quote-item-row highlight-row total-row"><span>Total detal</span><span id="fs-total">$0</span></div>
+            <!-- Filas mayorista (se ocultan si no hay datos) -->
+            <div id="fs-mayorista" style="display:none">
+              <div class="quote-item-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(6,214,160,0.2)">
+                <span style="color:var(--green);font-weight:600">Ventas mayoristas</span>
+                <span id="fs-may-count" style="color:var(--green);font-weight:600">0</span>
+              </div>
+              <div class="quote-item-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
+              <div class="quote-item-row highlight-row"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
+            </div>
+            <div id="fs-total-combinado" style="display:none">
+              <div class="quote-item-row highlight-row total-row" style="border-top:2px solid rgba(0,180,216,0.3);margin-top:4px">
+                <span style="font-size:14px">TOTAL GENERAL</span>
+                <span id="fs-gran-total" style="font-size:15px">$0</span>
+              </div>
+            </div>
+            <!-- Cuando no hay mayorista, mostrar el total único -->
           </div>
         </div>
         <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="margin-top:8px">🗑 Borrar todo el historial</button>
@@ -1874,6 +1997,111 @@
     </div>
 
   </div><!-- /clientes -->
+
+  <!-- ══════════════ PÁGINA: MAYORISTA ══════════════ -->
+  <div class="page" id="page-mayorista">
+
+    <!-- Datos del comprador -->
+    <div class="card section">
+      <div class="card-title">🏢 Datos del Comprador</div>
+      <div class="grid-2">
+        <div class="form-group" style="margin:0">
+          <label>Nombre / Empresa</label>
+          <input type="text" id="may-nombre" placeholder="Ej: Distribuidora Pérez" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Celular</label>
+          <input type="tel" id="may-tel" placeholder="Ej: 3165266913" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0;grid-column:1/-1">
+          <label>CC / NIT</label>
+          <input type="text" id="may-cc" placeholder="Ej: 900123456-1" autocomplete="off" style="max-width:320px">
+        </div>
+      </div>
+    </div>
+
+    <!-- Especies con precio negociado -->
+    <div class="card section">
+      <div class="card-title">📦 Especies y Precio Negociado</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        Ingresa la cantidad en libras y el precio negociado por libra para cada especie.
+      </p>
+      <div class="species-grid" id="may-species-grid">
+        <!-- generado por JS -->
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div class="section">
+      <div class="total-box">
+        <div>
+          <div class="text-primary" style="font-size:11px;letter-spacing:1px;font-weight:700;color:var(--text-muted)">TOTAL MAYORISTA</div>
+          <div class="total-amount" id="may-total-display">$0</div>
+          <div class="total-details" id="may-total-details">— libras</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="resetMayorista()">✨ Limpiar</button>
+          <button class="btn btn-success" onclick="guardarVentaMayorista()">💾 Registrar Venta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial mayorista -->
+    <div class="card section">
+      <div class="card-title">📋 Historial de Ventas Mayoristas
+        <span class="tab-badge" id="badge-may-hist" style="margin-left:8px">0</span>
+      </div>
+
+      <!-- Filtros de período -->
+      <div class="filter-bar">
+        <span class="filter-bar-label">📅 Período</span>
+        <div class="period-btns">
+          <button class="period-btn active" onclick="setMayPeriod('today')"  data-mayperiod="today">Hoy</button>
+          <button class="period-btn"        onclick="setMayPeriod('week')"   data-mayperiod="week">Esta semana</button>
+          <button class="period-btn"        onclick="setMayPeriod('month')"  data-mayperiod="month">Este mes</button>
+          <button class="period-btn"        onclick="setMayPeriod('all')"    data-mayperiod="all">Todo</button>
+          <button class="period-btn"        onclick="setMayPeriod('custom')" data-mayperiod="custom">Rango…</button>
+        </div>
+        <div class="date-range-inputs" id="may-custom-range" style="display:none">
+          <input type="date" id="may-date-desde" onchange="applyMayCustomRange()">
+          <span class="sep">→</span>
+          <input type="date" id="may-date-hasta" onchange="applyMayCustomRange()">
+        </div>
+        <div class="filter-period-indicator">
+          <span class="period-pill" id="may-period-pill">Hoy</span>
+        </div>
+      </div>
+
+      <!-- Búsqueda de texto -->
+      <div class="search-row" style="margin-bottom:16px">
+        <input type="text" id="may-search" placeholder="Buscar por nombre, celular o CC…" oninput="renderMayorista()">
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Comprador</th>
+              <th>CC / NIT</th>
+              <th>Celular</th>
+              <th>Especies</th>
+              <th>Libras</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="may-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="may-empty">
+          <div class="icon">📦</div>
+          <p>No hay ventas mayoristas registradas.<br>¡Registra la primera arriba!</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mayorista -->
 
 </main>
 
@@ -2100,6 +2328,46 @@
   </div>
 </div>
 
+<!-- ══════════════ MODAL: EDITAR VENTA MAYORISTA ══════════════ -->
+<div class="modal-overlay" id="may-modal-overlay" onclick="if(event.target===this)closeMayModal()">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h3>✏️ Editar Venta Mayorista</h3>
+      <button class="modal-close" onclick="closeMayModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Datos comprador -->
+      <div class="edit-section-title">🏢 Datos del Comprador</div>
+      <div class="grid-2" style="gap:14px;margin-bottom:20px">
+        <div class="form-group" style="margin:0;grid-column:1/-1">
+          <label>Nombre / Empresa</label>
+          <input type="text" id="may-edit-nombre" placeholder="Ej: Distribuidora Pérez">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Celular</label>
+          <input type="tel" id="may-edit-tel" placeholder="Ej: 3165266913">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>CC / NIT</label>
+          <input type="text" id="may-edit-cc" placeholder="Ej: 900123456-1">
+        </div>
+      </div>
+      <!-- Especies -->
+      <div class="edit-section-title">📦 Especies y Precios</div>
+      <div class="species-grid" id="may-edit-species-grid" style="margin-top:12px"></div>
+      <!-- Total en tiempo real -->
+      <div style="margin-top:14px;padding:12px 16px;background:rgba(6,214,160,0.06);border:1px solid rgba(6,214,160,0.2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--text-secondary);font-size:13px">Total calculado</span>
+        <strong style="font-family:'Roboto Mono',monospace;font-size:16px;color:var(--green)" id="may-edit-total">$0</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeMayModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarEdicionMayorista()">💾 Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- AUTOCOMPLETE FLOTANTE -->
 <div class="autocomplete-list" id="ac-list"></div>
 <div class="autocomplete-list" id="ac-tel-list"></div>
@@ -2123,8 +2391,9 @@ const ESPECIES = [
 ];
 
 const EVISCERA_COSTO = 500;
-const STORAGE_KEY   = 'aquacot_v1';
-const CLIENTES_KEY  = 'aquacot_clientes_v1';
+const STORAGE_KEY    = 'aquacot_v1';
+const CLIENTES_KEY   = 'aquacot_clientes_v1';
+const MAYORISTA_KEY  = 'aquacot_mayorista_v1';
 
 // ── Safe storage: fallback a memoria si localStorage está bloqueado ──
 const safeStorage = (() => {
@@ -2139,9 +2408,12 @@ const safeStorage = (() => {
   };
 })();
 
-let ordenes  = JSON.parse(safeStorage.getItem(STORAGE_KEY)  || '[]');
-let clientes = JSON.parse(safeStorage.getItem(CLIENTES_KEY) || '[]');
+let ordenes   = JSON.parse(safeStorage.getItem(STORAGE_KEY)    || '[]');
+let clientes  = JSON.parse(safeStorage.getItem(CLIENTES_KEY)   || '[]');
+let mayorista = JSON.parse(safeStorage.getItem(MAYORISTA_KEY)  || '[]');
 // clientes: [{ id, nombre, tel, cc, creadoEn, lastUpdated }]
+// mayorista: [{ id, fecha, fechaObj, lastUpdated, nombre, tel, cc, items, totalLibras, total }]
+// mayorista items: [{ especie, qty, precio, subTotal }]
 
 // ─────────────────────────────────────────────
 //  RELOJ
@@ -2174,6 +2446,7 @@ function showTab(tab) {
   if (tab === 'dashboard')   renderDashboard();
   if (tab === 'eviscerado')  renderEviscerado();
   if (tab === 'clientes')    renderClientes();
+  if (tab === 'mayorista')   renderMayorista();
 }
 
 // ─────────────────────────────────────────────
@@ -2202,6 +2475,376 @@ function buildSpeciesGrid() {
       </div>
     </div>
   `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  MAYORISTA — GRID Y CÁLCULO
+// ─────────────────────────────────────────────
+function buildMaySpeciesGrid() {
+  const grid = document.getElementById('may-species-grid');
+  if (!grid) return;
+  grid.innerHTML = ESPECIES.map(e => `
+    <div class="may-species-card" id="may-sc-${e.id}">
+      <div class="may-species-header">
+        <span class="may-species-name">${e.nombre}</span>
+      </div>
+      <div class="may-species-inputs">
+        <div class="may-input-wrap">
+          <span class="may-input-label">Precio / lb</span>
+          <input type="number" min="0" step="100"
+            placeholder="${e.precio ? e.precio : '0'}"
+            id="may-precio-${e.id}"
+            value="${e.precio || ''}"
+            oninput="calcularMayorista()">
+        </div>
+        <div class="may-input-wrap">
+          <span class="may-input-label">Libras</span>
+          <input type="number" min="0" step="0.1"
+            placeholder="0.0 lb"
+            id="may-qty-${e.id}"
+            oninput="calcularMayorista()">
+        </div>
+      </div>
+      <div class="may-subtotal">
+        <span id="may-sub-label-${e.id}">— lb</span>
+        <span id="may-sub-${e.id}">$0</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function calcularMayorista() {
+  let totalLibras = 0, total = 0;
+
+  ESPECIES.forEach(e => {
+    const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
+    const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
+    const sub    = qty * precio;
+    totalLibras += qty;
+    total       += sub;
+
+    const card = document.getElementById(`may-sc-${e.id}`);
+    if (card) card.classList.toggle('has-value', qty > 0 && precio > 0);
+    const subEl = document.getElementById(`may-sub-${e.id}`);
+    const lblEl = document.getElementById(`may-sub-label-${e.id}`);
+    if (subEl) subEl.textContent = fmt(sub);
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb` : '— lb';
+  });
+
+  const totalEl   = document.getElementById('may-total-display');
+  const detailEl  = document.getElementById('may-total-details');
+  if (totalEl)  totalEl.textContent  = fmt(total);
+  if (detailEl) detailEl.textContent = `${totalLibras.toFixed(1)} libras`;
+}
+
+function guardarVentaMayorista() {
+  const nombre = document.getElementById('may-nombre').value.trim();
+  if (!nombre) { toast('Ingresa el nombre del comprador', true); return; }
+
+  const tel = document.getElementById('may-tel').value.trim();
+  const cc  = document.getElementById('may-cc').value.trim();
+  const items = [];
+  let totalLibras = 0, total = 0;
+
+  ESPECIES.forEach(e => {
+    const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
+    const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
+    if (qty <= 0) return;
+    const sub = qty * precio;
+    items.push({ especie: e.nombre, qty, precio, subTotal: sub });
+    totalLibras += qty;
+    total       += sub;
+  });
+
+  if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
+
+  const now = new Date();
+  const venta = {
+    id:          Date.now(),
+    fecha:       now.toLocaleString('es-CO'),
+    fechaObj:    now.toISOString(),
+    lastUpdated: now.toISOString(),
+    nombre, tel, cc, items, totalLibras, total
+  };
+
+  mayorista.unshift(venta);
+  safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+  updateBadge();
+  toast('✅ Venta mayorista registrada');
+  renderDashboard();
+  renderMayorista();
+  scheduleDriveSync();
+  resetMayorista(true);
+}
+
+function resetMayorista(silent = false) {
+  if (!silent && !confirm('¿Limpiar el formulario? Se perderán los datos no guardados.')) return;
+  document.getElementById('may-nombre').value = '';
+  document.getElementById('may-tel').value    = '';
+  document.getElementById('may-cc').value     = '';
+  ESPECIES.forEach(e => {
+    const qtyEl    = document.getElementById(`may-qty-${e.id}`);
+    const precioEl = document.getElementById(`may-precio-${e.id}`);
+    if (qtyEl) qtyEl.value = '';
+    // Restaurar precio estándar como placeholder/valor por defecto
+    if (precioEl) precioEl.value = e.precio || '';
+    const card = document.getElementById(`may-sc-${e.id}`);
+    if (card) card.classList.remove('has-value');
+    const subEl = document.getElementById(`may-sub-${e.id}`);
+    const lblEl = document.getElementById(`may-sub-label-${e.id}`);
+    if (subEl) subEl.textContent = '$0';
+    if (lblEl) lblEl.textContent = '— lb';
+  });
+  const totalEl  = document.getElementById('may-total-display');
+  const detailEl = document.getElementById('may-total-details');
+  if (totalEl)  totalEl.textContent  = '$0';
+  if (detailEl) detailEl.textContent = '— libras';
+  if (!silent) toast('Formulario limpiado');
+}
+
+function eliminarVentaMayorista(id) {
+  if (!confirm('¿Eliminar esta venta mayorista?')) return;
+  mayorista = mayorista.filter(v => v.id !== id);
+  safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+  updateBadge();
+  renderDashboard();
+  renderMayorista();
+  scheduleDriveSync();
+  toast('Venta eliminada');
+}
+
+// ── Filtros de período para historial mayorista ──
+let mayPeriod      = 'today';
+let mayCustomDesde = null;
+let mayCustomHasta = null;
+
+function setMayPeriod(period) {
+  mayPeriod = period;
+  document.querySelectorAll('[data-mayperiod]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mayperiod === period);
+  });
+  const rangeEl = document.getElementById('may-custom-range');
+  if (rangeEl) rangeEl.style.display = period === 'custom' ? 'flex' : 'none';
+  renderMayorista();
+}
+
+function applyMayCustomRange() {
+  mayCustomDesde = document.getElementById('may-date-desde')?.value || null;
+  mayCustomHasta = document.getElementById('may-date-hasta')?.value || null;
+  renderMayorista();
+}
+
+function getMayFiltered() {
+  const now   = new Date();
+  const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  switch (mayPeriod) {
+    case 'today':
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= hoy0 && d <= hoy23; });
+    case 'week': {
+      const diff = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+      const lunes   = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= lunes && d <= domingo; });
+    }
+    case 'month': {
+      const ini = new Date(now.getFullYear(), now.getMonth(), 1);
+      const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= ini && d <= fin; });
+    }
+    case 'custom': {
+      if (!mayCustomDesde || !mayCustomHasta) return mayorista;
+      const desde = new Date(mayCustomDesde + 'T00:00:00');
+      const hasta = new Date(mayCustomHasta + 'T23:59:59');
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= desde && d <= hasta; });
+    }
+    default: return mayorista;
+  }
+}
+
+function getMayPeriodLabel() {
+  const now = new Date();
+  const fmt = d => d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+  switch (mayPeriod) {
+    case 'today':  return `Hoy, ${fmt(now)}`;
+    case 'week': {
+      const diff = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+      const lunes  = new Date(now); lunes.setDate(now.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+      return `${fmt(lunes)} – ${fmt(domingo)}`;
+    }
+    case 'month': return now.toLocaleDateString('es-CO', { month:'long', year:'numeric' });
+    case 'custom':
+      if (!mayCustomDesde || !mayCustomHasta) return 'Rango personalizado';
+      return `${fmt(new Date(mayCustomDesde+'T00:00:00'))} – ${fmt(new Date(mayCustomHasta+'T00:00:00'))}`;
+    default: return 'Todo el historial';
+  }
+}
+
+function renderMayorista() {
+  const q     = (document.getElementById('may-search')?.value || '').toLowerCase().trim();
+  const tbody = document.getElementById('may-tbody');
+  const empty = document.getElementById('may-empty');
+
+  // Actualizar pill de período
+  const pillEl = document.getElementById('may-period-pill');
+  if (pillEl) pillEl.textContent = getMayPeriodLabel();
+
+  let lista = getMayFiltered();
+  if (q) lista = lista.filter(v =>
+    v.nombre.toLowerCase().includes(q) ||
+    (v.tel || '').includes(q) ||
+    (v.cc  || '').toLowerCase().includes(q)
+  );
+
+  document.getElementById('badge-may-hist').textContent = mayorista.length;
+
+  if (lista.length === 0) {
+    if (tbody) tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  tbody.innerHTML = lista.map((v) => `
+    <tr>
+      <td><span class="badge badge-teal">${mayorista.length - mayorista.indexOf(v)}</span></td>
+      <td style="font-size:12px;color:var(--text-secondary)">${v.fecha}</td>
+      <td><strong>${v.nombre}</strong></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${v.cc || '—'}</td>
+      <td>${v.tel || '—'}</td>
+      <td><span class="badge badge-teal">${v.items.length} esp.</span></td>
+      <td>${v.totalLibras.toFixed(1)} lb</td>
+      <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarVentaMayorista(${v.id})" title="Eliminar">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Eventos editar con data attributes
+  tbody.querySelectorAll('.may-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => abrirEdicionMayorista(Number(btn.dataset.id)));
+  });
+}
+
+// ── Edición de venta mayorista ────────────────
+let editingMayoristaId = null;
+
+function abrirEdicionMayorista(id) {
+  const venta = mayorista.find(v => v.id === id);
+  if (!venta) return;
+  editingMayoristaId = id;
+
+  document.getElementById('may-edit-nombre').value = venta.nombre;
+  document.getElementById('may-edit-tel').value    = venta.tel || '';
+  document.getElementById('may-edit-cc').value     = venta.cc  || '';
+
+  // Construir grid de especies con valores actuales
+  const grid = document.getElementById('may-edit-species-grid');
+  grid.innerHTML = ESPECIES.map(e => {
+    const item  = venta.items.find(i => i.especie === e.nombre);
+    const qty   = item ? item.qty   : '';
+    const precio = item ? item.precio : (e.precio || '');
+    return `
+      <div class="may-species-card" id="may-edit-sc-${e.id}">
+        <div class="may-species-header">
+          <span class="may-species-name">${e.nombre}</span>
+        </div>
+        <div class="may-species-inputs">
+          <div class="may-input-wrap">
+            <span class="may-input-label">Precio / lb</span>
+            <input type="number" min="0" step="100"
+              id="may-edit-precio-${e.id}"
+              value="${precio}"
+              placeholder="${e.precio || 0}"
+              oninput="calcularMayEdit()">
+          </div>
+          <div class="may-input-wrap">
+            <span class="may-input-label">Libras</span>
+            <input type="number" min="0" step="0.1"
+              id="may-edit-qty-${e.id}"
+              value="${qty}"
+              placeholder="0.0 lb"
+              oninput="calcularMayEdit()">
+          </div>
+        </div>
+        <div class="may-subtotal">
+          <span id="may-edit-sub-label-${e.id}">${qty ? qty + ' lb' : '— lb'}</span>
+          <span id="may-edit-sub-${e.id}">${item ? fmt(item.subTotal) : '$0'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  calcularMayEdit();
+  document.getElementById('may-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function calcularMayEdit() {
+  let total = 0;
+  ESPECIES.forEach(e => {
+    const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
+    const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
+    const sub    = qty * precio;
+    total += sub;
+    const subEl = document.getElementById(`may-edit-sub-${e.id}`);
+    const lblEl = document.getElementById(`may-edit-sub-label-${e.id}`);
+    const card  = document.getElementById(`may-edit-sc-${e.id}`);
+    if (subEl) subEl.textContent = fmt(sub);
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb` : '— lb';
+    if (card)  card.classList.toggle('has-value', qty > 0 && precio > 0);
+  });
+  const totalEl = document.getElementById('may-edit-total');
+  if (totalEl) totalEl.textContent = fmt(total);
+}
+
+function closeMayModal() {
+  document.getElementById('may-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  editingMayoristaId = null;
+}
+
+function guardarEdicionMayorista() {
+  const nombre = document.getElementById('may-edit-nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio', true); return; }
+
+  const tel = document.getElementById('may-edit-tel').value.trim();
+  const cc  = document.getElementById('may-edit-cc').value.trim();
+
+  const items = [];
+  let totalLibras = 0, total = 0;
+  ESPECIES.forEach(e => {
+    const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
+    const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
+    if (qty <= 0) return;
+    const sub = qty * precio;
+    items.push({ especie: e.nombre, qty, precio, subTotal: sub });
+    totalLibras += qty;
+    total       += sub;
+  });
+
+  if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
+
+  const idx = mayorista.findIndex(v => v.id === editingMayoristaId);
+  if (idx === -1) return;
+
+  mayorista[idx] = {
+    ...mayorista[idx],
+    nombre, tel, cc, items, totalLibras, total,
+    lastUpdated: new Date().toISOString()
+  };
+
+  safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+  closeMayModal();
+  updateBadge();
+  renderDashboard();
+  renderMayorista();
+  scheduleDriveSync();
+  toast('✅ Venta mayorista actualizada');
 }
 
 // ─────────────────────────────────────────────
@@ -2665,6 +3308,36 @@ function getFilteredOrdenes() {
   }
 }
 
+// Aplica el mismo filtro de período a las ventas mayoristas
+function getFilteredMayorista() {
+  const now   = new Date();
+  const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  switch (activePeriod) {
+    case 'today':
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= hoy0 && d <= hoy23; });
+    case 'week': {
+      const diff = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+      const lunes   = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= lunes && d <= domingo; });
+    }
+    case 'month': {
+      const inicio = new Date(now.getFullYear(), now.getMonth(), 1);
+      const fin    = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= inicio && d <= fin; });
+    }
+    case 'custom': {
+      if (!customDesde || !customHasta) return mayorista;
+      const desde = new Date(customDesde + 'T00:00:00');
+      const hasta = new Date(customHasta + 'T23:59:59');
+      return mayorista.filter(v => { const d = new Date(v.fechaObj); return d >= desde && d <= hasta; });
+    }
+    default: return mayorista;
+  }
+}
+
 function getPeriodLabel() {
   const now = new Date();
   const fmtDate = d => d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
@@ -2691,6 +3364,7 @@ function getPeriodLabel() {
 
 function renderDashboard() {
   const lista       = getFilteredOrdenes();
+  const listaMay    = getFilteredMayorista();
   const periodLabel = getPeriodLabel();
 
   // Pill y etiquetas de período
@@ -2702,30 +3376,79 @@ function renderDashboard() {
   document.getElementById('species-period-tag').textContent  = `· ${periodLabel}`;
   document.getElementById('finance-period-tag').textContent  = `· ${periodLabel}`;
 
-  // Acumulados del período filtrado
-  const totalVentas     = lista.reduce((s, c) => s + c.total, 0);
-  const totalLibras     = lista.reduce((s, c) => s + c.totalLibras, 0);
-  const totalEviscerado = lista.reduce((s, c) => s + c.totalEviscerado, 0);
-  const totalPescado    = lista.reduce((s, c) => s + c.totalPescado, 0);
+  // Acumulados del período — detal
+  const totalVentasDetal     = lista.reduce((s, c) => s + c.total, 0);
+  const totalLibrasDetal     = lista.reduce((s, c) => s + c.totalLibras, 0);
+  const totalEviscerado      = lista.reduce((s, c) => s + c.totalEviscerado, 0);
+  const totalPescadoDetal    = lista.reduce((s, c) => s + c.totalPescado, 0);
 
-  document.getElementById('stat-total-cot').textContent  = lista.length;
+  // Acumulados del período — mayorista
+  const totalVentasMay  = listaMay.reduce((s, v) => s + v.total, 0);
+  const totalLibrasMay  = listaMay.reduce((s, v) => s + v.totalLibras, 0);
+
+  // Totales combinados
+  const totalVentas = totalVentasDetal + totalVentasMay;
+  const totalLibras = totalLibrasDetal + totalLibrasMay;
+  const totalOrdenes = lista.length + listaMay.length;
+
+  // Stat cards
+  document.getElementById('stat-total-cot').textContent  = totalOrdenes;
   document.getElementById('stat-ventas-dia').textContent = fmtShort(totalVentas);
   document.getElementById('stat-libras-dia').textContent = totalLibras.toFixed(1) + ' lb';
   document.getElementById('stat-eviscerado').textContent = fmtShort(totalEviscerado);
 
-  document.getElementById('fs-total-cot').textContent = lista.length;
-  document.getElementById('fs-libras').textContent    = totalLibras.toFixed(1) + ' lb';
-  document.getElementById('fs-pescado').textContent   = fmt(totalPescado);
-  document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
-  document.getElementById('fs-total').textContent     = fmt(totalVentas);
+  // Desglose detal/mayorista bajo la stat de ventas
+  const desgloseEl = document.getElementById('stat-desglose-ventas');
+  if (desgloseEl) {
+    desgloseEl.innerHTML = totalVentasMay > 0
+      ? `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>
+         <span class="dash-pill-mayor">Mayor ${fmtShort(totalVentasMay)}</span>`
+      : `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>`;
+  }
+  const desgloseLibEl = document.getElementById('stat-desglose-libras');
+  if (desgloseLibEl) {
+    desgloseLibEl.innerHTML = totalLibrasMay > 0
+      ? `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>
+         <span class="dash-pill-mayor">${totalLibrasMay.toFixed(1)} lb mayor</span>`
+      : `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>`;
+  }
 
-  // Estadísticas por especie (filtradas)
+  // Resumen financiero
+  document.getElementById('fs-total-cot').textContent  = lista.length;
+  document.getElementById('fs-libras').textContent     = totalLibrasDetal.toFixed(1) + ' lb';
+  document.getElementById('fs-pescado').textContent    = fmt(totalPescadoDetal);
+  document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
+  document.getElementById('fs-total').textContent      = fmt(totalVentasDetal);
+
+  // Filas mayorista en resumen financiero
+  const fsMayEl = document.getElementById('fs-mayorista');
+  if (fsMayEl) {
+    fsMayEl.style.display = listaMay.length > 0 ? '' : 'none';
+    document.getElementById('fs-may-count').textContent  = listaMay.length;
+    document.getElementById('fs-may-libras').textContent = totalLibrasMay.toFixed(1) + ' lb';
+    document.getElementById('fs-may-total').textContent  = fmt(totalVentasMay);
+  }
+  const fsTotalCombEl = document.getElementById('fs-total-combinado');
+  if (fsTotalCombEl) {
+    fsTotalCombEl.style.display = listaMay.length > 0 ? '' : 'none';
+    document.getElementById('fs-gran-total').textContent = fmt(totalVentas);
+  }
+
+  // Estadísticas por especie (solo detal — mayorista tiene precios diferentes)
   const map = {};
   lista.forEach(c => {
     c.items.forEach(item => {
       if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
       map[item.especie].lb    += item.qty;
       map[item.especie].total += item.subPescado + item.subEviscerado;
+    });
+  });
+  // Agregar mayorista al mapa de especies
+  listaMay.forEach(v => {
+    v.items.forEach(item => {
+      if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
+      map[item.especie].lb    += item.qty;
+      map[item.especie].total += item.subTotal;
     });
   });
 
@@ -2789,6 +3512,7 @@ function updateBadge() {
   document.getElementById('badge-count').textContent = ordenes.length;
   updateEvBadge();
   updateClientesBadge();
+  document.getElementById('badge-mayorista').textContent = mayorista.length;
 }
 
 function updateClientesBadge() {
@@ -3404,6 +4128,24 @@ function mergeClientes(localClientes, remoteClientes) {
     .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
 }
 
+// ── Mayorista bilateral ──────────────────────
+function mergeMayorista(localMay, remoteMay) {
+  const map = new Map();
+  localMay.forEach(v => map.set(v.id, v));
+  (remoteMay || []).forEach(v => {
+    const existing = map.get(v.id);
+    if (!existing) {
+      map.set(v.id, v);
+    } else {
+      const localTs  = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
+      const remoteTs = v.lastUpdated        ? new Date(v.lastUpdated).getTime()        : 0;
+      if (remoteTs > localTs) map.set(v.id, v);
+    }
+  });
+  return Array.from(map.values())
+    .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
+}
+
 // ── Refrescar UI preservando estado ─────────
 function refreshUI(uiState) {
   updateBadge();
@@ -3412,6 +4154,7 @@ function refreshUI(uiState) {
   renderDashboard();
   renderEviscerado();
   renderClientes();
+  renderMayorista();
   if (uiState) restoreUIState(uiState);
 }
 
@@ -3658,14 +4401,17 @@ async function initDriveSync() {
     if (driveFileId) {
       const remoteData = await downloadDriveFile();
       if (remoteData) {
-        const merged         = mergeBilateral(ordenes, remoteData);
-        const evDone         = mergeEvDone(getEvDone(), remoteData.evDone);
-        const mergedClientes = mergeClientes(clientes, remoteData.clientes);
-        ordenes  = merged;
-        clientes = mergedClientes;
+        const merged          = mergeBilateral(ordenes, remoteData);
+        const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
+        const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
+        const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
+        ordenes   = merged;
+        clientes  = mergedClientes;
+        mayorista = mergedMayorista;
         setEvDone(evDone);
-        safeStorage.setItem(STORAGE_KEY,  JSON.stringify(ordenes));
-        safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+        safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
+        safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
+        safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
         // Subir el resultado del merge para que todos tengan la misma versión
         await uploadDriveFile();
         refreshUI(uiState);
@@ -3735,10 +4481,11 @@ async function uploadDriveFile() {
   const payload = JSON.stringify({
     ordenes,
     clientes,
+    mayorista,
     evDone:     [...getEvDone()],
     deletedIds: getDeletedIds(),
     lastUpdated: new Date().toISOString(),
-    version: '2.1'
+    version: '2.2'
   });
 
   if (!driveFileId) {
@@ -3792,26 +4539,32 @@ async function autoSync() {
     const remoteData = await downloadDriveFile();
     if (!remoteData) return;
 
-    const uiState        = captureUIState();
-    const merged         = mergeBilateral(ordenes, remoteData);
-    const evDone         = mergeEvDone(getEvDone(), remoteData.evDone);
-    const mergedClientes = mergeClientes(clientes, remoteData.clientes);
+    const uiState         = captureUIState();
+    const merged          = mergeBilateral(ordenes, remoteData);
+    const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
+    const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
+    const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
 
     // Detectar si realmente hubo cambios comparando serializado
-    const localSerial    = JSON.stringify(ordenes.map(c => c.id + (c.lastUpdated||'')).sort());
-    const mergedSerial   = JSON.stringify(merged.map(c => c.id + (c.lastUpdated||'')).sort());
-    const evLocalSerial  = JSON.stringify([...getEvDone()].sort());
-    const evMergedSerial = JSON.stringify([...evDone].sort());
+    const localSerial     = JSON.stringify(ordenes.map(c => c.id + (c.lastUpdated||'')).sort());
+    const mergedSerial    = JSON.stringify(merged.map(c => c.id + (c.lastUpdated||'')).sort());
+    const evLocalSerial   = JSON.stringify([...getEvDone()].sort());
+    const evMergedSerial  = JSON.stringify([...evDone].sort());
     const cliLocalSerial  = JSON.stringify(clientes.map(c => c.id + (c.lastUpdated||'')).sort());
     const cliMergedSerial = JSON.stringify(mergedClientes.map(c => c.id + (c.lastUpdated||'')).sort());
-    const hayDiferencias = localSerial !== mergedSerial || evLocalSerial !== evMergedSerial || cliLocalSerial !== cliMergedSerial;
+    const mayLocalSerial  = JSON.stringify(mayorista.map(v => v.id + (v.lastUpdated||'')).sort());
+    const mayMergedSerial = JSON.stringify(mergedMayorista.map(v => v.id + (v.lastUpdated||'')).sort());
+    const hayDiferencias  = localSerial !== mergedSerial || evLocalSerial !== evMergedSerial ||
+                            cliLocalSerial !== cliMergedSerial || mayLocalSerial !== mayMergedSerial;
 
     if (hayDiferencias) {
-      ordenes  = merged;
-      clientes = mergedClientes;
+      ordenes   = merged;
+      clientes  = mergedClientes;
+      mayorista = mergedMayorista;
       setEvDone(evDone);
-      safeStorage.setItem(STORAGE_KEY,  JSON.stringify(ordenes));
-      safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+      safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
+      safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
+      safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
       // Subir el merge para que todos los dispositivos converjan
       await uploadDriveFile();
       refreshUI(uiState);
@@ -3831,14 +4584,17 @@ async function syncNow() {
     const uiState    = captureUIState();
     const remoteData = await downloadDriveFile();
     if (remoteData) {
-      const merged         = mergeBilateral(ordenes, remoteData);
-      const evDone         = mergeEvDone(getEvDone(), remoteData.evDone);
-      const mergedClientes = mergeClientes(clientes, remoteData.clientes);
-      ordenes  = merged;
-      clientes = mergedClientes;
+      const merged          = mergeBilateral(ordenes, remoteData);
+      const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
+      const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
+      const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
+      ordenes   = merged;
+      clientes  = mergedClientes;
+      mayorista = mergedMayorista;
       setEvDone(evDone);
-      safeStorage.setItem(STORAGE_KEY,  JSON.stringify(ordenes));
-      safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+      safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
+      safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
+      safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
     }
     await uploadDriveFile();
     refreshUI(uiState);
@@ -4547,6 +5303,7 @@ function buildEvCard(c, isDone) {
 //  INIT
 // ─────────────────────────────────────────────
 buildSpeciesGrid();
+buildMaySpeciesGrid();
 updateBadge();
 updateEvBadge();
 restoreDriveSession();
