@@ -1942,8 +1942,8 @@
   /* ──────────────── BOTÓN FLOTANTE EV COUNTDOWN ──────────────── */
   #ev-float-btn {
     position: fixed;
-    bottom: 84px;     /* justo encima del botón de tema */
-    right: 24px;
+    bottom: 24px;
+    left: 24px;      /* lado izquierdo — lejos de los botones de acción */
     z-index: 300;
     min-width: 48px;
     height: 48px;
@@ -6221,6 +6221,17 @@ function calcularEstimadorEv() {
   const minRestantes = Math.round(totalLibrasPend * minPorLb);
   const finEstimado  = new Date(Date.now() + minRestantes * 60000);
 
+  // Si no hay libras pendientes o tiempo es cero → ocultar botón flotante
+  if (totalLibrasPend === 0 || minRestantes === 0) {
+    if (floatBtn) floatBtn.className = 'hidden';
+    el.className = 'ev-estimador sin-datos';
+    elIcon.textContent  = '⏱️';
+    elHora.textContent  = '—';
+    elCount.innerHTML   = 'Sin libras pendientes de eviscerado.';
+    elBasis.textContent = '';
+    return;
+  }
+
   el.className = 'ev-estimador';
 
   const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
@@ -6232,7 +6243,7 @@ function calcularEstimadorEv() {
     if (diffMs <= 0) {
       elHora.textContent  = '¡Ahora!';
       elCount.innerHTML   = 'El tiempo estimado ya se cumplió.';
-      if (floatBtn) { floatBtn.className = 'urgent'; floatText.textContent = '¡Ya!'; }
+      if (floatBtn) floatBtn.className = 'hidden'; // tiempo = 0 → ocultar
       if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
       return;
     }
@@ -6245,7 +6256,7 @@ function calcularEstimadorEv() {
     elHora.textContent = fmtHora(finEstimado);
     elCount.innerHTML  = `<strong>~${countStr} restantes</strong> · ${pendientes.length} orden${pendientes.length !== 1 ? 'es' : ''} · ${totalLibrasPend.toFixed(1)} lb`;
 
-    // Botón flotante: solo minutos restantes
+    // Botón flotante: visible con tiempo > 0
     if (floatBtn) {
       const isUrgent = diffMin > 30;
       floatBtn.className = isUrgent ? 'urgent pending' : 'pending';
