@@ -1600,6 +1600,209 @@
     font-size: 11px; color: var(--text-muted);
     display: inline-flex; align-items: center; gap: 4px;
   }
+
+  /* Fila clickeable */
+  #clientes-tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #clientes-tbody tr:hover { background: rgba(0,180,216,0.05); }
+
+  /* ──────────────── PERFIL DE CLIENTE ──────────────── */
+  #cli-profile-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  #cli-profile-overlay.open { opacity: 1; pointer-events: all; }
+
+  #cli-profile-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(460px, 100vw);
+    background: var(--surface);
+    border-left: 1px solid var(--card-border);
+    z-index: 501;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+  }
+  #cli-profile-panel.open { transform: translateX(0); }
+
+  .profile-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: flex-start; gap: 14px;
+    background: rgba(6,15,30,0.6);
+    flex-shrink: 0;
+  }
+  .profile-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    border: 2px solid rgba(0,180,216,0.3);
+  }
+  .profile-avatar.masculino  { background: rgba(0,120,255,0.12); border-color: rgba(0,120,255,0.3); }
+  .profile-avatar.femenino   { background: rgba(255,80,150,0.12); border-color: rgba(255,80,150,0.3); }
+  .profile-avatar.otro       { background: rgba(0,180,216,0.12); }
+
+  .profile-name-block { flex: 1; min-width: 0; }
+  .profile-name {
+    font-size: 17px; font-weight: 800;
+    color: var(--text-primary); margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .profile-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .profile-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    cursor: pointer; border: 1px solid transparent;
+    transition: all 0.2s; margin-top: 6px;
+    user-select: none;
+  }
+  .profile-status.activo {
+    background: rgba(6,214,160,0.12);
+    border-color: rgba(6,214,160,0.3);
+    color: var(--green);
+  }
+  .profile-status.vetado {
+    background: rgba(255,82,82,0.12);
+    border-color: rgba(255,82,82,0.3);
+    color: var(--coral);
+  }
+
+  .profile-close-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 20px; padding: 4px;
+    line-height: 1; transition: color 0.15s; flex-shrink: 0;
+  }
+  .profile-close-btn:hover { color: var(--text-primary); }
+
+  .profile-body {
+    flex: 1; overflow-y: auto; padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .profile-body::-webkit-scrollbar { width: 4px; }
+  .profile-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+  .profile-section-title {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .profile-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .profile-info-item {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .profile-info-item.full { grid-column: 1/-1; }
+  .profile-info-label { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-bottom: 3px; }
+  .profile-info-value {
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+    word-break: break-word;
+  }
+  .profile-info-value.mono { font-family: 'Roboto Mono', monospace; font-size: 12px; }
+  .profile-info-value.muted { color: var(--text-muted); font-weight: 400; }
+
+  /* Top 3 especies */
+  .top-especies { display: flex; flex-direction: column; gap: 8px; }
+  .top-especie-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .top-especie-rank {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+  }
+  .rank-1 { background: rgba(255,200,0,0.18); color: #ffc800; border: 1px solid rgba(255,200,0,0.3); }
+  .rank-2 { background: rgba(180,180,180,0.15); color: #b0b0b0; border: 1px solid rgba(180,180,180,0.25); }
+  .rank-3 { background: rgba(180,100,40,0.15); color: #cd7f32; border: 1px solid rgba(180,100,40,0.25); }
+
+  .top-especie-info { flex: 1; min-width: 0; }
+  .top-especie-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .top-especie-bar-track {
+    height: 4px; background: rgba(0,180,216,0.1);
+    border-radius: 2px; margin-top: 4px; overflow: hidden;
+  }
+  .top-especie-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--teal), var(--green));
+    transition: width 0.5s;
+  }
+  .top-especie-lb { font-size: 11px; color: var(--text-muted); font-family: 'Roboto Mono', monospace; flex-shrink: 0; }
+
+  /* Indicador eviscerado */
+  .ev-indicator {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 600;
+  }
+  .ev-indicator.yes {
+    background: rgba(0,180,216,0.08);
+    border: 1px solid rgba(0,180,216,0.2);
+    color: var(--teal-bright);
+  }
+  .ev-indicator.no {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
+  }
+
+  /* Campos editables del perfil */
+  .profile-edit-field {
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .profile-edit-field label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-muted);
+  }
+  .profile-edit-field input,
+  .profile-edit-field select,
+  .profile-edit-field textarea {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; padding: 8px 12px;
+    outline: none; transition: border-color 0.2s;
+    width: 100%; box-sizing: border-box;
+  }
+  .profile-edit-field input:focus,
+  .profile-edit-field select:focus,
+  .profile-edit-field textarea:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.12);
+  }
+  .profile-edit-field textarea { resize: vertical; min-height: 72px; }
+  .profile-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .profile-edit-grid .full { grid-column: 1/-1; }
+
+  .profile-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--card-border);
+    display: flex; gap: 10px; justify-content: flex-end;
+    flex-shrink: 0;
+    background: rgba(6,15,30,0.6);
+  }
+
+  @media (max-width: 480px) {
+    #cli-profile-panel { width: 100vw; }
+    .profile-edit-grid { grid-template-columns: 1fr; }
+    .profile-info-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -2294,6 +2497,82 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════ PANEL: PERFIL DE CLIENTE ══════════════ -->
+<div id="cli-profile-overlay" onclick="cerrarPerfil()"></div>
+<div id="cli-profile-panel">
+
+  <!-- Cabecera del perfil -->
+  <div class="profile-header">
+    <div class="profile-avatar" id="prof-avatar">👤</div>
+    <div class="profile-name-block">
+      <div class="profile-name" id="prof-nombre">—</div>
+      <div class="profile-meta" id="prof-meta"></div>
+      <div id="prof-status-btn" class="profile-status activo" onclick="toggleEstadoCliente()">
+        <span id="prof-status-dot">●</span>
+        <span id="prof-status-text">ACTIVO</span>
+      </div>
+    </div>
+    <button class="profile-close-btn" onclick="cerrarPerfil()">✕</button>
+  </div>
+
+  <!-- Cuerpo scrollable -->
+  <div class="profile-body">
+
+    <!-- Datos de contacto -->
+    <div>
+      <div class="profile-section-title">📋 Datos de Contacto</div>
+      <div class="profile-info-grid" id="prof-contacto-grid"></div>
+    </div>
+
+    <!-- Comportamiento de compra -->
+    <div>
+      <div class="profile-section-title">🛒 Comportamiento de Compra · últimos 2 años</div>
+      <div class="top-especies" id="prof-top-especies"></div>
+      <div style="margin-top:12px" id="prof-ev-indicator"></div>
+    </div>
+
+    <!-- Caracterización opcional -->
+    <div>
+      <div class="profile-section-title">✏️ Caracterización del Cliente</div>
+      <div class="profile-edit-grid">
+        <div class="profile-edit-field">
+          <label>Género</label>
+          <select id="prof-genero" onchange="marcarCambio()">
+            <option value="">— Sin especificar —</option>
+            <option value="masculino">Masculino</option>
+            <option value="femenino">Femenino</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="profile-edit-field">
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="prof-nacimiento" oninput="marcarCambio(); actualizarEdad()">
+        </div>
+        <div class="profile-edit-field full">
+          <label>Lugar de residencia</label>
+          <input type="text" id="prof-residencia" placeholder="Ej: Cali, Valle del Cauca" oninput="marcarCambio()">
+        </div>
+        <div class="profile-edit-field full">
+          <label>Correo electrónico</label>
+          <input type="email" id="prof-email" placeholder="Ej: cliente@correo.com" oninput="marcarCambio()">
+        </div>
+        <div class="profile-edit-field full">
+          <label>Notas</label>
+          <textarea id="prof-notas" placeholder="Preferencias, observaciones, información adicional…" oninput="marcarCambio()"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /profile-body -->
+
+  <!-- Footer con botones -->
+  <div class="profile-footer">
+    <button class="btn btn-ghost" onclick="cerrarPerfil()">Cerrar</button>
+    <button class="btn btn-success" id="prof-save-btn" onclick="guardarPerfilCliente()" style="display:none">💾 Guardar cambios</button>
+  </div>
+
+</div><!-- /cli-profile-panel -->
 
 <!-- ══════════════ MODAL: EDITAR CLIENTE ══════════════ -->
 <div class="modal-overlay" id="cli-modal-overlay" onclick="closeCLiModalOutside(event)">
@@ -3698,9 +3977,12 @@ function renderClientes() {
   empty.style.display = 'none';
 
   tbody.innerHTML = lista.map((c, i) => `
-    <tr>
+    <tr data-cid="${c.id}" data-ckey="${encodeURIComponent(c.nombre.trim().toLowerCase())}">
       <td style="color:var(--text-muted);font-size:12px">${i + 1}</td>
-      <td><strong style="color:var(--text-primary)">${c.nombre}</strong></td>
+      <td>
+        <strong style="color:var(--text-primary)">${c.nombre}</strong>
+        ${c.perfil?.estado === 'vetado' ? '<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--coral);background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.25);border-radius:20px;padding:1px 7px">VETADO</span>' : ''}
+      </td>
       <td style="font-size:13px">${c.tel || '—'}</td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary)">${c.cc || '—'}</td>
       <td>
@@ -3718,7 +4000,7 @@ function renderClientes() {
           ${c.origen === 'directorio' ? '📁 Directorio' : '🛒 Historial'}
         </span>
       </td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap" class="cli-action-cell">
         <button class="btn btn-ghost btn-sm cli-edit-btn"
           data-id="${c.id}"
           data-nombre="${encodeURIComponent(c.nombre)}"
@@ -3727,16 +4009,27 @@ function renderClientes() {
           data-origen="${c.origen}"
           title="Editar">✏️</button>
         ${c.origen === 'directorio'
-          ? `<button class="btn btn-danger btn-sm" onclick="eliminarCliente(${c.id})" title="Eliminar">🗑</button>`
+          ? `<button class="btn btn-danger btn-sm cli-del-btn" data-id="${c.id}" title="Eliminar">🗑</button>`
           : ''
         }
       </td>
     </tr>
   `).join('');
 
-  // Asignar evento a los botones de editar usando data attributes
+  // Clic en fila → abrir perfil (excepto si se hace clic en la celda de acciones)
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.cli-action-cell')) return;
+      const key = decodeURIComponent(row.dataset.ckey);
+      const cid = row.dataset.cid;
+      abrirPerfilCliente(cid, key);
+    });
+  });
+
+  // Botones editar
   tbody.querySelectorAll('.cli-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       abrirEdicionCliente(
         isNaN(btn.dataset.id) ? btn.dataset.id : Number(btn.dataset.id),
         decodeURIComponent(btn.dataset.nombre),
@@ -3746,6 +4039,263 @@ function renderClientes() {
       );
     });
   });
+
+  // Botones eliminar
+  tbody.querySelectorAll('.cli-del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      eliminarCliente(isNaN(btn.dataset.id) ? btn.dataset.id : Number(btn.dataset.id));
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  PERFIL DE CLIENTE
+// ─────────────────────────────────────────────
+let perfilClienteId   = null;  // id numérico (directorio) o 'hist_key'
+let perfilClienteKey  = null;  // nombre.trim().toLowerCase()
+let perfilDirtyFlag   = false;
+let edadInterval      = null;
+
+function abrirPerfilCliente(cid, ckey) {
+  perfilClienteId  = cid;
+  perfilClienteKey = ckey;
+  perfilDirtyFlag  = false;
+
+  // Obtener el cliente unificado
+  const todos  = getTodosClientes();
+  const c      = todos.find(x => String(x.id) === String(cid) || x.nombre.trim().toLowerCase() === ckey);
+  if (!c) return;
+
+  // Buscar perfil extra en directorio (solo directorio tiene perfil)
+  const dirEntry = clientes.find(x => String(x.id) === String(cid));
+  const perfil   = dirEntry?.perfil || {};
+
+  // ── Cabecera ──
+  const genero = perfil.genero || '';
+  const avatarEl = document.getElementById('prof-avatar');
+  avatarEl.textContent = genero === 'femenino' ? '👩' : genero === 'masculino' ? '👨' : '👤';
+  avatarEl.className   = `profile-avatar ${genero || 'otro'}`;
+
+  document.getElementById('prof-nombre').textContent = c.nombre;
+
+  // Meta: origen + fecha registro
+  const metaEl = document.getElementById('prof-meta');
+  const reg = c.creadoEn ? new Date(c.creadoEn).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' }) : '—';
+  metaEl.innerHTML = `
+    <span>${c.origen === 'directorio' ? '📁 Directorio' : '🛒 Historial'}</span>
+    <span>· Desde ${reg}</span>
+  `;
+
+  // Estado
+  const estado = perfil.estado || 'activo';
+  actualizarBotonesEstado(estado);
+
+  // ── Datos de contacto ──
+  const contactoGrid = document.getElementById('prof-contacto-grid');
+  contactoGrid.innerHTML = `
+    <div class="profile-info-item">
+      <div class="profile-info-label">📞 Celular</div>
+      <div class="profile-info-value mono ${c.tel ? '' : 'muted'}">${c.tel || '—'}</div>
+    </div>
+    <div class="profile-info-item">
+      <div class="profile-info-label">🪪 CC / NIT</div>
+      <div class="profile-info-value mono ${c.cc ? '' : 'muted'}">${c.cc || '—'}</div>
+    </div>
+    <div class="profile-info-item ${perfil.email ? '' : 'muted'}">
+      <div class="profile-info-label">✉️ Correo</div>
+      <div class="profile-info-value ${perfil.email ? '' : 'muted'}">${perfil.email || '—'}</div>
+    </div>
+    <div class="profile-info-item">
+      <div class="profile-info-label">📍 Residencia</div>
+      <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}">${perfil.residencia || '—'}</div>
+    </div>
+    ${perfil.nacimiento ? `
+    <div class="profile-info-item full">
+      <div class="profile-info-label">🎂 Edad</div>
+      <div class="profile-info-value" id="prof-edad-display">—</div>
+    </div>` : ''}
+  `;
+
+  // ── Top 3 especies (últimos 2 años) ──
+  const hace2a = new Date(); hace2a.setFullYear(hace2a.getFullYear() - 2);
+  const specMap = {};
+  ordenes.forEach(o => {
+    if (!o.nombre) return;
+    if (o.nombre.trim().toLowerCase() !== ckey) return;
+    const d = new Date(o.fechaObj);
+    if (d < hace2a) return;
+    (o.items || []).forEach(item => {
+      if (!specMap[item.especie]) specMap[item.especie] = { lb: 0, total: 0 };
+      specMap[item.especie].lb    += item.qty || 0;
+      specMap[item.especie].total += (item.subPescado || 0) + (item.subEviscerado || 0);
+    });
+  });
+
+  const top3 = Object.entries(specMap)
+    .sort((a, b) => b[1].lb - a[1].lb)
+    .slice(0, 3);
+  const maxLb = top3.length > 0 ? top3[0][1].lb : 1;
+
+  const topEl = document.getElementById('prof-top-especies');
+  if (top3.length === 0) {
+    topEl.innerHTML = `<div class="profile-info-value muted" style="font-size:13px;padding:8px 0">Sin compras registradas en los últimos 2 años</div>`;
+  } else {
+    const rankClass = ['rank-1','rank-2','rank-3'];
+    const rankLabel = ['1°','2°','3°'];
+    topEl.innerHTML = top3.map(([esp, data], i) => `
+      <div class="top-especie-row">
+        <div class="top-especie-rank ${rankClass[i]}">${rankLabel[i]}</div>
+        <div class="top-especie-info">
+          <div class="top-especie-name">${esp}</div>
+          <div class="top-especie-bar-track">
+            <div class="top-especie-bar-fill" style="width:${Math.round(data.lb / maxLb * 100)}%"></div>
+          </div>
+        </div>
+        <div class="top-especie-lb">${data.lb.toFixed(1)} lb</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Indicador eviscerado ──
+  const usaEv = ordenes.some(o =>
+    o.nombre?.trim().toLowerCase() === ckey &&
+    (o.totalEviscerado || 0) > 0
+  );
+  document.getElementById('prof-ev-indicator').innerHTML = `
+    <div class="ev-indicator ${usaEv ? 'yes' : 'no'}">
+      <span style="font-size:16px">🔪</span>
+      ${usaEv
+        ? 'Este cliente ha tomado el servicio de eviscerado'
+        : 'No ha solicitado eviscerado en sus compras'}
+    </div>
+  `;
+
+  // ── Campos de caracterización ──
+  document.getElementById('prof-genero').value      = perfil.genero     || '';
+  document.getElementById('prof-nacimiento').value  = perfil.nacimiento || '';
+  document.getElementById('prof-residencia').value  = perfil.residencia || '';
+  document.getElementById('prof-email').value       = perfil.email      || '';
+  document.getElementById('prof-notas').value       = perfil.notas      || '';
+
+  // Edad en tiempo real
+  if (edadInterval) clearInterval(edadInterval);
+  if (perfil.nacimiento) actualizarEdad(perfil.nacimiento);
+
+  // Botón guardar oculto hasta que haya cambios
+  document.getElementById('prof-save-btn').style.display = 'none';
+  perfilDirtyFlag = false;
+
+  // Abrir panel
+  document.getElementById('cli-profile-overlay').classList.add('open');
+  document.getElementById('cli-profile-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function actualizarEdad(nacFijo) {
+  const nac = nacFijo || document.getElementById('prof-nacimiento').value;
+  const el  = document.getElementById('prof-edad-display');
+  if (!nac || !el) { if (el) el.textContent = '—'; return; }
+
+  const calcular = () => {
+    const hoy  = new Date();
+    const born = new Date(nac + 'T00:00:00');
+    let age = hoy.getFullYear() - born.getFullYear();
+    const m = hoy.getMonth() - born.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < born.getDate())) age--;
+    const elNow = document.getElementById('prof-edad-display');
+    if (elNow) elNow.textContent = age >= 0 ? `${age} años` : '—';
+  };
+
+  calcular();
+  if (edadInterval) clearInterval(edadInterval);
+  // Recalcular cada día a medianoche (con un interval diario)
+  edadInterval = setInterval(calcular, 86400000);
+}
+
+function actualizarBotonesEstado(estado) {
+  const btn  = document.getElementById('prof-status-btn');
+  const text = document.getElementById('prof-status-text');
+  btn.className  = `profile-status ${estado}`;
+  text.textContent = estado === 'vetado' ? 'VETADO' : 'ACTIVO';
+  document.getElementById('prof-status-dot').textContent = '●';
+}
+
+function toggleEstadoCliente() {
+  // Solo directorio puede cambiar estado
+  const dirEntry = clientes.find(x => String(x.id) === String(perfilClienteId));
+  if (!dirEntry) { toast('Solo los clientes del directorio pueden ser vetados/activados', true); return; }
+
+  const actual  = dirEntry.perfil?.estado || 'activo';
+  const nuevo   = actual === 'vetado' ? 'activo' : 'vetado';
+  const accion  = nuevo === 'vetado' ? 'vetar' : 'reactivar';
+  if (!confirm(`¿Deseas ${accion} a ${dirEntry.nombre}?`)) return;
+
+  dirEntry.perfil = { ...(dirEntry.perfil || {}), estado: nuevo, lastUpdated: new Date().toISOString() };
+  dirEntry.lastUpdated = new Date().toISOString();
+  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  actualizarBotonesEstado(nuevo);
+  renderClientes();
+  scheduleDriveSync();
+  toast(nuevo === 'vetado' ? '🚫 Cliente vetado' : '✅ Cliente reactivado');
+}
+
+function marcarCambio() {
+  perfilDirtyFlag = true;
+  document.getElementById('prof-save-btn').style.display = '';
+
+  // Actualizar avatar según género seleccionado
+  const genero  = document.getElementById('prof-genero').value;
+  const avatarEl = document.getElementById('prof-avatar');
+  avatarEl.textContent = genero === 'femenino' ? '👩' : genero === 'masculino' ? '👨' : '👤';
+  avatarEl.className   = `profile-avatar ${genero || 'otro'}`;
+
+  // Actualizar edad si cambia la fecha
+  actualizarEdad();
+}
+
+function guardarPerfilCliente() {
+  // Solo directorio tiene perfil guardable
+  let dirEntry = clientes.find(x => String(x.id) === String(perfilClienteId));
+
+  if (!dirEntry) {
+    // Cliente del historial: promoverlo al directorio primero
+    const todos = getTodosClientes();
+    const c = todos.find(x => x.nombre.trim().toLowerCase() === perfilClienteKey);
+    if (!c) return;
+    const now = new Date().toISOString();
+    dirEntry = { id: Date.now(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', creadoEn: now, lastUpdated: now, perfil: {} };
+    clientes.unshift(dirEntry);
+    perfilClienteId = dirEntry.id;
+  }
+
+  dirEntry.perfil = {
+    ...(dirEntry.perfil || {}),
+    genero:      document.getElementById('prof-genero').value,
+    nacimiento:  document.getElementById('prof-nacimiento').value,
+    residencia:  document.getElementById('prof-residencia').value.trim(),
+    email:       document.getElementById('prof-email').value.trim(),
+    notas:       document.getElementById('prof-notas').value.trim(),
+  };
+  dirEntry.lastUpdated = new Date().toISOString();
+
+  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  perfilDirtyFlag = false;
+  document.getElementById('prof-save-btn').style.display = 'none';
+  renderClientes();
+  scheduleDriveSync();
+  toast('✅ Perfil guardado');
+}
+
+function cerrarPerfil() {
+  if (perfilDirtyFlag && !confirm('¿Cerrar sin guardar los cambios?')) return;
+  document.getElementById('cli-profile-overlay').classList.remove('open');
+  document.getElementById('cli-profile-panel').classList.remove('open');
+  document.body.style.overflow = '';
+  if (edadInterval) { clearInterval(edadInterval); edadInterval = null; }
+  perfilClienteId  = null;
+  perfilClienteKey = null;
+  perfilDirtyFlag  = false;
 }
 
 function toast(msg, isError = false) {
