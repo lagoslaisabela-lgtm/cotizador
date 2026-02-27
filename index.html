@@ -1925,14 +1925,12 @@
     transition: all 0.3s cubic-bezier(.4,0,.2,1);
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   }
-  /* Oscuro → muestra sol (para cambiar a claro) */
   body:not(.light) #theme-toggle {
     background: rgba(13,34,64,0.9);
     border: 1px solid rgba(0,180,216,0.35);
     color: #ffd166;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 12px rgba(255,209,102,0.15);
   }
-  /* Claro → muestra luna (para cambiar a oscuro) */
   body.light #theme-toggle {
     background: rgba(255,255,255,0.95);
     border: 1px solid rgba(0,140,200,0.3);
@@ -1940,12 +1938,178 @@
     box-shadow: 0 4px 20px rgba(0,100,180,0.15);
   }
   #theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
+
+  /* ──────────────── BOTÓN FLOTANTE EV COUNTDOWN ──────────────── */
+  #ev-float-btn {
+    position: fixed;
+    bottom: 84px;     /* justo encima del botón de tema */
+    right: 24px;
+    z-index: 300;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 28px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    user-select: none;
+    white-space: nowrap;
+  }
+  /* Estado: hay pendientes */
+  #ev-float-btn.pending {
+    background: rgba(13,34,64,0.92);
+    border: 1px solid rgba(255,209,102,0.45);
+    color: var(--gold);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 14px rgba(255,209,102,0.18);
+  }
+  body.light #ev-float-btn.pending {
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(220,160,0,0.4);
+    color: #b07a00;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 0 10px rgba(220,160,0,0.1);
+  }
+  /* Estado: urgente (>30 min pendientes) */
+  #ev-float-btn.urgent {
+    background: rgba(80,10,20,0.92);
+    border: 1px solid rgba(239,71,111,0.6);
+    color: var(--coral);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 0 14px rgba(239,71,111,0.25);
+    animation: floatPulse 2s infinite;
+  }
+  body.light #ev-float-btn.urgent {
+    background: rgba(255,240,242,0.97);
+    border-color: rgba(239,71,111,0.5);
+    color: var(--coral);
+  }
+  /* Estado: todo listo */
+  #ev-float-btn.done {
+    background: rgba(6,40,30,0.88);
+    border: 1px solid rgba(6,214,160,0.45);
+    color: var(--green);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 14px rgba(6,214,160,0.18);
+  }
+  body.light #ev-float-btn.done {
+    background: rgba(240,255,250,0.97);
+    border-color: rgba(6,214,160,0.4);
+    color: #048a62;
+  }
+  /* Estado oculto cuando no hay órdenes de eviscerado */
+  #ev-float-btn.hidden { opacity: 0; pointer-events: none; transform: scale(0.7); }
+
+  #ev-float-btn:hover:not(.hidden) { transform: scale(1.06) translateY(-2px); }
+
+  @keyframes floatPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 0 14px rgba(239,71,111,0.25); }
+    50%       { box-shadow: 0 4px 24px rgba(0,0,0,0.5),  0 0 22px rgba(239,71,111,0.45); }
+  }
+
+  /* ──────────────── CHART 15 DÍAS ──────────────── */
+  .chart-card { overflow: hidden; }
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+  }
+  .chart-wrap canvas { display: block; }
+  .chart-legend {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 12px; margin-bottom: 4px;
+  }
+  .chart-legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .chart-legend-dot {
+    width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+  }
+
+  /* ──────────────── EV TIMING ──────────────── */
+  /* Chip de tiempo en cada tarjeta de eviscerado pendiente */
+  .ev-timer-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid rgba(255,209,102,0.3);
+    background: rgba(255,209,102,0.08);
+    color: var(--gold);
+  }
+  .ev-timer-chip.urgent {
+    border-color: rgba(239,71,111,0.4);
+    background: rgba(239,71,111,0.08);
+    color: var(--coral);
+    animation: chipPulse 1.5s infinite;
+  }
+  @keyframes chipPulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+  }
+  /* Tiempo real en tarjetas completadas */
+  .ev-done-time {
+    font-size: 11px; color: var(--green);
+    font-family: 'Roboto Mono', monospace;
+    text-align: center; margin-top: 6px;
+    opacity: 0.8;
+  }
+
+  /* Estimador global */
+  .ev-estimador {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,209,102,0.25);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .ev-estimador-icon { font-size: 28px; flex-shrink: 0; }
+  .ev-estimador-body { flex: 1; min-width: 0; }
+  .ev-estimador-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .ev-estimador-hora {
+    font-size: 22px; font-weight: 800;
+    font-family: 'Roboto Mono', monospace;
+    color: var(--gold); line-height: 1;
+  }
+  .ev-estimador-countdown {
+    font-size: 13px; color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .ev-estimador-countdown strong { color: var(--teal-bright); }
+  .ev-estimador-basis {
+    font-size: 11px; color: var(--text-muted); margin-top: 4px;
+  }
+  .ev-estimador.sin-datos {
+    border-color: var(--card-border);
+    opacity: 0.7;
+  }
+  .ev-estimador.listo {
+    border-color: rgba(6,214,160,0.35);
+    background: rgba(6,214,160,0.05);
+  }
+  .ev-estimador.listo .ev-estimador-hora { color: var(--green); }
+
+  body.light .ev-estimador { background: rgba(255,255,255,0.9); }
+  body.light .ev-timer-chip { background: rgba(255,209,102,0.12); }
 </style>
 </head>
 <body>
 
 <!-- Botón toggle modo claro/oscuro -->
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">☀️</button>
+
+<!-- Botón flotante countdown eviscerado -->
+<button id="ev-float-btn" class="hidden" onclick="showTab('eviscerado')" title="Ver órdenes de eviscerado">
+  🔪 <span id="ev-float-text">—</span>
+</button>
 
 <div id="top-bar">
 <header>
@@ -2177,6 +2341,20 @@
       </div>
     </div>
 
+    <!-- Gráfico 15 días -->
+    <div class="card section chart-card">
+      <div class="card-title">📈 Ventas — Últimos 15 días</div>
+      <div class="chart-legend">
+        <div class="chart-legend-item">
+          <div class="chart-legend-dot" style="background:var(--teal)"></div><span>Detal</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="chart-legend-dot" style="background:var(--green)"></div><span>Mayorista</span>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-15dias"></canvas></div>
+    </div>
+
     <div class="grid-2">
       <!-- Ventas por especie -->
       <div class="card">
@@ -2247,6 +2425,17 @@
       </div>
       <div class="filter-period-indicator">
         <span class="period-pill" id="ev-period-pill">Todo</span>
+      </div>
+    </div>
+
+    <!-- Estimador de finalización -->
+    <div class="ev-estimador sin-datos" id="ev-estimador">
+      <div class="ev-estimador-icon" id="ev-est-icon">⏱️</div>
+      <div class="ev-estimador-body">
+        <div class="ev-estimador-title">Estimado de finalización</div>
+        <div class="ev-estimador-hora" id="ev-est-hora">—</div>
+        <div class="ev-estimador-countdown" id="ev-est-countdown">Sin órdenes pendientes</div>
+        <div class="ev-estimador-basis" id="ev-est-basis"></div>
       </div>
     </div>
 
@@ -3890,6 +4079,9 @@ function renderDashboard() {
     </div>
     <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;padding-left:152px">${fmt(data.total)}</div>
   `).join('');
+
+  // Gráfico 15 días (siempre usa datos completos, sin filtro de período)
+  requestAnimationFrame(() => renderChart15dias());
 }
 
 // ─────────────────────────────────────────────
@@ -5697,7 +5889,8 @@ window.addEventListener('scroll', () => {
 // ═════════════════════════════════════════════
 //  EVISCERADO — ÓRDENES EN TIEMPO REAL
 // ═════════════════════════════════════════════
-const EV_DONE_KEY = 'aquacot_ev_done'; // Set de IDs marcados como completados
+const EV_DONE_KEY  = 'aquacot_ev_done'; // Set de IDs marcados como completados
+const EV_TIMES_KEY = 'aquacot_ev_times'; // Map id→{start, end} para medir tiempos
 
 function getEvDone() {
   try { return new Set(JSON.parse(safeStorage.getItem(EV_DONE_KEY) || '[]')); }
@@ -5708,11 +5901,32 @@ function setEvDone(set) {
   safeStorage.setItem(EV_DONE_KEY, JSON.stringify([...set]));
 }
 
+function getEvTimes() {
+  try { return JSON.parse(safeStorage.getItem(EV_TIMES_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function setEvTimes(map) {
+  safeStorage.setItem(EV_TIMES_KEY, JSON.stringify(map));
+}
+
 function toggleEvDone(cotId) {
-  const done = getEvDone();
-  if (done.has(cotId)) done.delete(cotId);
-  else done.add(cotId);
+  const done  = getEvDone();
+  const times = getEvTimes();
+  const now   = Date.now();
+
+  if (done.has(cotId)) {
+    // Desmarcar → eliminar timestamp de fin
+    done.delete(cotId);
+    if (times[cotId]) { delete times[cotId].end; }
+  } else {
+    // Marcar como completado → guardar timestamp de completado
+    done.add(cotId);
+    const orden = ordenes.find(c => c.id === cotId);
+    const start = orden ? new Date(orden.fechaObj).getTime() : now;
+    times[cotId] = { start, end: now };
+  }
   setEvDone(done);
+  setEvTimes(times);
   renderEviscerado();
   updateEvBadge();
   scheduleDriveSync();
@@ -5841,6 +6055,9 @@ function renderEviscerado() {
     emptyC.style.display = 'none';
     gridC.innerHTML = completadas.map(c => buildEvCard(c, true)).join('');
   }
+
+  // Actualizar estimador
+  calcularEstimadorEv();
 }
 
 function buildEvCard(c, isDone) {
@@ -5857,6 +6074,28 @@ function buildEvCard(c, isDone) {
   const d = new Date(c.fechaObj);
   const fechaCorta = d.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' });
   const horaCorta  = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+
+  // Timer chip (solo pendientes)
+  let timerChipHtml = '';
+  let doneTimeHtml  = '';
+
+  if (!isDone) {
+    const elapsed = Math.floor((Date.now() - d.getTime()) / 60000); // minutos
+    const hrs = Math.floor(elapsed / 60);
+    const min = elapsed % 60;
+    const label = hrs > 0 ? `${hrs}h ${min}m esperando` : `${min}m esperando`;
+    const urgent = elapsed > 30;
+    timerChipHtml = `<span class="ev-timer-chip${urgent ? ' urgent' : ''}" data-start="${d.getTime()}">⏱ ${label}</span>`;
+  } else {
+    // Tiempo total de procesamiento
+    const times = getEvTimes();
+    if (times[c.id]?.end && times[c.id]?.start) {
+      const dur = Math.round((times[c.id].end - times[c.id].start) / 60000);
+      const hrs = Math.floor(dur / 60), min = dur % 60;
+      const durStr = hrs > 0 ? `${hrs}h ${min}m` : `${min} min`;
+      doneTimeHtml = `<div class="ev-done-time">✅ Procesado en ${durStr}</div>`;
+    }
+  }
 
   const footerBtn = isDone
     ? `<div class="ev-done-badge">✅ Eviscerado completado</div>
@@ -5888,14 +6127,296 @@ function buildEvCard(c, isDone) {
         <div class="ev-card-row">
           <span class="label">Total libras (orden)</span>
           <span class="val">${totalLbsAll.toFixed(1)} lb</span>
-        </div>        
+        </div>
+        ${!isDone ? `<div>${timerChipHtml}</div>` : ''}
       </div>
 
       <div class="ev-species-list">${pills}</div>
 
       <div class="ev-card-footer">${footerBtn}</div>
+      ${doneTimeHtml}
     </div>
   `;
+}
+
+// ─────────────────────────────────────────────
+//  ESTIMADOR DE FINALIZACIÓN — EVISCERADO
+// ─────────────────────────────────────────────
+let evCountdownInterval = null;
+
+function calcularEstimadorEv() {
+  const done      = getEvDone();
+  const times     = getEvTimes();
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const el        = document.getElementById('ev-estimador');
+  const elHora    = document.getElementById('ev-est-hora');
+  const elCount   = document.getElementById('ev-est-countdown');
+  const elBasis   = document.getElementById('ev-est-basis');
+  const elIcon    = document.getElementById('ev-est-icon');
+  if (!el) return;
+
+  // Limpiar countdown previo
+  if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
+
+  const floatBtn  = document.getElementById('ev-float-btn');
+  const floatText = document.getElementById('ev-float-text');
+
+  if (pendientes.length === 0) {
+    // ¿Hay órdenes ev totales? Si no hay ninguna, ocultar el botón
+    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
+    el.className = 'ev-estimador listo';
+    elIcon.textContent = '✅';
+    elHora.textContent  = '¡Todo listo!';
+    elCount.innerHTML   = 'Todas las órdenes de eviscerado han sido completadas.';
+    elBasis.textContent = '';
+    if (floatBtn) {
+      if (hayEv) {
+        floatBtn.className = 'done';
+        floatText.textContent = '¡Listo!';
+      } else {
+        floatBtn.className = 'hidden';
+      }
+    }
+    return;
+  }
+
+  // Calcular velocidad promedio: min/lb de órdenes COMPLETADAS del mismo día
+  const hoy0  = new Date(); hoy0.setHours(0,0,0,0);
+  const completadasHoy = ordenes.filter(c =>
+    c.totalEviscerado > 0 &&
+    done.has(c.id) &&
+    times[c.id]?.end && times[c.id]?.start &&
+    new Date(times[c.id].start) >= hoy0
+  );
+
+  let minPorLb = null; // minutos por libra
+  let basisMsg = '';
+
+  if (completadasHoy.length > 0) {
+    let totalMin = 0, totalLb = 0;
+    completadasHoy.forEach(c => {
+      const dur = (times[c.id].end - times[c.id].start) / 60000;
+      const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+      if (lb > 0 && dur > 0) { totalMin += dur; totalLb += lb; }
+    });
+    if (totalLb > 0) {
+      minPorLb = totalMin / totalLb;
+      basisMsg = `Promedio hoy: ${minPorLb.toFixed(1)} min/lb · ${completadasHoy.length} orden${completadasHoy.length !== 1 ? 'es' : ''} de referencia`;
+    }
+  }
+
+  // Fallback: asumir 20 seg/lb si no hay datos del día
+  if (minPorLb === null) {
+    minPorLb = 20 / 60; // 20 segundos por libra → 0.333 min/lb
+    basisMsg = 'Sin datos del día — estimado con referencia estándar (20 seg/lb)';
+  }
+
+  // Calcular libras pendientes totales (ordenadas por creación, FIFO)
+  const pendientesOrdenados = pendientes.sort((a,b) => new Date(a.fechaObj) - new Date(b.fechaObj));
+  let totalLibrasPend = 0;
+  pendientesOrdenados.forEach(c => {
+    totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+  });
+
+  const minRestantes = Math.round(totalLibrasPend * minPorLb);
+  const finEstimado  = new Date(Date.now() + minRestantes * 60000);
+
+  el.className = 'ev-estimador';
+
+  const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+
+  function actualizarCountdown() {
+    const ahora  = new Date();
+    const diffMs = finEstimado - ahora;
+
+    if (diffMs <= 0) {
+      elHora.textContent  = '¡Ahora!';
+      elCount.innerHTML   = 'El tiempo estimado ya se cumplió.';
+      if (floatBtn) { floatBtn.className = 'urgent'; floatText.textContent = '¡Ya!'; }
+      if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
+      return;
+    }
+
+    const diffMin  = Math.ceil(diffMs / 60000);
+    const hh       = Math.floor(diffMin / 60);
+    const mm       = diffMin % 60;
+    const countStr = hh > 0 ? `${hh}h ${mm}m` : `${mm} min`;
+
+    elHora.textContent = fmtHora(finEstimado);
+    elCount.innerHTML  = `<strong>~${countStr} restantes</strong> · ${pendientes.length} orden${pendientes.length !== 1 ? 'es' : ''} · ${totalLibrasPend.toFixed(1)} lb`;
+
+    // Botón flotante: solo minutos restantes
+    if (floatBtn) {
+      const isUrgent = diffMin > 30;
+      floatBtn.className = isUrgent ? 'urgent pending' : 'pending';
+      floatText.textContent = hh > 0 ? `${hh}h ${mm}m` : `${mm} min`;
+      floatBtn.title = `Eviscerado: ~${countStr} restantes — clic para ir a la sección`;
+    }
+  }
+
+  actualizarCountdown();
+  elBasis.textContent = basisMsg;
+  elIcon.textContent  = '⏱️';
+  evCountdownInterval = setInterval(actualizarCountdown, 60000);
+}
+
+// ─────────────────────────────────────────────
+//  GRÁFICO 15 DÍAS — barras apiladas
+// ─────────────────────────────────────────────
+let chart15Instance = null;
+
+function renderChart15dias() {
+  const canvas = document.getElementById('chart-15dias');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const now = new Date();
+
+  // Generar los 15 días (hoy incluido)
+  const dias = [];
+  for (let i = 14; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    dias.push(d);
+  }
+
+  // Sumar ventas detal y mayorista por día
+  const detalPorDia    = dias.map(d => {
+    const d0 = new Date(d); d0.setHours(0,0,0,0);
+    const d1 = new Date(d); d1.setHours(23,59,59,999);
+    return ordenes
+      .filter(o => { const od = new Date(o.fechaObj); return od >= d0 && od <= d1; })
+      .reduce((s, o) => s + (o.total || 0), 0);
+  });
+
+  const mayPorDia = dias.map(d => {
+    const d0 = new Date(d); d0.setHours(0,0,0,0);
+    const d1 = new Date(d); d1.setHours(23,59,59,999);
+    return mayorista
+      .filter(v => { const vd = new Date(v.fechaObj); return vd >= d0 && vd <= d1; })
+      .reduce((s, v) => s + (v.total || 0), 0);
+  });
+
+  const labels = dias.map(d => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const isToday = d.getTime() === today.getTime();
+    const label = d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+    return isToday ? `Hoy` : label;
+  });
+
+  // Detectar modo claro para colores del eje
+  const isLight   = document.body.classList.contains('light');
+  const textColor = isLight ? 'rgba(10,40,80,0.6)' : 'rgba(200,230,240,0.5)';
+  const gridColor = isLight ? 'rgba(0,140,200,0.08)' : 'rgba(0,180,216,0.08)';
+
+  if (chart15Instance) { chart15Instance.destroy(); chart15Instance = null; }
+
+  // Ajustar canvas al contenedor
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth  || 600;
+  canvas.height = wrap.clientHeight || 220;
+
+  // Dibujar gráfico de barras apiladas manualmente (sin dependencias externas)
+  const W = canvas.width, H = canvas.height;
+  const PAD_L = 72, PAD_R = 16, PAD_T = 16, PAD_B = 48;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const n = dias.length;
+  const barW  = Math.floor(chartW / n * 0.65);
+  const barGap = chartW / n;
+
+  const maxVal = Math.max(...dias.map((_, i) => detalPorDia[i] + mayPorDia[i]), 1);
+  const niceMax = Math.ceil(maxVal / 1000) * 1000 || 1000;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid horizontal
+  const gridLines = 4;
+  ctx.textAlign = 'right';
+  ctx.font = '10px Roboto Mono, monospace';
+  ctx.fillStyle = textColor;
+  for (let g = 0; g <= gridLines; g++) {
+    const y = PAD_T + chartH - (g / gridLines) * chartH;
+    const val = (g / gridLines) * niceMax;
+    ctx.beginPath();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.moveTo(PAD_L, y);
+    ctx.lineTo(PAD_L + chartW, y);
+    ctx.stroke();
+    const label = val >= 1000000 ? `$${(val/1000000).toFixed(1)}M`
+                : val >= 1000    ? `$${(val/1000).toFixed(0)}K`
+                : `$${val}`;
+    ctx.fillText(label, PAD_L - 6, y + 4);
+  }
+
+  // Barras
+  for (let i = 0; i < n; i++) {
+    const x    = PAD_L + i * barGap + (barGap - barW) / 2;
+    const vDet = detalPorDia[i];
+    const vMay = mayPorDia[i];
+    const hDet = (vDet / niceMax) * chartH;
+    const hMay = (vMay / niceMax) * chartH;
+
+    // Barra detal (abajo, teal)
+    if (hDet > 0) {
+      const grd = ctx.createLinearGradient(0, PAD_T + chartH - hDet, 0, PAD_T + chartH);
+      grd.addColorStop(0, 'rgba(0,180,216,0.9)');
+      grd.addColorStop(1, 'rgba(0,100,160,0.7)');
+      ctx.fillStyle = grd;
+      const r = Math.min(4, barW / 2, hDet);
+      ctx.beginPath();
+      const yBot = PAD_T + chartH;
+      const yTop = yBot - hDet;
+      if (hMay > 0) {
+        // Esquinas redondeadas solo abajo
+        ctx.roundRect(x, yTop, barW, hDet, [0, 0, r, r]);
+      } else {
+        ctx.roundRect(x, yTop, barW, hDet, r);
+      }
+      ctx.fill();
+    }
+
+    // Barra mayorista (encima, verde)
+    if (hMay > 0) {
+      const grd = ctx.createLinearGradient(0, PAD_T + chartH - hDet - hMay, 0, PAD_T + chartH - hDet);
+      grd.addColorStop(0, 'rgba(6,214,160,0.9)');
+      grd.addColorStop(1, 'rgba(6,160,110,0.7)');
+      ctx.fillStyle = grd;
+      const r = Math.min(4, barW / 2, hMay);
+      const yBot = PAD_T + chartH - hDet;
+      const yTop = yBot - hMay;
+      ctx.beginPath();
+      ctx.roundRect(x, yTop, barW, hMay, [r, r, 0, 0]);
+      ctx.fill();
+    }
+
+    // Etiqueta eje X
+    ctx.fillStyle = textColor;
+    ctx.font = i === n - 1 ? 'bold 10px DM Sans, sans-serif' : '10px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    // Mostrar solo días alternos + hoy para no saturar
+    if (i % 2 === 0 || i === n - 1) {
+      ctx.fillText(labels[i], x + barW / 2, H - PAD_B + 16);
+    }
+
+    // Tooltip: total encima de la barra si hay datos
+    const total = vDet + vMay;
+    if (total > 0) {
+      const hTotal = hDet + hMay;
+      ctx.fillStyle = isLight ? 'rgba(0,50,100,0.7)' : 'rgba(200,240,255,0.7)';
+      ctx.font = '9px Roboto Mono, monospace';
+      ctx.textAlign = 'center';
+      const shortVal = total >= 1000000 ? `${(total/1000000).toFixed(1)}M`
+                     : total >= 1000    ? `${(total/1000).toFixed(0)}K`
+                     : `${total}`;
+      if (hTotal > 18) {
+        ctx.fillText(`$${shortVal}`, x + barW / 2, PAD_T + chartH - hTotal - 4);
+      }
+    }
+  }
+
+  // Guardar referencia para poder destruirlo en el próximo render
+  chart15Instance = { destroy: () => {} }; // placeholder
 }
 
 // ─────────────────────────────────────────────
@@ -5998,6 +6519,8 @@ function toggleTheme() {
   btn.textContent = isLight ? '🌙' : '☀️';
   btn.title = isLight ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
   safeStorage.setItem('aquacot_theme', isLight ? 'light' : 'dark');
+  // Redibujar chart con colores del tema correcto
+  requestAnimationFrame(() => renderChart15dias());
 }
 
 function initTheme() {
@@ -6022,6 +6545,23 @@ buildMaySpeciesGrid();
 updateBadge();
 updateEvBadge();
 restoreDriveSession();
+
+// Ticker cada 60s: refresca chips de tiempo en tarjetas pendientes y redibuja chart si dashboard visible
+setInterval(() => {
+  // Actualizar chips de espera en tarjetas de eviscerado
+  document.querySelectorAll('.ev-timer-chip[data-start]').forEach(chip => {
+    const start   = parseInt(chip.dataset.start);
+    const elapsed = Math.floor((Date.now() - start) / 60000);
+    const hrs = Math.floor(elapsed / 60), min = elapsed % 60;
+    const label = hrs > 0 ? `${hrs}h ${min}m esperando` : `${min}m esperando`;
+    chip.textContent = `⏱ ${label}`;
+    chip.classList.toggle('urgent', elapsed > 30);
+  });
+  // Redibujar chart si el dashboard está activo
+  if (document.getElementById('page-dashboard')?.classList.contains('active')) {
+    renderChart15dias();
+  }
+}, 60000);
 </script>
 </body>
 </html>
