@@ -377,15 +377,13 @@
 
   /* ──────────────── NAV TABS ──────────────── */
   nav {
-    background: rgba(8,18,35,0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: var(--ocean-deep);
     padding: 10px 24px;
     display: flex;
     justify-content: center;
     transition: background 0.35s;
   }
-  body.light nav { background: rgba(225,240,255,0.92); }
+  body.light nav { background: var(--ocean-deep); }
 
   .nav-inner {
     display: flex;
@@ -462,6 +460,7 @@
     max-width: 1280px;
     margin: 0 auto;
     padding: 24px;
+    padding-bottom: 96px; /* espacio para que los botones flotantes no tapen el último elemento */
     position: relative;
     z-index: 1;
   }
@@ -999,8 +998,6 @@
     .btn { padding: 10px 16px; }
     nav { padding: 10px 12px; }
     .nav-inner { padding: 4px; gap: 4px; }
-    /* En móvil, ocultar el timer flotante cuando hay botones de acción visibles */
-    body.tab-has-actions #ev-float-btn { opacity: 0 !important; pointer-events: none !important; transform: scale(0.7); }
   }
 
   /* ──────────────── SUMMARY ITEMS ──────────────── */
@@ -3053,7 +3050,6 @@ function showTab(tab) {
   document.getElementById(`page-${tab}`).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   // Marca si la pestaña activa tiene botones de acción en la parte inferior
-  document.body.classList.toggle('tab-has-actions', tab === 'cotizar' || tab === 'mayorista');
   if (tab === 'historial')   renderHistorial();
   if (tab === 'dashboard')   renderDashboard();
   if (tab === 'eviscerado')  renderEviscerado();
