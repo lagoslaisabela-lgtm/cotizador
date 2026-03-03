@@ -2010,6 +2010,74 @@
     50%       { box-shadow: 0 4px 24px rgba(0,0,0,0.5),  0 0 22px rgba(239,71,111,0.45); }
   }
 
+  /* ──────────────── EVISCERADO FULLSCREEN ──────────────── */
+  #ev-fullscreen-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: var(--ocean-deep);
+    overflow-y: auto;
+    padding: 24px;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #ev-fullscreen-overlay.open { display: flex; }
+
+  .ev-fs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .ev-fs-title {
+    font-size: 20px; font-weight: 800;
+    color: var(--text-primary);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ev-fs-close {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 14px; font-weight: 600;
+    padding: 9px 18px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.18s;
+  }
+  .ev-fs-close:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* En fullscreen, las tarjetas son más grandes */
+  #ev-fullscreen-overlay .ev-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 24px;
+  }
+  #ev-fullscreen-overlay .ev-card {
+    padding: 28px 30px;
+    gap: 20px;
+  }
+  #ev-fullscreen-overlay .ev-card-name { font-size: 22px; }
+  #ev-fullscreen-overlay .ev-card-meta { font-size: 13px; margin-top: 6px; }
+  #ev-fullscreen-overlay .ev-card-time { font-size: 13px; }
+  #ev-fullscreen-overlay .ev-card-row  { font-size: 15px; }
+  #ev-fullscreen-overlay .ev-card-row .label { font-size: 14px; }
+  #ev-fullscreen-overlay .ev-card-row .val.big { font-size: 32px; }
+  #ev-fullscreen-overlay .ev-species-pill { font-size: 13px; padding: 5px 14px; }
+  #ev-fullscreen-overlay .btn-ev-done { padding: 16px; font-size: 15px; }
+  #ev-fullscreen-overlay .btn-ev-undo { padding: 16px 20px; font-size: 14px; }
+  #ev-fullscreen-overlay .ev-timer-chip { font-size: 12px; padding: 5px 13px; }
+  #ev-fullscreen-overlay .ev-done-time { font-size: 13px; }
+  #ev-fullscreen-overlay .ev-section-title { font-size: 16px; margin-bottom: 16px; }
+  #ev-fullscreen-overlay .ev-estimador { margin-bottom: 0; }
+
+  @media (max-width: 600px) {
+    #ev-fullscreen-overlay .ev-cards-grid { grid-template-columns: 1fr; }
+    #ev-fullscreen-overlay { padding: 16px; }
+  }
+
+  body.light #ev-fullscreen-overlay { background: var(--ocean-deep); }
+
   /* ──────────────── CHART 15 DÍAS ──────────────── */
   .chart-card { overflow: hidden; }
   .chart-wrap {
@@ -2254,8 +2322,28 @@
       </div>
     </div>
 
+    <!-- Filtro de período -->
+    <div class="filter-bar">
+      <span class="filter-bar-label">📅 Período</span>
+      <div class="period-btns">
+        <button class="period-btn active" onclick="setHistPeriod('today')"  data-histperiod="today">Hoy</button>
+        <button class="period-btn"        onclick="setHistPeriod('week')"   data-histperiod="week">Esta semana</button>
+        <button class="period-btn"        onclick="setHistPeriod('month')"  data-histperiod="month">Este mes</button>
+        <button class="period-btn"        onclick="setHistPeriod('all')"    data-histperiod="all">Todo</button>
+        <button class="period-btn"        onclick="setHistPeriod('custom')" data-histperiod="custom">Rango…</button>
+      </div>
+      <div class="date-range-inputs" id="hist-custom-range" style="display:none">
+        <input type="date" id="hist-date-desde" onchange="applyHistCustomRange()">
+        <span class="sep">→</span>
+        <input type="date" id="hist-date-hasta" onchange="applyHistCustomRange()">
+      </div>
+      <div class="filter-period-indicator">
+        <span class="period-pill" id="hist-period-pill">Hoy</span>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-title">📂 Registro de Ordenes</div>
+      <div class="card-title">📂 Registro de Ordenes <span id="hist-period-tag" style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:6px"></span></div>
       <div class="table-wrapper">
         <table id="historial-table">
           <thead>
@@ -2403,7 +2491,10 @@
   <div class="page" id="page-eviscerado">
 
     <div class="card section">
-      <div class="card-title">🔪 Órdenes con Eviscerado</div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>🔪 Órdenes con Eviscerado</span>
+        <button class="btn btn-ghost btn-sm" id="ev-fullscreen-btn" onclick="toggleEvFullscreen()" title="Pantalla completa">⛶ Pantalla completa</button>
+      </div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Ordenes que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
     </div>
 
@@ -2635,6 +2726,48 @@
   </div><!-- /mayorista -->
 
 </main>
+
+<!-- ══════════════ OVERLAY: EVISCERADO PANTALLA COMPLETA ══════════════ -->
+<div id="ev-fullscreen-overlay">
+  <div class="ev-fs-header">
+    <div class="ev-fs-title">
+      🔪 Eviscerado
+      <span class="ev-count" id="ev-fs-badge-pendientes" style="background:rgba(0,180,216,0.15);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:2px 10px;font-size:13px">0</span>
+    </div>
+    <button class="ev-fs-close" onclick="toggleEvFullscreen()">✕ Salir de pantalla completa</button>
+  </div>
+
+  <!-- Estimador -->
+  <div class="ev-estimador sin-datos" id="ev-fs-estimador">
+    <div class="ev-estimador-icon" id="ev-fs-est-icon">⏱️</div>
+    <div class="ev-estimador-body">
+      <div class="ev-estimador-title">Estimado de finalización</div>
+      <div class="ev-estimador-hora" id="ev-fs-est-hora">—</div>
+      <div class="ev-estimador-countdown" id="ev-fs-est-countdown">Sin órdenes pendientes</div>
+      <div class="ev-estimador-basis" id="ev-fs-est-basis"></div>
+    </div>
+  </div>
+
+  <!-- Pendientes -->
+  <div>
+    <div class="ev-section-title" id="ev-fs-title-pend">⏳ Pendientes <span class="ev-count">0</span></div>
+    <div class="ev-cards-grid" id="ev-fs-cards-pendientes"></div>
+    <div class="ev-empty" id="ev-fs-empty-pendientes" style="display:none">
+      <div class="icon">✅</div><p>¡Todas las órdenes han sido procesadas!</p>
+    </div>
+  </div>
+
+  <div class="ev-divider"></div>
+
+  <!-- Completadas -->
+  <div>
+    <div class="ev-section-title done-title">✅ Completadas <span class="ev-count" id="ev-fs-badge-completadas">0</span></div>
+    <div class="ev-cards-grid" id="ev-fs-cards-completadas"></div>
+    <div class="ev-empty" id="ev-fs-empty-completadas" style="display:none">
+      <div class="icon">🔪</div><p>Aún no hay órdenes procesadas.</p>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════ MODAL: GOOGLE DRIVE SETUP ══════════════ -->
 <div class="setup-modal-overlay" id="setup-modal-overlay" onclick="closeSetupOutside(event)">
@@ -3711,6 +3844,80 @@ function generarPDF(cotId) {
 // ─────────────────────────────────────────────
 //  HISTORIAL
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+//  HISTORIAL — FILTRO DE PERÍODO
+// ─────────────────────────────────────────────
+let histPeriod      = 'today';
+let histCustomDesde = null;
+let histCustomHasta = null;
+
+function setHistPeriod(period) {
+  histPeriod = period;
+  document.querySelectorAll('[data-histperiod]').forEach(b =>
+    b.classList.toggle('active', b.dataset.histperiod === period)
+  );
+  const rangeEl = document.getElementById('hist-custom-range');
+  if (rangeEl) rangeEl.style.display = period === 'custom' ? 'flex' : 'none';
+  if (period !== 'custom') renderHistorial();
+}
+
+function applyHistCustomRange() {
+  const desde = document.getElementById('hist-date-desde').value;
+  const hasta  = document.getElementById('hist-date-hasta').value;
+  if (!desde || !hasta) return;
+  histCustomDesde = desde;
+  histCustomHasta = hasta;
+  renderHistorial();
+}
+
+function getHistPeriodLabel() {
+  const now = new Date();
+  const fd  = d => d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+  switch (histPeriod) {
+    case 'today':  return `Hoy, ${fd(now)}`;
+    case 'week': {
+      const day  = now.getDay(), diff = day === 0 ? 6 : day - 1;
+      const lunes   = new Date(now); lunes.setDate(now.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+      return `${fd(lunes)} – ${fd(domingo)}`;
+    }
+    case 'month':  return now.toLocaleDateString('es-CO', { month:'long', year:'numeric' });
+    case 'custom': return histCustomDesde && histCustomHasta
+      ? `${fd(new Date(histCustomDesde+'T00:00:00'))} – ${fd(new Date(histCustomHasta+'T00:00:00'))}`
+      : 'Rango personalizado';
+    default: return 'Todo el historial';
+  }
+}
+
+function getHistFiltered(lista) {
+  const now   = new Date();
+  const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  switch (histPeriod) {
+    case 'today':
+      return lista.filter(c => { const d = new Date(c.fechaObj); return d >= hoy0 && d <= hoy23; });
+    case 'week': {
+      const day = now.getDay(), diff = day === 0 ? 6 : day - 1;
+      const lunes   = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
+      return lista.filter(c => { const d = new Date(c.fechaObj); return d >= lunes && d <= domingo; });
+    }
+    case 'month': {
+      const ini = new Date(now.getFullYear(), now.getMonth(), 1);
+      const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return lista.filter(c => { const d = new Date(c.fechaObj); return d >= ini && d <= fin; });
+    }
+    case 'custom': {
+      if (!histCustomDesde || !histCustomHasta) return lista;
+      const desde = new Date(histCustomDesde + 'T00:00:00');
+      const hasta  = new Date(histCustomHasta + 'T23:59:59');
+      return lista.filter(c => { const d = new Date(c.fechaObj); return d >= desde && d <= hasta; });
+    }
+    default: return lista;
+  }
+}
+
 function renderHistorial(filter = '') {
   const nombre = document.getElementById('search-nombre')?.value.toLowerCase() || '';
   const tel    = document.getElementById('search-tel')?.value.toLowerCase() || '';
@@ -3718,7 +3925,16 @@ function renderHistorial(filter = '') {
   const tbody  = document.getElementById('historial-tbody');
   const empty  = document.getElementById('historial-empty');
 
-  let lista = ordenes.filter(c => {
+  // Actualizar píldora y tag de período
+  const label = getHistPeriodLabel();
+  const pillEl = document.getElementById('hist-period-pill');
+  const tagEl  = document.getElementById('hist-period-tag');
+  if (pillEl) pillEl.textContent = label;
+  if (tagEl)  tagEl.textContent  = `· ${label}`;
+
+  // Filtrar por período primero, luego por búsqueda de texto
+  let lista = getHistFiltered(ordenes);
+  lista = lista.filter(c => {
     return (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
            (!tel    || (c.tel || '').includes(tel)) &&
            (!cc     || (c.cc  || '').toLowerCase().includes(cc));
@@ -5928,6 +6144,7 @@ function toggleEvDone(cotId) {
   setEvDone(done);
   setEvTimes(times);
   renderEviscerado();
+  if (evFullscreenOpen) renderEvFullscreen();
   updateEvBadge();
   scheduleDriveSync();
 }
@@ -6431,6 +6648,158 @@ function renderChart15dias() {
 }
 
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+//  EVISCERADO — PANTALLA COMPLETA
+// ─────────────────────────────────────────────
+let evFullscreenOpen = false;
+let evFsCountdownInterval = null;
+
+function toggleEvFullscreen() {
+  evFullscreenOpen = !evFullscreenOpen;
+  const overlay = document.getElementById('ev-fullscreen-overlay');
+  const btn     = document.getElementById('ev-fullscreen-btn');
+
+  if (evFullscreenOpen) {
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    btn.innerHTML = '✕ Salir de pantalla completa';
+    renderEvFullscreen();
+  } else {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    btn.innerHTML = '⛶ Pantalla completa';
+    if (evFsCountdownInterval) { clearInterval(evFsCountdownInterval); evFsCountdownInterval = null; }
+  }
+}
+
+// Cierra fullscreen con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && evFullscreenOpen) toggleEvFullscreen();
+});
+
+function renderEvFullscreen() {
+  if (!evFullscreenOpen) return;
+
+  const done      = getEvDone();
+  const conEv     = getEvFiltered();
+  const pendientes  = conEv.filter(c => !done.has(c.id));
+  const completadas = conEv.filter(c =>  done.has(c.id))
+    .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
+
+  // Badge
+  document.getElementById('ev-fs-badge-pendientes').textContent  = pendientes.length;
+  document.getElementById('ev-fs-badge-completadas').textContent = completadas.length;
+  document.getElementById('ev-fs-title-pend').innerHTML =
+    `⏳ Pendientes <span class="ev-count" style="background:rgba(0,180,216,0.15);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:2px 10px;font-size:13px">${pendientes.length}</span>`;
+
+  // Cards pendientes
+  const gridP  = document.getElementById('ev-fs-cards-pendientes');
+  const emptyP = document.getElementById('ev-fs-empty-pendientes');
+  if (pendientes.length === 0) {
+    gridP.innerHTML = ''; emptyP.style.display = 'block';
+  } else {
+    emptyP.style.display = 'none';
+    gridP.innerHTML = pendientes.map(c => buildEvCard(c, false)).join('');
+  }
+
+  // Cards completadas
+  const gridC  = document.getElementById('ev-fs-cards-completadas');
+  const emptyC = document.getElementById('ev-fs-empty-completadas');
+  if (completadas.length === 0) {
+    gridC.innerHTML = ''; emptyC.style.display = 'block';
+  } else {
+    emptyC.style.display = 'none';
+    gridC.innerHTML = completadas.map(c => buildEvCard(c, true)).join('');
+  }
+
+  // Estimador en fullscreen (usa los mismos IDs del estimador principal pero prefijados con ev-fs-)
+  calcularEstimadorEvEn('ev-fs-estimador', 'ev-fs-est-icon', 'ev-fs-est-hora', 'ev-fs-est-countdown', 'ev-fs-est-basis', evFsCountdownInterval, cb => { evFsCountdownInterval = cb; });
+}
+
+// Versión del estimador que acepta IDs dinámicos (reutilizable para normal y fullscreen)
+function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval, setInterval_cb) {
+  const done       = getEvDone();
+  const times      = getEvTimes();
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const el         = document.getElementById(elId);
+  const elHora     = document.getElementById(horaId);
+  const elCount    = document.getElementById(countId);
+  const elBasis    = document.getElementById(basisId);
+  const elIcon     = document.getElementById(iconId);
+  if (!el) return;
+
+  if (_interval) { clearInterval(_interval); setInterval_cb(null); }
+
+  if (pendientes.length === 0) {
+    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
+    el.className = hayEv ? 'ev-estimador listo' : 'ev-estimador sin-datos';
+    elIcon.textContent  = hayEv ? '✅' : '⏱️';
+    elHora.textContent  = hayEv ? '¡Todo listo!' : '—';
+    elCount.innerHTML   = hayEv ? 'Todas las órdenes completadas.' : 'Sin órdenes pendientes';
+    elBasis.textContent = '';
+    return;
+  }
+
+  const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
+  const completadasHoy = ordenes.filter(c =>
+    c.totalEviscerado > 0 && done.has(c.id) &&
+    times[c.id]?.end && times[c.id]?.start &&
+    new Date(times[c.id].start) >= hoy0
+  );
+
+  let minPorLb = null, basisMsg = '';
+  if (completadasHoy.length > 0) {
+    let totalMin = 0, totalLb = 0;
+    completadasHoy.forEach(c => {
+      const dur = (times[c.id].end - times[c.id].start) / 60000;
+      const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+      if (lb > 0 && dur > 0) { totalMin += dur; totalLb += lb; }
+    });
+    if (totalLb > 0) {
+      minPorLb = totalMin / totalLb;
+      basisMsg = `Promedio hoy: ${minPorLb.toFixed(1)} min/lb · ${completadasHoy.length} orden${completadasHoy.length !== 1 ? 'es' : ''} de referencia`;
+    }
+  }
+  if (minPorLb === null) {
+    minPorLb = 20 / 60;
+    basisMsg = 'Sin datos del día — estimado con referencia estándar (20 seg/lb)';
+  }
+
+  let totalLibrasPend = 0;
+  pendientes.forEach(c => { totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0); });
+
+  const minRestantes = Math.round(totalLibrasPend * minPorLb);
+  if (totalLibrasPend === 0 || minRestantes === 0) {
+    el.className = 'ev-estimador sin-datos';
+    elIcon.textContent = '⏱️'; elHora.textContent = '—';
+    elCount.innerHTML = 'Sin libras pendientes.'; elBasis.textContent = '';
+    return;
+  }
+
+  const finEstimado = new Date(Date.now() + minRestantes * 60000);
+  el.className = 'ev-estimador';
+  elIcon.textContent = '⏱️';
+  elBasis.textContent = basisMsg;
+  const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+
+  function tick() {
+    const diff = finEstimado - new Date();
+    if (diff <= 0) {
+      elHora.textContent = '¡Ahora!'; elCount.innerHTML = 'El tiempo estimado ya se cumplió.';
+      return;
+    }
+    const dm = Math.ceil(diff / 60000), hh = Math.floor(dm / 60), mm = dm % 60;
+    const cs = hh > 0 ? `${hh}h ${mm}m` : `${mm} min`;
+    elHora.textContent = fmtHora(finEstimado);
+    elCount.innerHTML  = `<strong>~${cs} restantes</strong> · ${pendientes.length} orden${pendientes.length !== 1 ? 'es' : ''} · ${totalLibrasPend.toFixed(1)} lb`;
+  }
+  tick();
+  setInterval_cb(setInterval(tick, 60000));
+}
+
+// Cuando se marca/desmarca desde fullscreen, también re-renderizar el fullscreen
+const _origToggleEvDone = toggleEvDone;
+
 //  PEZ NADADOR — nada horizontalmente con ondulación natural
 // ─────────────────────────────────────────────
 (function() {
