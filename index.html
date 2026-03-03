@@ -634,12 +634,26 @@
     color: var(--text-muted);
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
   }
 
   .species-subtotal span:last-child {
     color: var(--gold);
     font-weight: 600;
     font-family: 'Roboto Mono', monospace;
+  }
+
+  .qty-expr-result {
+    font-size: 11px;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    color: var(--teal-bright);
+    background: rgba(0,180,216,0.1);
+    border: 1px solid rgba(0,180,216,0.2);
+    border-radius: 6px;
+    padding: 1px 7px;
+    display: none;
+    width: fit-content;
   }
 
   /* ──────────────── TOTAL BOX ──────────────── */
@@ -2231,7 +2245,7 @@
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">☀️</button>
 
 <!-- Botón flotante countdown eviscerado -->
-<button id="ev-float-btn" class="hidden" onclick="showTab('eviscerado')" title="Ver órdenes de eviscerado">
+<button id="ev-float-btn" class="pending" onclick="showTab('eviscerado')" title="Ver órdenes de eviscerado">
   🔪 <span id="ev-float-text">—</span>
 </button>
 
@@ -2293,7 +2307,17 @@
     <!-- Datos del Cliente -->
     <div class="card section">
       <div class="card-title"> 🧜🏻‍♂️Datos del Cliente</div>
-      <div class="grid-2">
+      <div class="grid-3">
+        <div class="form-group" style="margin:0">
+          <label>Identificación (CC / NIT)</label>
+          <div id="ac-cc-anchor">
+            <input type="text" id="cliente-cc" placeholder="Ej: 66656526"
+              oninput="acCC(this.value)"
+              onkeydown="acCCKeydown(event)"
+              onfocus="acCC(this.value)"
+              autocomplete="off">
+          </div>
+        </div>
         <div class="form-group" style="margin:0">
           <label>Nombre completo</label>
           <div class="autocomplete-wrap" id="ac-anchor">
@@ -2312,17 +2336,6 @@
               onkeydown="acTelKeydown(event)"
               onfocus="acTel(this.value)"
               autocomplete="off">
-          </div>
-        </div>
-        <div class="form-group" style="margin:0;grid-column:1/-1">
-          <label>identificación (CC / NIT)</label>
-          <div id="ac-cc-anchor">
-            <input type="text" id="cliente-cc" placeholder="Ej: 66656526"
-              oninput="acCC(this.value)"
-              onkeydown="acCCKeydown(event)"
-              onfocus="acCC(this.value)"
-              autocomplete="off"
-              style="max-width:320px">
           </div>
         </div>
       </div>
@@ -3266,7 +3279,7 @@ function buildSpeciesGrid() {
       </div>
       <div class="species-inputs">
         ${e.precio === null ? `<input type="number" min="0" step="0.1" placeholder="Precio/lb" id="precio-${e.id}" oninput="calcular()" style="max-width:100px">` : ''}
-        <input type="number" min="0" step="0.1" placeholder="0.0 lb" id="qty-${e.id}" oninput="calcular()">
+        <input type="text" inputmode="decimal" placeholder="0.0 lb" id="qty-${e.id}" oninput="calcular()" autocomplete="off">
         <label class="eviscera-label">
           <input type="checkbox" id="ev-${e.id}" onchange="calcular()">
           <div class="custom-check">✓</div>
@@ -3274,7 +3287,10 @@ function buildSpeciesGrid() {
         </label>
       </div>
       <div class="species-subtotal">
-        <span id="sub-label-${e.id}">— lb</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span id="sub-label-${e.id}">— lb</span>
+          <span id="sub-expr-${e.id}" class="qty-expr-result" style="display:none"></span>
+        </div>
         <span id="sub-${e.id}">$0</span>
       </div>
     </div>
@@ -3654,32 +3670,76 @@ function guardarEdicionMayorista() {
 // ─────────────────────────────────────────────
 //  CALCULAR
 // ─────────────────────────────────────────────
+// Evalúa expresiones de suma/resta de números positivos: "4.5+3.2+7.8" → 15.5
+// Solo permite dígitos, puntos decimales, + y -. Rechaza cualquier otra cosa.
+function evaluarLbs(str) {
+  const limpio = (str || '').trim().replace(/\s/g, '');
+  if (!limpio) return { valor: 0, esExpr: false };
+  // Validar: solo números, punto decimal, + y -
+  if (!/^[\d.+\-]+$/.test(limpio)) return { valor: 0, esExpr: false };
+  // Dividir por + y -, conservando el signo
+  try {
+    // Evaluar de forma segura: split por + y - respetando negativos solo al inicio
+    const partes = limpio.split(/(?<=[\d.])([+\-])/).reduce((acc, tok) => {
+      // split con lookbehind puede no estar disponible en todos los navegadores → fallback
+      return acc;
+    }, null);
+    // Método más compatible: reemplazar - por +(-
+    const expr = limpio.replace(/([+\-])/g, ' $1 ').trim().split(/\s+/);
+    let total = 0, signo = 1;
+    for (const tok of expr) {
+      if (tok === '+') { signo = 1; continue; }
+      if (tok === '-') { signo = -1; continue; }
+      const n = parseFloat(tok);
+      if (isNaN(n)) return { valor: 0, esExpr: false };
+      total += signo * n;
+    }
+    const esExpr = /[+\-]/.test(limpio);
+    return { valor: Math.max(0, total), esExpr };
+  } catch(e) {
+    return { valor: 0, esExpr: false };
+  }
+}
+
 function calcular() {
   let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
 
   ESPECIES.forEach(e => {
-    const qtyEl = document.getElementById(`qty-${e.id}`);
-    const evEl  = document.getElementById(`ev-${e.id}`);
-    const card  = document.getElementById(`sc-${e.id}`);
-    const qty   = parseFloat(qtyEl.value) || 0;
-    const ev    = evEl.checked;
-    let precio  = e.precio;
+    const qtyEl   = document.getElementById(`qty-${e.id}`);
+    const evEl    = document.getElementById(`ev-${e.id}`);
+    const card    = document.getElementById(`sc-${e.id}`);
+    const exprEl  = document.getElementById(`sub-expr-${e.id}`);
+    const { valor: qty, esExpr } = evaluarLbs(qtyEl.value);
+    const ev      = evEl.checked;
+    let precio    = e.precio;
 
     if (e.precio === null) {
       const pEl = document.getElementById(`precio-${e.id}`);
       precio = parseFloat(pEl.value) || 0;
     }
 
-    const subPescado   = qty * precio;
+    const subPescado    = qty * precio;
     const subEviscerado = ev ? qty * EVISCERA_COSTO : 0;
-    const subTotal     = subPescado + subEviscerado;
+    const subTotal      = subPescado + subEviscerado;
 
     totalPescado    += subPescado;
     totalEviscerado += subEviscerado;
     totalLibras     += qty;
 
     document.getElementById(`sub-${e.id}`).textContent = fmt(subTotal);
-    document.getElementById(`sub-label-${e.id}`).textContent = qty > 0 ? `${qty} lb${ev ? ' · con eviscerado':''}`:'— lb';
+    document.getElementById(`sub-label-${e.id}`).textContent =
+      qty > 0 ? `${qty.toFixed(2).replace(/\.?0+$/, '')} lb${ev ? ' · con eviscerado' : ''}` : '— lb';
+
+    // Mostrar resultado de la expresión debajo si hay operación
+    if (exprEl) {
+      if (esExpr && qty > 0) {
+        exprEl.textContent = `= ${qty.toFixed(2).replace(/\.?0+$/, '')} lb`;
+        exprEl.style.display = 'block';
+      } else {
+        exprEl.style.display = 'none';
+      }
+    }
+
     card.classList.toggle('has-value', qty > 0);
   });
 
@@ -3688,7 +3748,6 @@ function calcular() {
   document.getElementById('total-details').textContent =
     `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`;
 
-  // Recalcular devuelta si hay un valor de pago ingresado
   calcDevuelta();
 }
 
@@ -3730,7 +3789,7 @@ function getFormData() {
   let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
 
   ESPECIES.forEach(e => {
-    const qty = parseFloat(document.getElementById(`qty-${e.id}`).value) || 0;
+    const { valor: qty } = evaluarLbs(document.getElementById(`qty-${e.id}`).value);
     if (qty <= 0) return;
     const ev = document.getElementById(`ev-${e.id}`).checked;
     let precio = e.precio;
@@ -6442,26 +6501,47 @@ function calcularEstimadorEv() {
   const floatBtn  = document.getElementById('ev-float-btn');
   const floatText = document.getElementById('ev-float-text');
 
+  // Formatear tiempo en segundos a string legible
+  function fmtSecs(totalSecs) {
+    if (totalSecs <= 0) return '0s';
+    const hh = Math.floor(totalSecs / 3600);
+    const mm = Math.floor((totalSecs % 3600) / 60);
+    const ss = totalSecs % 60;
+    if (hh > 0) return `${hh}h ${mm}m ${ss}s`;
+    if (mm > 0) return `${mm}m ${ss}s`;
+    return `${ss}s`;
+  }
+
+  // Formato corto para el botón flotante
+  function fmtSecsShort(totalSecs) {
+    if (totalSecs <= 0) return '0s';
+    const hh = Math.floor(totalSecs / 3600);
+    const mm = Math.floor((totalSecs % 3600) / 60);
+    const ss = totalSecs % 60;
+    if (hh > 0) return `${hh}h ${mm}m`;
+    if (mm > 0) return `${mm}m ${ss}s`;
+    return `${ss}s`;
+  }
+
+  const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+
   if (pendientes.length === 0) {
-    // ¿Hay órdenes ev totales? Si no hay ninguna, ocultar el botón
     const hayEv = ordenes.some(c => c.totalEviscerado > 0);
-    el.className = 'ev-estimador listo';
-    elIcon.textContent = '✅';
-    elHora.textContent  = '¡Todo listo!';
-    elCount.innerHTML   = 'Todas las órdenes de eviscerado han sido completadas.';
+    el.className = hayEv ? 'ev-estimador listo' : 'ev-estimador sin-datos';
+    elIcon.textContent  = hayEv ? '✅' : '⏱️';
+    elHora.textContent  = hayEv ? '¡Todo listo!' : '—';
+    elCount.innerHTML   = hayEv ? 'Todas las órdenes de eviscerado han sido completadas.' : 'Sin órdenes pendientes';
     elBasis.textContent = '';
     if (floatBtn) {
-      if (hayEv) {
-        floatBtn.className = 'done';
-        floatText.textContent = '¡Listo!';
-      } else {
-        floatBtn.className = 'hidden';
-      }
+      floatBtn.className = hayEv ? 'done' : 'pending';
+      floatBtn.style.opacity = '1';
+      floatBtn.style.pointerEvents = 'all';
+      floatText.textContent = hayEv ? '¡Listo!' : '—';
     }
     return;
   }
 
-  // Calcular velocidad promedio: min/lb de órdenes COMPLETADAS del mismo día
+  // Calcular velocidad promedio: seg/lb de órdenes COMPLETADAS del mismo día
   const hoy0  = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
     c.totalEviscerado > 0 &&
@@ -6470,86 +6550,92 @@ function calcularEstimadorEv() {
     new Date(times[c.id].start) >= hoy0
   );
 
-  let minPorLb = null; // minutos por libra
+  let segPorLb = null;
   let basisMsg = '';
 
   if (completadasHoy.length > 0) {
-    let totalMin = 0, totalLb = 0;
+    let totalSeg = 0, totalLb = 0;
     completadasHoy.forEach(c => {
-      const dur = (times[c.id].end - times[c.id].start) / 60000;
+      const dur = (times[c.id].end - times[c.id].start) / 1000; // en segundos
       const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
-      if (lb > 0 && dur > 0) { totalMin += dur; totalLb += lb; }
+      if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
     });
     if (totalLb > 0) {
-      minPorLb = totalMin / totalLb;
-      basisMsg = `Promedio hoy: ${minPorLb.toFixed(1)} min/lb · ${completadasHoy.length} orden${completadasHoy.length !== 1 ? 'es' : ''} de referencia`;
+      segPorLb = totalSeg / totalLb;
+      const minRef = (segPorLb / 60).toFixed(1);
+      basisMsg = `Promedio hoy: ${minRef} min/lb · ${completadasHoy.length} orden${completadasHoy.length !== 1 ? 'es' : ''} de referencia`;
     }
   }
 
-  // Fallback: asumir 20 seg/lb si no hay datos del día
-  if (minPorLb === null) {
-    minPorLb = 20 / 60; // 20 segundos por libra → 0.333 min/lb
+  if (segPorLb === null) {
+    segPorLb = 20; // 20 segundos por libra (referencia estándar)
     basisMsg = 'Sin datos del día — estimado con referencia estándar (20 seg/lb)';
   }
 
-  // Calcular libras pendientes totales (ordenadas por creación, FIFO)
-  const pendientesOrdenados = pendientes.sort((a,b) => new Date(a.fechaObj) - new Date(b.fechaObj));
+  // Calcular libras pendientes totales
   let totalLibrasPend = 0;
-  pendientesOrdenados.forEach(c => {
+  pendientes.forEach(c => {
     totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
   });
 
-  const minRestantes = Math.round(totalLibrasPend * minPorLb);
-  const finEstimado  = new Date(Date.now() + minRestantes * 60000);
-
-  // Si no hay libras pendientes o tiempo es cero → ocultar botón flotante
-  if (totalLibrasPend === 0 || minRestantes === 0) {
-    if (floatBtn) floatBtn.className = 'hidden';
+  if (totalLibrasPend === 0) {
     el.className = 'ev-estimador sin-datos';
     elIcon.textContent  = '⏱️';
     elHora.textContent  = '—';
     elCount.innerHTML   = 'Sin libras pendientes de eviscerado.';
     elBasis.textContent = '';
+    if (floatBtn) {
+      floatBtn.className = 'pending';
+      floatBtn.style.opacity = '1';
+      floatBtn.style.pointerEvents = 'all';
+      floatText.textContent = '—';
+    }
     return;
   }
 
-  el.className = 'ev-estimador';
+  const segsRestantes = Math.round(totalLibrasPend * segPorLb);
+  const finEstimado   = new Date(Date.now() + segsRestantes * 1000);
 
-  const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+  el.className = 'ev-estimador';
+  elIcon.textContent  = '⏱️';
+  elBasis.textContent = basisMsg;
+
+  // Asegurar botón siempre visible
+  if (floatBtn) {
+    floatBtn.style.opacity = '1';
+    floatBtn.style.pointerEvents = 'all';
+  }
 
   function actualizarCountdown() {
-    const ahora  = new Date();
-    const diffMs = finEstimado - ahora;
+    const diffMs   = finEstimado - Date.now();
+    const diffSecs = Math.max(0, Math.round(diffMs / 1000));
 
-    if (diffMs <= 0) {
-      elHora.textContent  = '¡Ahora!';
-      elCount.innerHTML   = 'El tiempo estimado ya se cumplió.';
-      if (floatBtn) floatBtn.className = 'hidden'; // tiempo = 0 → ocultar
+    if (diffSecs <= 0) {
+      elHora.textContent = '¡Ahora!';
+      elCount.innerHTML  = 'El tiempo estimado ya se cumplió.';
+      if (floatBtn) {
+        floatBtn.className = 'done';
+        floatText.textContent = '¡Ya!';
+      }
       if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
       return;
     }
 
-    const diffMin  = Math.ceil(diffMs / 60000);
-    const hh       = Math.floor(diffMin / 60);
-    const mm       = diffMin % 60;
-    const countStr = hh > 0 ? `${hh}h ${mm}m` : `${mm} min`;
+    const countStr = fmtSecs(diffSecs);
+    const isUrgent = diffSecs > 30 * 60; // más de 30 min = urgente
 
     elHora.textContent = fmtHora(finEstimado);
-    elCount.innerHTML  = `<strong>~${countStr} restantes</strong> · ${pendientes.length} orden${pendientes.length !== 1 ? 'es' : ''} · ${totalLibrasPend.toFixed(1)} lb`;
+    elCount.innerHTML  = `<strong>${countStr} restantes</strong> · ${pendientes.length} orden${pendientes.length !== 1 ? 'es' : ''} · ${totalLibrasPend.toFixed(1)} lb`;
 
-    // Botón flotante: visible con tiempo > 0
     if (floatBtn) {
-      const isUrgent = diffMin > 30;
       floatBtn.className = isUrgent ? 'urgent pending' : 'pending';
-      floatText.textContent = hh > 0 ? `${hh}h ${mm}m` : `${mm} min`;
-      floatBtn.title = `Eviscerado: ~${countStr} restantes — clic para ir a la sección`;
+      floatText.textContent = fmtSecsShort(diffSecs);
+      floatBtn.title = `Eviscerado: ${countStr} restantes`;
     }
   }
 
   actualizarCountdown();
-  elBasis.textContent = basisMsg;
-  elIcon.textContent  = '⏱️';
-  evCountdownInterval = setInterval(actualizarCountdown, 60000);
+  evCountdownInterval = setInterval(actualizarCountdown, 1000);
 }
 
 // ─────────────────────────────────────────────
