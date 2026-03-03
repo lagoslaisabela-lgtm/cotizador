@@ -1653,10 +1653,16 @@
   }
   .clientes-form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 14px;
     align-items: end;
   }
+  .clientes-form-row .form-group-btn {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .clientes-form-row .form-group-btn .btn { min-width: 140px; justify-content: center; }
   @media (max-width: 800px) {
     .clientes-form-row { grid-template-columns: 1fr 1fr; }
     .clientes-form-row .form-group-btn { grid-column: 1 / -1; }
@@ -1664,8 +1670,6 @@
   @media (max-width: 500px) {
     .clientes-form-row { grid-template-columns: 1fr; }
   }
-  .form-group-btn { display: flex; align-items: flex-end; }
-  .form-group-btn .btn { width: 100%; justify-content: center; }
 
   .cli-compras-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -2490,7 +2494,8 @@
         <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
         <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
         <input type="text" id="search-cc" placeholder="Buscar por identificación…" oninput="filtrarHistorial()">
-        <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Exportar Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarHistorialPDF()">📄 PDF</button>
       </div>
     </div>
 
@@ -2740,16 +2745,16 @@
       <div class="card-title">➕ Agregar Cliente</div>
       <div class="clientes-form-row">
         <div class="form-group">
+          <label>CC / NIT</label>
+          <input type="text" id="cli-cc" placeholder="Ej: 66656526" autocomplete="off">
+        </div>
+        <div class="form-group">
           <label>Nombre completo</label>
           <input type="text" id="cli-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Celular</label>
           <input type="tel" id="cli-tel" placeholder="Ej: 3165266913" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>CC / NIT</label>
-          <input type="text" id="cli-cc" placeholder="Ej: 66656526" autocomplete="off">
         </div>
         <div class="form-group form-group-btn">
           <button class="btn btn-success" onclick="agregarCliente()">💾 Guardar</button>
@@ -2762,6 +2767,8 @@
       <div class="card-title">🔍 Buscar Clientes</div>
       <div class="search-row">
         <input type="text" id="cli-search" placeholder="Buscar por nombre, celular o CC…" oninput="renderClientes()">
+        <button class="btn btn-ghost btn-sm" onclick="exportarClientesExcel()">📥 Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarClientesPDF()">📄 PDF</button>
       </div>
     </div>
 
@@ -2799,7 +2806,11 @@
     <!-- Datos del comprador -->
     <div class="card section">
       <div class="card-title">🏢 Datos del Comprador</div>
-      <div class="grid-2">
+      <div class="grid-3">
+        <div class="form-group" style="margin:0">
+          <label>CC / NIT</label>
+          <input type="text" id="may-cc" placeholder="Ej: 900123456-1" autocomplete="off">
+        </div>
         <div class="form-group" style="margin:0">
           <label>Nombre / Empresa</label>
           <input type="text" id="may-nombre" placeholder="Ej: Distribuidora Pérez" autocomplete="off">
@@ -2807,10 +2818,6 @@
         <div class="form-group" style="margin:0">
           <label>Celular</label>
           <input type="tel" id="may-tel" placeholder="Ej: 3165266913" autocomplete="off">
-        </div>
-        <div class="form-group" style="margin:0;grid-column:1/-1">
-          <label>CC / NIT</label>
-          <input type="text" id="may-cc" placeholder="Ej: 900123456-1" autocomplete="off" style="max-width:320px">
         </div>
       </div>
     </div>
@@ -4317,6 +4324,326 @@ function buildExcelResumen() {
     rows.push([k, v.lb, v.pescado, v.ev, v.pescado + v.ev]);
   });
   return rows;
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR HISTORIAL → PDF
+// ─────────────────────────────────────────────
+function exportarHistorialPDF() {
+  // Obtener la lista filtrada actualmente visible (mismo criterio que renderHistorial)
+  const nombre = (document.getElementById('search-nombre')?.value || '').toLowerCase();
+  const tel    = (document.getElementById('search-tel')?.value    || '').toLowerCase();
+  const cc     = (document.getElementById('search-cc')?.value     || '').toLowerCase();
+
+  let lista = getHistFiltered(ordenes);
+  lista = lista.filter(c =>
+    (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
+    (!tel    || (c.tel || '').includes(tel)) &&
+    (!cc     || (c.cc  || '').toLowerCase().includes(cc))
+  );
+
+  if (lista.length === 0) { toast('No hay órdenes en la vista actual para exportar', true); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const W = 297, M = 14;
+  let y = 18;
+
+  // ── Cabecera ──
+  doc.setFillColor(5, 18, 38);
+  doc.rect(0, 0, W, 26, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(0, 180, 216);
+  doc.text('Lagos La Isabela', M, 11);
+  doc.setFontSize(9);
+  doc.setTextColor(160, 200, 220);
+  doc.text('Historial de Órdenes', M, 17);
+
+  const periodoLabel = getHistPeriodLabel();
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(120, 180, 210);
+  doc.text(`Período: ${periodoLabel}`, W - M, 11, { align: 'right' });
+  doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, W - M, 17, { align: 'right' });
+
+  y = 34;
+
+  // ── Resumen rápido ──
+  const totalVentas = lista.reduce((s, c) => s + (c.total || 0), 0);
+  const totalLibras = lista.reduce((s, c) => s + c.items.reduce((a, i) => a + (i.qty || 0), 0), 0);
+  doc.setFillColor(12, 30, 55);
+  doc.roundedRect(M, y - 5, (W - 2*M), 14, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(0, 180, 216);
+  doc.text(`${lista.length} órdenes`, M + 4, y + 2);
+  doc.setTextColor(6, 214, 160);
+  doc.text(`Total: ${fmt(totalVentas)}`, M + 40, y + 2);
+  doc.setTextColor(255, 209, 102);
+  doc.text(`${totalLibras.toFixed(1)} lb`, M + 105, y + 2);
+  y += 16;
+
+  // ── Cabeceras de tabla ──
+  const cols = [
+    { h: '#',           w: 8  },
+    { h: 'Fecha',       w: 30 },
+    { h: 'Cliente',     w: 38 },
+    { h: 'Identificación', w: 28 },
+    { h: 'Celular',     w: 26 },
+    { h: 'Especies',    w: 48 },
+    { h: 'Libras',      w: 16 },
+    { h: 'Eviscerado',  w: 20 },
+    { h: 'Total',       w: 22 },
+    { h: 'Nota',        w: 37 },
+  ];
+
+  const ROW_H = 7.5;
+  const PAGE_H = 195;
+
+  function drawHeader() {
+    doc.setFillColor(0, 100, 140);
+    let xh = M;
+    cols.forEach(col => {
+      doc.rect(xh, y, col.w, ROW_H, 'F');
+      xh += col.w;
+    });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
+    xh = M;
+    cols.forEach(col => {
+      doc.text(col.h, xh + 2, y + 5);
+      xh += col.w;
+    });
+    y += ROW_H;
+  }
+
+  drawHeader();
+
+  // ── Filas ──
+  lista.forEach((c, idx) => {
+    if (y + ROW_H > PAGE_H) {
+      doc.addPage();
+      y = 18;
+      drawHeader();
+    }
+
+    const bg = idx % 2 === 0 ? [12, 25, 48] : [8, 18, 35];
+    let xr = M;
+    doc.setFillColor(...bg);
+    let rowW = cols.reduce((s, col) => s + col.w, 0);
+    doc.rect(M, y, rowW, ROW_H, 'F');
+
+    const especiesStr = c.items.map(i => `${i.especie}${i.ev ? '🔪' : ''}`).join(', ');
+    const librasTotal = c.items.reduce((s, i) => s + (i.qty || 0), 0);
+    const tieneEv     = c.items.some(i => i.ev) ? `${fmt(c.totalEviscerado)}` : '—';
+
+    const cells = [
+      String(lista.length - idx),
+      c.fecha,
+      c.nombre || '—',
+      c.cc     || '—',
+      c.tel    || '—',
+      especiesStr,
+      librasTotal.toFixed(2),
+      tieneEv,
+      fmt(c.total || 0),
+      c.nota   || '',
+    ];
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(210, 230, 245);
+    cols.forEach((col, ci) => {
+      const cellText = String(cells[ci] || '');
+      const maxW = col.w - 3;
+      // Truncar si es muy largo
+      const truncated = doc.getTextWidth(cellText) > maxW
+        ? cellText.slice(0, Math.floor(cellText.length * maxW / doc.getTextWidth(cellText)) - 1) + '…'
+        : cellText;
+      doc.text(truncated, xr + 2, y + 5);
+      xr += col.w;
+    });
+
+    y += ROW_H;
+  });
+
+  // ── Pie de página ──
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 140, 170);
+    doc.text(`Página ${p} de ${pages} · Lagos La Isabela`, W / 2, 205, { align: 'center' });
+  }
+
+  const fecha = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+  doc.save(`Historial_LagosLaIsabela_${fecha}.pdf`);
+  toast('📄 PDF del historial exportado');
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR DIRECTORIO CLIENTES → EXCEL
+// ─────────────────────────────────────────────
+function exportarClientesExcel() {
+  const q = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
+  let lista = getTodosClientes();
+  if (q) {
+    lista = lista.filter(c =>
+      c.nombre.toLowerCase().includes(q) ||
+      (c.tel || '').includes(q) ||
+      (c.cc  || '').toLowerCase().includes(q)
+    );
+  }
+  if (lista.length === 0) { toast('No hay clientes para exportar', true); return; }
+
+  // Hoja principal: directorio completo
+  const rows = [['#', 'Nombre', 'Identificación (CC/NIT)', 'Celular', 'Compras', 'Total Comprado', 'Origen', 'Estado', 'Registrado']];
+  lista.forEach((c, i) => {
+    rows.push([
+      i + 1,
+      c.nombre || '',
+      c.cc     || '',
+      c.tel    || '',
+      c.compras        || 0,
+      c.totalComprado  || 0,
+      c.origen === 'directorio' ? 'Directorio' : 'Historial',
+      c.perfil?.estado === 'vetado' ? 'VETADO' : 'Activo',
+      c.creadoEn ? new Date(c.creadoEn).toLocaleDateString('es-CO') : '',
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch:5 },{ wch:30 },{ wch:22 },{ wch:16 },{ wch:10 },{ wch:18 },{ wch:14 },{ wch:10 },{ wch:16 }];
+
+  // Hoja resumen: top 20 compradores
+  const top = [...lista].filter(c => c.totalComprado > 0)
+    .sort((a, b) => b.totalComprado - a.totalComprado).slice(0, 20);
+  const resumen = [['Top Compradores','',''],['Nombre','Compras','Total Comprado']];
+  top.forEach(c => resumen.push([c.nombre, c.compras, c.totalComprado]));
+  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  ws2['!cols'] = [{ wch:30 },{ wch:12 },{ wch:18 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws,  'Clientes');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Top Compradores');
+
+  XLSX.writeFile(wb, `Clientes_LagosLaIsabela_${new Date().toLocaleDateString('es-CO').replace(/\//g,'-')}.xlsx`);
+  toast('📥 Excel de clientes exportado');
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR DIRECTORIO CLIENTES → PDF
+// ─────────────────────────────────────────────
+function exportarClientesPDF() {
+  const q = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
+  let lista = getTodosClientes();
+  if (q) {
+    lista = lista.filter(c =>
+      c.nombre.toLowerCase().includes(q) ||
+      (c.tel || '').includes(q) ||
+      (c.cc  || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (lista.length === 0) { toast('No hay clientes para exportar', true); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const W = 210, M = 14;
+  let y = 18;
+
+  // ── Cabecera ──
+  doc.setFillColor(5, 18, 38);
+  doc.rect(0, 0, W, 26, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(0, 180, 216);
+  doc.text('Lagos La Isabela', M, 11);
+  doc.setFontSize(9); doc.setTextColor(160, 200, 220);
+  doc.text('Directorio de Clientes', M, 17);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 180, 210);
+  doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, W - M, 17, { align: 'right' });
+
+  y = 34;
+
+  // ── Resumen ──
+  const totalComprado = lista.reduce((s, c) => s + (c.totalComprado || 0), 0);
+  doc.setFillColor(12, 30, 55);
+  doc.roundedRect(M, y - 5, W - 2*M, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(0, 180, 216);
+  doc.text(`${lista.length} clientes`, M + 4, y + 2);
+  doc.setTextColor(6, 214, 160);
+  doc.text(`Total comprado: ${fmt(totalComprado)}`, M + 40, y + 2);
+  y += 16;
+
+  // ── Tabla ──
+  const cols = [
+    { h: '#',              w: 10 },
+    { h: 'Nombre',         w: 52 },
+    { h: 'Identificación', w: 36 },
+    { h: 'Celular',        w: 30 },
+    { h: 'Compras',        w: 18 },
+    { h: 'Total comprado', w: 30 },
+    { h: 'Origen',         w: 22 },
+  ];
+
+  const ROW_H = 8;
+  const PAGE_H = 280;
+
+  function drawHeader() {
+    doc.setFillColor(0, 100, 140);
+    let xh = M;
+    cols.forEach(col => { doc.rect(xh, y, col.w, ROW_H, 'F'); xh += col.w; });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
+    xh = M;
+    cols.forEach(col => { doc.text(col.h, xh + 2, y + 5.5); xh += col.w; });
+    y += ROW_H;
+  }
+
+  drawHeader();
+
+  lista.forEach((c, idx) => {
+    if (y + ROW_H > PAGE_H) {
+      doc.addPage();
+      y = 18;
+      drawHeader();
+    }
+
+    const bg = idx % 2 === 0 ? [12, 25, 48] : [8, 18, 35];
+    doc.setFillColor(...bg);
+    const rowW = cols.reduce((s, col) => s + col.w, 0);
+    doc.rect(M, y, rowW, ROW_H, 'F');
+
+    const vetado = c.perfil?.estado === 'vetado' ? ' [VETADO]' : '';
+    const cells = [
+      String(idx + 1),
+      (c.nombre || '—') + vetado,
+      c.cc  || '—',
+      c.tel || '—',
+      String(c.compras || 0),
+      c.totalComprado > 0 ? fmt(c.totalComprado) : '—',
+      c.origen === 'directorio' ? 'Directorio' : 'Historial',
+    ];
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(210, 230, 245);
+    let xr = M;
+    cols.forEach((col, ci) => {
+      const txt = String(cells[ci] || '');
+      const maxW = col.w - 3;
+      const truncated = doc.getTextWidth(txt) > maxW
+        ? txt.slice(0, Math.floor(txt.length * maxW / doc.getTextWidth(txt)) - 1) + '…'
+        : txt;
+      doc.text(truncated, xr + 2, y + 5.5);
+      xr += col.w;
+    });
+    y += ROW_H;
+  });
+
+  // ── Pie de página ──
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 140, 170);
+    doc.text(`Página ${p} de ${pages} · Lagos La Isabela`, W / 2, 290, { align: 'center' });
+  }
+
+  const fecha = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+  doc.save(`Clientes_LagosLaIsabela_${fecha}.pdf`);
+  toast('📄 PDF de clientes exportado');
 }
 
 // ─────────────────────────────────────────────
