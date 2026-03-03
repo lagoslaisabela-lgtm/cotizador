@@ -2377,6 +2377,12 @@
       </div>
     </div>
 
+    <!-- Nota interna -->
+    <div class="card section" style="padding-top:14px;padding-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block">📝 Nota interna (opcional)</label>
+      <input type="text" id="nota-input" placeholder="Ej: prefiere sin cabeza, pagar la próxima semana…" autocomplete="off" style="width:100%">
+    </div>
+
   </div><!-- /cotizar -->
 
   <!-- ══════════════ PÁGINA: HISTORIAL ══════════════ -->
@@ -2429,6 +2435,7 @@
               <th>Total</th>
               <th>Pago</th>
               <th>Devuelta</th>
+              <th>Nota</th>
               <th></th>
             </tr>
           </thead>
@@ -3027,6 +3034,12 @@
         <div class="evalue" id="edit-total-display">$0</div>
       </div>
 
+      <!-- Nota -->
+      <div class="form-group" style="margin-top:16px;margin-bottom:0">
+        <label>📝 Nota interna</label>
+        <input type="text" id="edit-nota" placeholder="Observación sobre esta orden…" style="width:100%">
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -3426,6 +3439,10 @@ function eliminarVentaMayorista(id) {
   if (!confirm('¿Eliminar esta venta mayorista?')) return;
   mayorista = mayorista.filter(v => v.id !== id);
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+  // Registrar eliminación para sync bilateral
+  const del = getDeletedMay();
+  del[id] = new Date().toISOString();
+  saveDeletedMay(del);
   updateBadge();
   renderDashboard();
   renderMayorista();
@@ -3814,11 +3831,15 @@ function guardarOrden() {
 
   const now = new Date();
   const pagoVal = parseInt((document.getElementById('pago-input').value || '0').replace(/\D/g,'')) || 0;
+  const nota = (document.getElementById('nota-input')?.value || '').trim();
   const cot = {
     id: Date.now(),
     fecha: now.toLocaleString('es-CO'),
     fechaObj: now.toISOString(),
     lastUpdated: now.toISOString(),
+    // evStartedAt: timestamp absoluto fijo de creación para estimado consistente entre dispositivos
+    evStartedAt: data.totalEviscerado > 0 ? now.getTime() : undefined,
+    nota: nota || undefined,
     pagoCon: pagoVal || null,
     devuelta: pagoVal > 0 ? pagoVal - (data.totalPescado + data.totalEviscerado) : null,
     ...data
@@ -4087,6 +4108,9 @@ function renderHistorial(filter = '') {
         : c.devuelta === 0 ? `<span style="color:var(--teal-bright)">Exacto</span>`
         : `<span style="color:var(--coral)">Faltó ${fmt(Math.abs(c.devuelta))}</span>`
       }</td>
+      <td style="font-size:12px;color:var(--text-secondary);max-width:140px;white-space:normal">${
+        c.nota ? `<span title="${c.nota.replace(/"/g,'&quot;')}">📝 ${c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota}</span>` : '—'
+      }</td>
       <td style="white-space:nowrap">
         <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" style="margin-right:6px" title="Generar PDF">📄</button>
         <button class="btn btn-whatsapp btn-sm" onclick="enviarWhatsApp(${c.id})" style="margin-right:6px" title="Enviar por WhatsApp">
@@ -4107,10 +4131,15 @@ function eliminarCot(id) {
   // Registrar eliminación para sync bilateral
   const deleted = getDeletedIds();
   deleted[id] = new Date().toISOString();
-  safeStorage.setItem(DELETED_IDS_KEY, JSON.stringify(deleted));
+  saveDeletedIds(deleted);
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+  // Limpiar evDone y evTimes para esta orden
+  const evDone = getEvDone(); evDone.delete(id); setEvDone(evDone);
+  const evTimes = getEvTimes(); delete evTimes[id]; setEvTimes(evTimes);
   updateBadge();
+  updateEvBadge();
   renderHistorial();
+  renderEviscerado();
   toast('Orden eliminada');
   scheduleDriveSync();
 }
@@ -4184,6 +4213,7 @@ let customHasta  = null;
 
 function setPeriod(period) {
   activePeriod = period;
+  _dashCache.serial = null; // invalidar cache
 
   // Actualizar botones activos
   document.querySelectorAll('.period-btn').forEach(b => {
@@ -4203,6 +4233,7 @@ function applyCustomRange() {
   if (!desde || !hasta) return;
   customDesde = desde;
   customHasta = hasta;
+  _dashCache.serial = null;
   renderDashboard();
 }
 
@@ -4308,7 +4339,15 @@ function getPeriodLabel() {
   }
 }
 
+let _dashCache = { serial: null };
+
 function renderDashboard() {
+  // Cache: si los datos no cambiaron y el período es el mismo, saltar
+  const serial = activePeriod + '|' + (activePeriod === 'custom' ? customDesde + customHasta : '') +
+    '|' + ordenes.length + '|' + (ordenes[0]?.lastUpdated || '') +
+    '|' + mayorista.length + '|' + (mayorista[0]?.lastUpdated || '');
+  if (_dashCache.serial === serial) return;
+  _dashCache.serial = serial;
   const lista       = getFilteredOrdenes();
   const listaMay    = getFilteredMayorista();
   const periodLabel = getPeriodLabel();
@@ -4451,6 +4490,8 @@ function resetForm(silent = false) {
   document.getElementById('total-display').textContent = '$0';
   document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
   document.getElementById('pago-input').value = '';
+  const notaEl = document.getElementById('nota-input');
+  if (notaEl) notaEl.value = '';
   const dev = document.getElementById('devuelta-display');
   dev.textContent = '—';
   dev.className = 'devuelta-amount pending';
@@ -4551,6 +4592,10 @@ function eliminarCliente(id) {
   if (!confirm('¿Eliminar este cliente del directorio?')) return;
   clientes = clientes.filter(c => c.id !== id);
   safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  // Registrar eliminación para sync bilateral
+  const del = getDeletedCli();
+  del[id] = new Date().toISOString();
+  saveDeletedCli(del);
   updateClientesBadge();
   renderClientes();
   scheduleDriveSync();
@@ -4976,12 +5021,22 @@ function toast(msg, isError = false) {
 }
 
 function clearAllData() {
-  if (!confirm('¿Borrar TODAS las ordenes? Esta acción es irreversible.')) return;
+  if (!confirm('¿Borrar TODAS las ordenes? Esta acción es irreversible y se propagará a todos los dispositivos.')) return;
+  // Registrar cada orden en deletedIds antes de borrar
+  const deleted = getDeletedIds();
+  const ts = new Date().toISOString();
+  ordenes.forEach(c => { deleted[c.id] = ts; });
+  saveDeletedIds(deleted);
   ordenes = [];
   safeStorage.removeItem(STORAGE_KEY);
+  // Limpiar evDone y evTimes también
+  setEvDone(new Set());
+  setEvTimes({});
   updateBadge();
+  updateEvBadge();
   renderDashboard();
-  toast('Historial borrado');
+  renderEviscerado();
+  toast('Historial borrado en todos los dispositivos');
   scheduleDriveSync();
 }
 
@@ -5002,6 +5057,8 @@ function abrirEdicion(id) {
   document.getElementById('edit-nombre').value = cot.nombre;
   document.getElementById('edit-tel').value    = cot.tel || '';
   document.getElementById('edit-cc').value     = cot.cc  || '';
+  const editNota = document.getElementById('edit-nota');
+  if (editNota) editNota.value = cot.nota || '';
 
   // Poblar select de especies
   const sel = document.getElementById('add-especie');
@@ -5147,6 +5204,7 @@ function guardarEdicion() {
   const nombre = document.getElementById('edit-nombre').value.trim();
   const tel    = document.getElementById('edit-tel').value.trim();
   const cc     = document.getElementById('edit-cc').value.trim();
+  const nota   = (document.getElementById('edit-nota')?.value || '').trim();
 
   if (!nombre)           { toast('El nombre no puede estar vacío', true); return; }
   if (editItems.length === 0) { toast('Debe haber al menos una especie', true); return; }
@@ -5161,6 +5219,13 @@ function guardarEdicion() {
   const idx = ordenes.findIndex(c => c.id === editingId);
   if (idx === -1) { toast('Orden no encontrada', true); return; }
 
+  const hadEv = ordenes[idx].totalEviscerado > 0;
+  const hasEv = totalEviscerado > 0;
+  // Preservar evStartedAt si ya tenía ev; asignar nuevo si acaba de agregarse; quitar si se removió
+  let evStartedAt = ordenes[idx].evStartedAt;
+  if (!hadEv && hasEv) evStartedAt = Date.now();
+  if (!hasEv) evStartedAt = undefined;
+
   ordenes[idx] = {
     ...ordenes[idx],
     nombre,
@@ -5171,6 +5236,8 @@ function guardarEdicion() {
     totalEviscerado,
     totalLibras,
     total: totalPescado + totalEviscerado,
+    nota: nota || undefined,
+    evStartedAt,
     editadoEn: new Date().toLocaleString('es-CO'),
     lastUpdated: new Date().toISOString()
   };
@@ -5191,7 +5258,9 @@ const DRIVE_TOKEN_KEY     = 'aquacot_drive_token';
 const DRIVE_FILE_NAME     = 'lagos-isabela-data.json';
 const DRIVE_SCOPE         = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 const HARDCODED_CLIENT_ID = '355744497215-b46rsra82q7sgk2j6r4ekoobiq8pgq6d.apps.googleusercontent.com';
-const DELETED_IDS_KEY     = 'aquacot_deleted_ids';
+const DELETED_IDS_KEY      = 'aquacot_deleted_ids';
+const DELETED_CLI_KEY      = 'aquacot_deleted_clientes';
+const DELETED_MAY_KEY      = 'aquacot_deleted_mayorista';
 
 let driveToken    = null;
 let driveFileId   = null;
@@ -5208,6 +5277,18 @@ function getDeletedIds() {
 function saveDeletedIds(obj) {
   safeStorage.setItem(DELETED_IDS_KEY, JSON.stringify(obj));
 }
+
+function getDeletedCli() {
+  try { return JSON.parse(safeStorage.getItem(DELETED_CLI_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function saveDeletedCli(obj) { safeStorage.setItem(DELETED_CLI_KEY, JSON.stringify(obj)); }
+
+function getDeletedMay() {
+  try { return JSON.parse(safeStorage.getItem(DELETED_MAY_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function saveDeletedMay(obj) { safeStorage.setItem(DELETED_MAY_KEY, JSON.stringify(obj)); }
 
 // ── Guardar estado de UI para restaurar tras sync ──
 function captureUIState() {
@@ -5330,8 +5411,32 @@ function mergeEvDone(localDone, remoteDone) {
   return new Set([...localSet, ...remoteSet]);
 }
 
+// ── evTimes bilateral ─────────────────────────
+// evTimes: gana el que tenga 'end' más temprano (primer dispositivo que completó)
+// Si el remoto tiene un entry que el local no tiene, se toma el remoto y viceversa
+function mergeEvTimes(localTimes, remoteTimes) {
+  const merged = { ...localTimes };
+  for (const [id, rEntry] of Object.entries(remoteTimes || {})) {
+    const lEntry = merged[id];
+    if (!lEntry) {
+      merged[id] = rEntry;
+    } else {
+      // Tomar el start más temprano y el end más temprano (primer dispositivo que marcó completado)
+      merged[id] = {
+        start: Math.min(lEntry.start || Infinity, rEntry.start || Infinity),
+        end:   lEntry.end && rEntry.end ? Math.min(lEntry.end, rEntry.end)
+               : lEntry.end || rEntry.end
+      };
+    }
+  }
+  return merged;
+}
+
 // ── Clientes bilateral ───────────────────────
-function mergeClientes(localClientes, remoteClientes) {
+function mergeClientes(localClientes, remoteClientes, remoteDeletedCli) {
+  const allDeleted = { ...getDeletedCli(), ...(remoteDeletedCli || {}) };
+  saveDeletedCli(allDeleted);
+
   const map = new Map();
   localClientes.forEach(c => map.set(c.id, c));
   (remoteClientes || []).forEach(c => {
@@ -5344,12 +5449,26 @@ function mergeClientes(localClientes, remoteClientes) {
       if (remoteTs > localTs) map.set(c.id, c);
     }
   });
+
+  // Aplicar borrados
+  for (const [deletedId, deletedAt] of Object.entries(allDeleted)) {
+    const existing = map.get(deletedId) || map.get(Number(deletedId));
+    if (existing) {
+      const updatedTs = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
+      const deletedTs = new Date(deletedAt).getTime();
+      if (deletedTs >= updatedTs) { map.delete(deletedId); map.delete(Number(deletedId)); }
+    }
+  }
+
   return Array.from(map.values())
     .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
 }
 
 // ── Mayorista bilateral ──────────────────────
-function mergeMayorista(localMay, remoteMay) {
+function mergeMayorista(localMay, remoteMay, remoteDeletedMay) {
+  const allDeleted = { ...getDeletedMay(), ...(remoteDeletedMay || {}) };
+  saveDeletedMay(allDeleted);
+
   const map = new Map();
   localMay.forEach(v => map.set(v.id, v));
   (remoteMay || []).forEach(v => {
@@ -5362,12 +5481,24 @@ function mergeMayorista(localMay, remoteMay) {
       if (remoteTs > localTs) map.set(v.id, v);
     }
   });
+
+  // Aplicar borrados
+  for (const [deletedId, deletedAt] of Object.entries(allDeleted)) {
+    const existing = map.get(Number(deletedId)) || map.get(deletedId);
+    if (existing) {
+      const updatedTs = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
+      const deletedTs = new Date(deletedAt).getTime();
+      if (deletedTs >= updatedTs) { map.delete(Number(deletedId)); map.delete(deletedId); }
+    }
+  }
+
   return Array.from(map.values())
     .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
 }
 
 // ── Refrescar UI preservando estado ─────────
 function refreshUI(uiState) {
+  _dashCache.serial = null;
   updateBadge();
   updateEvBadge();
   renderHistorial();
@@ -5624,12 +5755,14 @@ async function initDriveSync() {
       if (remoteData) {
         const merged          = mergeBilateral(ordenes, remoteData);
         const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
-        const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
-        const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
+        const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+        const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
+        const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
         ordenes   = merged;
         clientes  = mergedClientes;
         mayorista = mergedMayorista;
         setEvDone(evDone);
+        setEvTimes(mergedEvTimes);
         safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
         safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
         safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -5703,10 +5836,13 @@ async function uploadDriveFile() {
     ordenes,
     clientes,
     mayorista,
-    evDone:     [...getEvDone()],
-    deletedIds: getDeletedIds(),
-    lastUpdated: new Date().toISOString(),
-    version: '2.2'
+    evDone:           [...getEvDone()],
+    evTimes:          getEvTimes(),
+    deletedIds:       getDeletedIds(),
+    deletedClientes:  getDeletedCli(),
+    deletedMayorista: getDeletedMay(),
+    lastUpdated:      new Date().toISOString(),
+    version: '3.0'
   });
 
   if (!driveFileId) {
@@ -5763,8 +5899,9 @@ async function autoSync() {
     const uiState         = captureUIState();
     const merged          = mergeBilateral(ordenes, remoteData);
     const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
-    const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
-    const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
+    const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+    const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
+    const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
 
     // Detectar si realmente hubo cambios comparando serializado
     const localSerial     = JSON.stringify(ordenes.map(c => c.id + (c.lastUpdated||'')).sort());
@@ -5783,6 +5920,7 @@ async function autoSync() {
       clientes  = mergedClientes;
       mayorista = mergedMayorista;
       setEvDone(evDone);
+      setEvTimes(mergedEvTimes);
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -5807,12 +5945,14 @@ async function syncNow() {
     if (remoteData) {
       const merged          = mergeBilateral(ordenes, remoteData);
       const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
-      const mergedClientes  = mergeClientes(clientes, remoteData.clientes);
-      const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista);
+      const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+      const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
+      const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
       ordenes   = merged;
       clientes  = mergedClientes;
       mayorista = mergedMayorista;
       setEvDone(evDone);
+      if (typeof mergedEvTimes !== 'undefined') setEvTimes(mergedEvTimes);
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -5890,35 +6030,52 @@ function getClientesSugeridos(query) {
   if (!query || query.length < 2) return [];
   const q = query.toLowerCase().trim();
 
-  // Agrupar clientes únicos del historial
   const mapa = {};
+
+  // Fuente 1: historial de órdenes detal
   ordenes.forEach(c => {
     if (!c.nombre) return;
     const key = c.nombre.toLowerCase();
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', count: 0 };
     mapa[key].count++;
+    if (!mapa[key].tel && c.tel) mapa[key].tel = c.tel;
+    if (!mapa[key].cc  && c.cc)  mapa[key].cc  = c.cc;
   });
 
-  // Incluir también clientes del directorio (sin compras aún)
+  // Fuente 2: historial de ventas mayoristas
+  mayorista.forEach(v => {
+    if (!v.nombre) return;
+    const key = v.nombre.toLowerCase();
+    if (!mapa[key]) mapa[key] = { nombre: v.nombre, tel: v.tel || '', cc: v.cc || '', count: 0 };
+    mapa[key].count++;
+    if (!mapa[key].tel && v.tel) mapa[key].tel = v.tel;
+    if (!mapa[key].cc  && v.cc)  mapa[key].cc  = v.cc;
+  });
+
+  // Fuente 3: directorio de clientes
   clientes.forEach(c => {
     if (!c.nombre) return;
     const key = c.nombre.toLowerCase();
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', count: 0 };
     else {
-      // Completar campos vacíos con los del directorio
       if (!mapa[key].tel && c.tel) mapa[key].tel = c.tel;
       if (!mapa[key].cc  && c.cc)  mapa[key].cc  = c.cc;
     }
   });
 
   return Object.values(mapa)
-    .filter(c => c.nombre.toLowerCase().includes(q))
+    .filter(c => {
+      // Buscar en nombre, tel Y cc
+      return c.nombre.toLowerCase().includes(q) ||
+             c.tel.includes(q) ||
+             c.cc.toLowerCase().includes(q);
+    })
     .sort((a, b) => {
       const aStart = a.nombre.toLowerCase().startsWith(q) ? 0 : 1;
       const bStart = b.nombre.toLowerCase().startsWith(q) ? 0 : 1;
       return aStart - bStart || b.count - a.count;
     })
-    .slice(0, 6);
+    .slice(0, 8);
 }
 
 function acNombre(val) {
@@ -6468,6 +6625,7 @@ function buildEvCard(c, isDone) {
           <span class="label">Total libras (orden)</span>
           <span class="val">${totalLbsAll.toFixed(1)} lb</span>
         </div>
+        ${c.nota ? `<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;padding:7px 10px">📝 ${c.nota}</div>` : ''}
         ${!isDone ? `<div>${timerChipHtml}</div>` : ''}
       </div>
 
@@ -6593,8 +6751,14 @@ function calcularEstimadorEv() {
     return;
   }
 
-  const segsRestantes = Math.round(totalLibrasPend * segPorLb);
-  const finEstimado   = new Date(Date.now() + segsRestantes * 1000);
+  // finEstimado: punto fijo basado en el evStartedAt de la orden más antigua pendiente
+  // Esto garantiza que TODOS los dispositivos calculen exactamente el mismo horario
+  const startRef = pendientes.reduce((min, c) => {
+    const t = c.evStartedAt || new Date(c.fechaObj).getTime();
+    return t < min ? t : min;
+  }, Infinity);
+  const segsTotal   = Math.round(totalLibrasPend * segPorLb);
+  const finEstimado = new Date(startRef + segsTotal * 1000);
 
   el.className = 'ev-estimador';
   elIcon.textContent  = '⏱️';
@@ -7104,7 +7268,44 @@ updateBadge();
 updateEvBadge();
 restoreDriveSession();
 
+// Pausar/reanudar tickers según visibilidad de la pestaña (ahorra batería en móvil)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Al volver: re-render inmediato para mostrar datos frescos
+    if (activeTab === 'eviscerado') renderEviscerado();
+    if (activeTab === 'dashboard')  renderDashboard();
+    if (evFullscreenOpen) renderEvFullscreen();
+    // Si había tickers del fullscreen detenidos, reanudar
+    if (evFullscreenOpen && !evFsTickerSec) {
+      evFsTickerSec = setInterval(() => {
+        document.querySelectorAll('#ev-fs-cards-pendientes .ev-timer-chip[data-start]').forEach(chip => {
+          const elapsed = Math.floor((Date.now() - parseInt(chip.dataset.start)) / 60000);
+          chip.textContent = `⏱ ${Math.floor(elapsed/60)>0 ? Math.floor(elapsed/60)+'h ' : ''}${elapsed%60}m esperando`;
+          chip.classList.toggle('urgent', elapsed > 30);
+        });
+      }, 1000);
+      evFsTickerMin = setInterval(() => renderEvFullscreen(), 30000);
+    }
+  } else {
+    // Al ocultar: detener tickers del fullscreen para ahorrar CPU/batería
+    if (evFsTickerSec) { clearInterval(evFsTickerSec); evFsTickerSec = null; }
+    if (evFsTickerMin) { clearInterval(evFsTickerMin); evFsTickerMin = null; }
+    if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
+  }
+});
+if (typeof ResizeObserver !== 'undefined') {
+  const chartWrap = document.querySelector('.chart-wrap');
+  if (chartWrap) {
+    new ResizeObserver(() => {
+      if (document.getElementById('page-dashboard')?.classList.contains('active')) {
+        renderChart15dias();
+      }
+    }).observe(chartWrap);
+  }
+}
+
 // Ticker cada 60s: refresca chips de tiempo en tarjetas pendientes y redibuja chart si dashboard visible
+let _evAlertedIds = new Set(); // IDs ya alertados para no repetir
 setInterval(() => {
   // Actualizar chips de espera en tarjetas de eviscerado
   document.querySelectorAll('.ev-timer-chip[data-start]').forEach(chip => {
@@ -7115,6 +7316,37 @@ setInterval(() => {
     chip.textContent = `⏱ ${label}`;
     chip.classList.toggle('urgent', elapsed > 30);
   });
+
+  // Alerta sonora+vibración si hay órdenes pendientes >45 min sin completar
+  const done = getEvDone();
+  const evPendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  evPendientes.forEach(c => {
+    const elapsed = Math.floor((Date.now() - new Date(c.fechaObj).getTime()) / 60000);
+    if (elapsed >= 45 && !_evAlertedIds.has(c.id)) {
+      _evAlertedIds.add(c.id);
+      // Vibración en dispositivos que la soportan (móvil)
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      // Sonido suave con Web Audio API
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 520;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.8);
+        setTimeout(() => ctx.close(), 1200);
+      } catch(e) {}
+      toast(`⚠️ Orden de ${c.nombre} lleva más de 45 min pendiente`, true);
+    }
+  });
+  // Limpiar alertedIds de órdenes ya completadas
+  _evAlertedIds.forEach(id => { if (done.has(id)) _evAlertedIds.delete(id); });
+
   // Redibujar chart si el dashboard está activo
   if (document.getElementById('page-dashboard')?.classList.contains('active')) {
     renderChart15dias();
