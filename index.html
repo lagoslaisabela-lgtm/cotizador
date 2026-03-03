@@ -5316,6 +5316,7 @@ function refreshUI(uiState) {
   renderEviscerado();
   renderClientes();
   renderMayorista();
+  if (evFullscreenOpen) renderEvFullscreen();
   if (uiState) restoreUIState(uiState);
 }
 
@@ -6717,6 +6718,9 @@ function renderChart15dias() {
 let evFullscreenOpen = false;
 let evFsCountdownInterval = null;
 
+let evFsTickerSec = null;
+let evFsTickerMin = null;
+
 function toggleEvFsCompletadas() {
   const body  = document.getElementById('ev-fs-completadas-body');
   const arrow = document.getElementById('ev-fs-collapse-arrow');
@@ -6734,11 +6738,29 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
     document.body.style.overflow = 'hidden';
     btn.innerHTML = '✕ Salir de pantalla completa';
     renderEvFullscreen();
+
+    // Ticker cada segundo: actualiza chips de tiempo en las tarjetas pendientes del fullscreen
+    evFsTickerSec = setInterval(() => {
+      document.querySelectorAll('#ev-fs-cards-pendientes .ev-timer-chip[data-start]').forEach(chip => {
+        const elapsed = Math.floor((Date.now() - parseInt(chip.dataset.start)) / 60000);
+        const hrs = Math.floor(elapsed / 60), min = elapsed % 60;
+        chip.textContent = `⏱ ${hrs > 0 ? hrs + 'h ' : ''}${min}m esperando`;
+        chip.classList.toggle('urgent', elapsed > 30);
+      });
+    }, 1000);
+
+    // Ticker cada 30s: re-renderiza tarjetas por completo (capta órdenes nuevas sin salir)
+    evFsTickerMin = setInterval(() => {
+      renderEvFullscreen();
+    }, 30000);
+
   } else {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
     btn.innerHTML = '⛶ Pantalla completa';
     if (evFsCountdownInterval) { clearInterval(evFsCountdownInterval); evFsCountdownInterval = null; }
+    if (evFsTickerSec) { clearInterval(evFsTickerSec); evFsTickerSec = null; }
+    if (evFsTickerMin) { clearInterval(evFsTickerMin); evFsTickerMin = null; }
   }
 }
 
