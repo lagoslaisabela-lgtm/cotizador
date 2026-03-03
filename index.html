@@ -2048,6 +2048,40 @@
   }
   .ev-fs-close:hover { border-color: var(--teal); color: var(--teal); }
 
+  .ev-fs-collapse-btn {
+    width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 700;
+    transition: all 0.18s;
+    text-align: left;
+  }
+  .ev-fs-collapse-btn:hover {
+    border-color: rgba(6,214,160,0.35);
+    color: var(--green);
+    background: rgba(6,214,160,0.05);
+  }
+  .ev-fs-collapse-btn .ev-count {
+    background: rgba(6,214,160,0.1);
+    border: 1px solid rgba(6,214,160,0.2);
+    border-radius: 20px; padding: 2px 10px;
+    font-size: 13px; color: var(--green);
+  }
+  .ev-fs-collapse-arrow {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+    display: inline-block;
+  }
+  .ev-fs-collapse-arrow.open { transform: rotate(90deg); }
+
   /* En fullscreen, las tarjetas son más grandes */
   #ev-fullscreen-overlay .ev-cards-grid {
     grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
@@ -2070,6 +2104,29 @@
   #ev-fullscreen-overlay .ev-done-time { font-size: 13px; }
   #ev-fullscreen-overlay .ev-section-title { font-size: 16px; margin-bottom: 16px; }
   #ev-fullscreen-overlay .ev-estimador { margin-bottom: 0; }
+
+  /* Pendientes: tarjetas notablemente más grandes */
+  #ev-fs-cards-pendientes {
+    grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+    gap: 28px;
+  }
+  #ev-fs-cards-pendientes .ev-card {
+    padding: 36px 40px;
+    gap: 26px;
+    border-width: 2px;
+  }
+  #ev-fs-cards-pendientes .ev-card::before { width: 7px; }
+  #ev-fs-cards-pendientes .ev-card-name   { font-size: 28px; }
+  #ev-fs-cards-pendientes .ev-card-meta   { font-size: 14px; margin-top: 8px; }
+  #ev-fs-cards-pendientes .ev-card-time   { font-size: 14px; }
+  #ev-fs-cards-pendientes .ev-card-row    { font-size: 17px; }
+  #ev-fs-cards-pendientes .ev-card-row .label { font-size: 15px; }
+  #ev-fs-cards-pendientes .ev-card-row .val.big { font-size: 48px; line-height: 1; }
+  #ev-fs-cards-pendientes .ev-species-pill { font-size: 14px; padding: 7px 16px; }
+  #ev-fs-cards-pendientes .btn-ev-done    { padding: 20px; font-size: 17px; }
+  #ev-fs-cards-pendientes .btn-ev-undo    { padding: 20px 24px; font-size: 15px; }
+  #ev-fs-cards-pendientes .ev-timer-chip  { font-size: 13px; padding: 6px 15px; }
+  #ev-fs-cards-pendientes .ev-card-footer { gap: 14px; margin-top: 8px; }
 
   @media (max-width: 600px) {
     #ev-fullscreen-overlay .ev-cards-grid { grid-template-columns: 1fr; }
@@ -2759,12 +2816,18 @@
 
   <div class="ev-divider"></div>
 
-  <!-- Completadas -->
+  <!-- Completadas — desplegable -->
   <div>
-    <div class="ev-section-title done-title">✅ Completadas <span class="ev-count" id="ev-fs-badge-completadas">0</span></div>
-    <div class="ev-cards-grid" id="ev-fs-cards-completadas"></div>
-    <div class="ev-empty" id="ev-fs-empty-completadas" style="display:none">
-      <div class="icon">🔪</div><p>Aún no hay órdenes procesadas.</p>
+    <button class="ev-fs-collapse-btn" id="ev-fs-collapse-btn" onclick="toggleEvFsCompletadas()">
+      <span>✅ Completadas</span>
+      <span class="ev-count" id="ev-fs-badge-completadas">0</span>
+      <span class="ev-fs-collapse-arrow" id="ev-fs-collapse-arrow">▶</span>
+    </button>
+    <div id="ev-fs-completadas-body" style="display:none;margin-top:16px">
+      <div class="ev-cards-grid" id="ev-fs-cards-completadas"></div>
+      <div class="ev-empty" id="ev-fs-empty-completadas" style="display:none">
+        <div class="icon">🔪</div><p>Aún no hay órdenes procesadas.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -6654,8 +6717,15 @@ function renderChart15dias() {
 let evFullscreenOpen = false;
 let evFsCountdownInterval = null;
 
-function toggleEvFullscreen() {
-  evFullscreenOpen = !evFullscreenOpen;
+function toggleEvFsCompletadas() {
+  const body  = document.getElementById('ev-fs-completadas-body');
+  const arrow = document.getElementById('ev-fs-collapse-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display  = open ? 'block' : 'none';
+  arrow.classList.toggle('open', open);
+}
+
+function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
   const overlay = document.getElementById('ev-fullscreen-overlay');
   const btn     = document.getElementById('ev-fullscreen-btn');
 
