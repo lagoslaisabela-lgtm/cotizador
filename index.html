@@ -2473,7 +2473,7 @@
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetForm()">✨ Limpiar</button>
-          <button class="btn btn-success" onclick="guardarOrden()">💵 Cobrar</button>
+          <button class="btn btn-success" id="btn-cobrar" onclick="guardarOrden()">💵 Cobrar</button>
         </div>
       </div>
     </div>
@@ -3878,11 +3878,11 @@ function _pagoRaw(el) {
   return parseInt((el || document.getElementById('pago-input')).value.replace(/[^\d]/g, '')) || 0;
 }
 function pagoInput(el) {
-  const n    = _pagoRaw(el);
-  const prev = el.value.length;
-  const pos  = el.selectionStart;
-  el.value   = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
-  try { const d = el.value.length - prev; el.setSelectionRange(pos + d, pos + d); } catch(e) {}
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  // Cursor always at end — correct for a numeric currency field
+  const len = el.value.length;
+  try { el.setSelectionRange(len, len); } catch(e) {}
   calcDevuelta();
 }
 function pagoFocus(el) { el.select(); }
@@ -5991,15 +5991,6 @@ function closeSetupOutside(e) {
   if (e.target === document.getElementById('setup-modal-overlay')) closeSetupModal();
 }
 
-function saveClientId() {
-  const val = document.getElementById('client-id-input').value.trim();
-  if (!val) { toast('Pega un Client ID válido', true); return; }
-  safeStorage.setItem(DRIVE_CLIENT_ID_KEY, val);
-  document.getElementById('client-id-saved-msg').style.display = 'block';
-  document.getElementById('google-signin-btn').disabled = false;
-  toast('✓ Client ID guardado');
-}
-
 // ── OAuth con redirección (login manual) ──
 function driveConnect() {
   safeStorage.setItem('aquacot_oauth_pending', '1');
@@ -7712,7 +7703,7 @@ function launchFishConfetti() {
   const count = 28;
   const vw = window.innerWidth, vh = window.innerHeight;
   // Origin: cerca del botón cobrar
-  const btnEl = document.querySelector('.btn-success');
+  const btnEl = document.getElementById('btn-cobrar') || document.querySelector('.btn-success');
   const ox = btnEl ? btnEl.getBoundingClientRect().left + btnEl.offsetWidth / 2 : vw / 2;
   const oy = btnEl ? btnEl.getBoundingClientRect().top  + btnEl.offsetHeight / 2 : vh * 0.8;
 
