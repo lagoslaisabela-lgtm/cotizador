@@ -1326,6 +1326,23 @@
     color-scheme: dark;
   }
 
+  input[type="datetime-local"] {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 9px 12px;
+    color-scheme: dark;
+    transition: border-color 0.18s;
+  }
+  input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0,180,216,0.15);
+  }
+
   .date-range-inputs .sep {
     font-size: 12px;
     color: var(--text-muted);
@@ -3332,6 +3349,12 @@
         <input type="text" id="edit-nota" placeholder="Observación sobre esta orden…" style="width:100%">
       </div>
 
+      <!-- Fecha -->
+      <div class="form-group" style="margin-top:14px;margin-bottom:0">
+        <label>📅 Fecha de la orden</label>
+        <input type="datetime-local" id="edit-fecha" style="width:100%;max-width:280px">
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -3480,6 +3503,11 @@
       <div style="margin-top:14px;padding:12px 16px;background:rgba(6,214,160,0.06);border:1px solid rgba(6,214,160,0.2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
         <span style="color:var(--text-secondary);font-size:13px">Total calculado</span>
         <strong style="font-family:'Roboto Mono',monospace;font-size:16px;color:var(--green)" id="may-edit-total">$0</strong>
+      </div>
+      <!-- Fecha -->
+      <div class="form-group" style="margin-top:14px;margin-bottom:0">
+        <label>📅 Fecha de la venta</label>
+        <input type="datetime-local" id="may-edit-fecha" style="width:100%;max-width:280px">
       </div>
     </div>
     <div class="modal-footer">
@@ -3665,7 +3693,7 @@ function calcularMayorista() {
 }
 
 function guardarVentaMayorista() {
-  const nombre = document.getElementById('may-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('may-nombre').value.trim());
   if (!nombre) { toast('Ingresa el nombre del comprador', true); return; }
 
   const tel = document.getElementById('may-tel').value.trim();
@@ -3869,9 +3897,16 @@ function abrirEdicionMayorista(id) {
   if (!venta) return;
   editingMayoristaId = id;
 
-  document.getElementById('may-edit-nombre').value = venta.nombre;
+  document.getElementById('may-edit-nombre').value = toTitleCase(venta.nombre);
   document.getElementById('may-edit-tel').value    = venta.tel || '';
   document.getElementById('may-edit-cc').value     = venta.cc  || '';
+  // Cargar fecha actual
+  const mayFechaEl = document.getElementById('may-edit-fecha');
+  if (mayFechaEl && venta.fechaObj) {
+    const d = new Date(venta.fechaObj);
+    const pad = n => String(n).padStart(2,'0');
+    mayFechaEl.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   // Construir grid de especies con valores actuales
   const grid = document.getElementById('may-edit-species-grid');
@@ -3940,11 +3975,12 @@ function closeMayModal() {
 }
 
 function guardarEdicionMayorista() {
-  const nombre = document.getElementById('may-edit-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('may-edit-nombre').value.trim());
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
 
-  const tel = document.getElementById('may-edit-tel').value.trim();
-  const cc  = document.getElementById('may-edit-cc').value.trim();
+  const tel      = document.getElementById('may-edit-tel').value.trim();
+  const cc       = document.getElementById('may-edit-cc').value.trim();
+  const fechaVal = document.getElementById('may-edit-fecha')?.value;
 
   const items = [];
   let totalLibras = 0, total = 0;
@@ -3966,7 +4002,11 @@ function guardarEdicionMayorista() {
   mayorista[idx] = {
     ...mayorista[idx],
     nombre, tel, cc, items, totalLibras, total,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    ...(fechaVal ? (() => {
+      const d = new Date(fechaVal);
+      return { fechaObj: d.toISOString(), fecha: d.toLocaleString('es-CO') };
+    })() : {})
   };
 
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -4110,7 +4150,7 @@ function calcDevuelta() {
 //  GUARDAR
 // ─────────────────────────────────────────────
 function getFormData() {
-  const nombre = document.getElementById('cliente-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('cliente-nombre').value.trim());
   const tel    = document.getElementById('cliente-tel').value.trim();
   const cc     = document.getElementById('cliente-cc').value.trim();
   const items  = [];
@@ -5100,6 +5140,15 @@ function fmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CO');
 }
 
+// ── Title Case: primera letra de cada palabra en mayúscula ──
+function toTitleCase(str) {
+  if (!str) return str;
+  return str.trim().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(\w+)/g, (w) => {
+    // lowercase the rest of each word
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  });
+}
+
 function fmtShort(n) {
   if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
   if (n >= 1000)    return '$' + (n/1000).toFixed(0) + 'K';
@@ -5197,7 +5246,7 @@ function getTodosClientes() {
 }
 
 function agregarCliente() {
-  const nombre = document.getElementById('cli-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('cli-nombre').value.trim());
   const tel    = document.getElementById('cli-tel').value.trim();
   const cc     = document.getElementById('cli-cc').value.trim();
 
@@ -5266,7 +5315,7 @@ function closeCLiModalOutside(e) {
 }
 
 function guardarEdicionCliente() {
-  const nombre = document.getElementById('cli-edit-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('cli-edit-nombre').value.trim());
   const tel    = document.getElementById('cli-edit-tel').value.trim();
   const cc     = document.getElementById('cli-edit-cc').value.trim();
 
@@ -5688,11 +5737,19 @@ function abrirEdicion(id) {
   // Deep copy de los items para editar sin mutar el original
   editItems = cot.items.map(i => ({ ...i }));
 
-  document.getElementById('edit-nombre').value = cot.nombre;
+  document.getElementById('edit-nombre').value = toTitleCase(cot.nombre);
   document.getElementById('edit-tel').value    = cot.tel || '';
   document.getElementById('edit-cc').value     = cot.cc  || '';
   const editNota = document.getElementById('edit-nota');
   if (editNota) editNota.value = cot.nota || '';
+  // Cargar fecha actual de la orden
+  const editFechaEl = document.getElementById('edit-fecha');
+  if (editFechaEl && cot.fechaObj) {
+    const d = new Date(cot.fechaObj);
+    // datetime-local requiere formato YYYY-MM-DDTHH:MM
+    const pad = n => String(n).padStart(2,'0');
+    editFechaEl.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   // Poblar select de especies
   const sel = document.getElementById('add-especie');
@@ -5835,10 +5892,11 @@ function recalcEditTotal() {
 }
 
 function guardarEdicion() {
-  const nombre = document.getElementById('edit-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('edit-nombre').value.trim());
   const tel    = document.getElementById('edit-tel').value.trim();
   const cc     = document.getElementById('edit-cc').value.trim();
   const nota   = (document.getElementById('edit-nota')?.value || '').trim();
+  const fechaVal = document.getElementById('edit-fecha')?.value;
 
   if (!nombre)           { toast('El nombre no puede estar vacío', true); return; }
   if (editItems.length === 0) { toast('Debe haber al menos una especie', true); return; }
@@ -5873,7 +5931,14 @@ function guardarEdicion() {
     nota: nota || undefined,
     evStartedAt,
     editadoEn: new Date().toLocaleString('es-CO'),
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    ...(fechaVal ? (() => {
+      const d = new Date(fechaVal);
+      return {
+        fechaObj: d.toISOString(),
+        fecha:    d.toLocaleString('es-CO'),
+      };
+    })() : {})
   };
 
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
@@ -8087,8 +8152,12 @@ function _cdRenderKPIs(clts) {
 function _cdCtx(id) {
   const el = document.getElementById(id);
   if (!el) return null;
-  el.width  = el.offsetWidth  || el.parentElement.offsetWidth || 400;
-  el.height = parseInt(el.getAttribute('height')) || 220;
+  // Use the parent card's width for full-width canvas
+  const parent = el.closest('.cd-card') || el.parentElement;
+  const w = (parent ? parent.clientWidth - 40 : 400); // subtract padding
+  const h = parseInt(el.getAttribute('height')) || 220;
+  el.width  = Math.max(w, 100);
+  el.height = h;
   return { ctx: el.getContext('2d'), W: el.width, H: el.height };
 }
 
@@ -8628,6 +8697,15 @@ if (typeof ResizeObserver !== 'undefined') {
         renderChart15dias();
       }
     }).observe(chartWrap);
+  }
+  // Redraw clientes-dash charts on resize
+  const cdPage = document.getElementById('page-clientes-dash');
+  if (cdPage) {
+    new ResizeObserver(() => {
+      if (cdPage.classList.contains('active')) {
+        requestAnimationFrame(() => renderClientesDash());
+      }
+    }).observe(cdPage);
   }
 }
 
