@@ -1404,6 +1404,51 @@
     letter-spacing: 0.5px;
   }
 
+  /* Delta vs período anterior */
+  .stat-delta {
+    margin-top: 6px;
+    min-height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .delta-up   { color: #06d6a0; }
+  .delta-down { color: #ef476f; }
+  .delta-flat { color: var(--text-muted); }
+
+  /* Historial precios mayorista */
+  .price-hist-esp {
+    margin-bottom: 18px;
+  }
+  .price-hist-esp-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .price-hist-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid rgba(0,180,216,0.07);
+    font-size: 13px;
+  }
+  .price-hist-date { color: var(--text-muted); font-size: 11px; min-width: 90px; }
+  .price-hist-qty  { color: var(--text-secondary); min-width: 60px; }
+  .price-hist-val  { font-family:'Roboto Mono',monospace; font-weight: 700; color: var(--green); margin-left: auto; }
+  .price-hist-bar  { flex:1; background: rgba(255,255,255,0.05); border-radius:4px; height:5px; overflow:hidden; max-width:120px; }
+  .price-hist-bar-fill { height:100%; background: linear-gradient(90deg,var(--teal),var(--green)); border-radius:4px; }
+  .price-trend-up   { color: var(--green);  font-size: 10px; }
+  .price-trend-down { color: var(--coral);  font-size: 10px; }
+
+  /* Recibo térmico — print */
+  @media print {
+    body > *:not(#thermal-overlay) { display: none !important; }
+    #thermal-overlay {
+      position: static !important; background: none !important;
+      display: block !important;
+    }
+    #thermal-overlay > div { box-shadow: none !important; margin: 0; }
+    #thermal-overlay > div > div:first-child { display: none !important; }
+  }
+
   /* ──────────────── AUTOCOMPLETE NOMBRE ──────────────── */
   .autocomplete-wrap {
     position: relative;
@@ -2555,6 +2600,7 @@
       <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
         <span class="drive-dot"></span>
         <span id="drive-status-text">CONECTAR</span>
+        <span id="drive-pending-badge" style="display:none;background:rgba(255,209,102,0.25);color:#ffd166;border:1px solid rgba(255,209,102,0.4);border-radius:10px;font-size:9px;font-weight:800;padding:1px 6px;margin-left:4px;letter-spacing:0.4px">PENDIENTE</span>
       </button>
     </div>
     <div class="header-time" style="position:relative;z-index:1;margin-left:auto;text-align:right">
@@ -2691,6 +2737,14 @@
         <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
         <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
         <input type="text" id="search-cc" placeholder="Buscar por identificación…" oninput="filtrarHistorial()">
+        <select id="search-especie" onchange="filtrarHistorial()" style="background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:8px 12px;min-width:140px">
+          <option value="">🐟 Todas las especies</option>
+        </select>
+        <select id="search-ev" onchange="filtrarHistorial()" style="background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:8px 12px">
+          <option value="">🔪 Eviscerado: todos</option>
+          <option value="si">Solo con eviscerado</option>
+          <option value="no">Solo sin eviscerado</option>
+        </select>
         <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="exportarHistorialPDF()">📄 PDF</button>
       </div>
@@ -2746,6 +2800,15 @@
           <p>No hay ordenes guardadas todavía.<br>¡Crea tu primera orden!</p>
         </div>
       </div>
+      <!-- Paginación -->
+      <div id="hist-pagination" style="display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 0 4px">
+        <span id="hist-page-info" style="font-size:12px;color:var(--text-muted)"></span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-ghost btn-sm" id="hist-prev-btn" onclick="histPagePrev()">← Anterior</button>
+          <span id="hist-page-nums" style="display:flex;gap:4px"></span>
+          <button class="btn btn-ghost btn-sm" id="hist-next-btn" onclick="histPageNext()">Siguiente →</button>
+        </div>
+      </div>
     </div>
 
   </div><!-- /historial -->
@@ -2780,6 +2843,7 @@
         <div class="stat-value" id="stat-total-cot">0</div>
         <div class="stat-label">Ordenes</div>
         <div class="stat-sublabel" id="stat-period-label-1">—</div>
+        <div class="stat-delta" id="delta-ordenes"></div>
       </div>
       <div class="stat-card green">
         <div class="stat-icon">💵</div>
@@ -2787,6 +2851,7 @@
         <div class="stat-label">Ventas</div>
         <div class="stat-sublabel" id="stat-period-label-2">—</div>
         <div class="dash-desglose" id="stat-desglose-ventas"></div>
+        <div class="stat-delta" id="delta-ventas"></div>
       </div>
       <div class="stat-card gold">
         <div class="stat-icon">⚖️</div>
@@ -2794,12 +2859,14 @@
         <div class="stat-label">Libras</div>
         <div class="stat-sublabel" id="stat-period-label-3">—</div>
         <div class="dash-desglose" id="stat-desglose-libras"></div>
+        <div class="stat-delta" id="delta-libras"></div>
       </div>
       <div class="stat-card coral">
         <div class="stat-icon">🔪</div>
         <div class="stat-value" id="stat-eviscerado">$0</div>
         <div class="stat-label">Eviscerado</div>
         <div class="stat-sublabel" id="stat-period-label-4">—</div>
+        <div class="stat-delta" id="delta-eviscerado"></div>
       </div>
     </div>
 
@@ -3197,6 +3264,30 @@
   </div><!-- /mayorista -->
 
 </main>
+
+<!-- ══════ MODAL: HISTORIAL DE PRECIOS MAYORISTA ══════ -->
+<div class="modal-overlay" id="may-price-modal-overlay" onclick="closeMayPriceModal()" style="display:none;position:fixed;inset:0;background:rgba(4,11,22,0.75);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:720px;width:95%;max-height:88vh;overflow:hidden;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <h3 id="may-price-modal-title">📊 Historial de Precios</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeMayPriceModal()">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;padding:20px 24px">
+      <div id="may-price-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: RECIBO TÉRMICO ══════ -->
+<div class="modal-overlay" id="thermal-overlay" onclick="closeThermal()" style="display:none;position:fixed;inset:0;background:rgba(4,11,22,0.82);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+  <div onclick="event.stopPropagation()" style="background:#fff;color:#111;width:300px;max-height:90vh;overflow-y:auto;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,0.5);font-family:'Courier New',Courier,monospace;font-size:12px;position:relative">
+    <div style="position:sticky;top:0;background:#fff;padding:8px 12px;border-bottom:1px dashed #ccc;display:flex;gap:8px;z-index:1">
+      <button onclick="window.print()" style="flex:1;background:#111;color:#fff;border:none;border-radius:4px;padding:7px;cursor:pointer;font-size:12px;font-family:inherit">🖨️ Imprimir</button>
+      <button onclick="closeThermal()" style="background:#eee;border:none;border-radius:4px;padding:7px 12px;cursor:pointer;font-size:12px;font-family:inherit">✕</button>
+    </div>
+    <div id="thermal-content" style="padding:16px 14px"></div>
+  </div>
+</div>
 
 <!-- ══════════════ OVERLAY: EVISCERADO PANTALLA COMPLETA ══════════════ -->
 <div id="ev-fullscreen-overlay">
@@ -3962,6 +4053,7 @@ function renderMayorista() {
       <td>${v.totalLibras.toFixed(1)} lb</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
       <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${v.nombre}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarVentaMayorista(${v.id})" title="Eliminar">🗑</button>
       </td>
@@ -4498,43 +4590,39 @@ function getHistFiltered(lista) {
   }
 }
 
-function renderHistorial(filter = '') {
-  const nombre = document.getElementById('search-nombre')?.value.toLowerCase() || '';
-  const tel    = document.getElementById('search-tel')?.value.toLowerCase() || '';
-  const cc     = document.getElementById('search-cc')?.value.toLowerCase() || '';
+// ── Paginación historial ─────────────────────
+const HIST_PER_PAGE = 25;
+let histCurrentPage = 1;
+let _histListaFiltrada = []; // caché para paginación
+
+function histPagePrev() { if (histCurrentPage > 1) { histCurrentPage--; _renderHistPage(); } }
+function histPageNext() {
+  const total = Math.ceil(_histListaFiltrada.length / HIST_PER_PAGE);
+  if (histCurrentPage < total) { histCurrentPage++; _renderHistPage(); }
+}
+function histGoPage(p) { histCurrentPage = p; _renderHistPage(); }
+
+function _renderHistPage() {
+  const lista  = _histListaFiltrada;
+  const total  = lista.length;
+  const pages  = Math.ceil(total / HIST_PER_PAGE);
+  const start  = (histCurrentPage - 1) * HIST_PER_PAGE;
+  const slice  = lista.slice(start, start + HIST_PER_PAGE);
   const tbody  = document.getElementById('historial-tbody');
-  const empty  = document.getElementById('historial-empty');
+  const pgDiv  = document.getElementById('hist-pagination');
+  const infoEl = document.getElementById('hist-page-info');
+  const numsEl = document.getElementById('hist-page-nums');
+  const prevBtn= document.getElementById('hist-prev-btn');
+  const nextBtn= document.getElementById('hist-next-btn');
 
-  // Actualizar píldora y tag de período
-  const label = getHistPeriodLabel();
-  const pillEl = document.getElementById('hist-period-pill');
-  const tagEl  = document.getElementById('hist-period-tag');
-  if (pillEl) pillEl.textContent = label;
-  if (tagEl)  tagEl.textContent  = `· ${label}`;
-
-  // Filtrar por período primero, luego por búsqueda de texto
-  let lista = getHistFiltered(ordenes);
-  lista = lista.filter(c => {
-    return (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
-           (!tel    || (c.tel || '').includes(tel)) &&
-           (!cc     || (c.cc  || '').toLowerCase().includes(cc));
-  });
-
-  if (lista.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-
-  tbody.innerHTML = lista.map((c, i) => `
+  tbody.innerHTML = slice.map(c => `
     <tr>
       <td><span class="badge badge-teal">${ordenes.length - ordenes.indexOf(c)}</span></td>
       <td style="font-size:12px;color:var(--text-secondary)">${c.fecha}</td>
       <td><strong>${c.nombre}</strong></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.cc || '—'}</td>
       <td>${c.tel || '—'}</td>
-      <td><span class="badge badge-teal">${c.items.length} esp.</span></td>
+      <td style="font-size:12px">${c.items.map(it => `<span class="badge badge-teal" style="margin:1px">${it.especie.replace('Tilapia ','T.')}</span>`).join(' ')}</td>
       <td>${c.totalLibras.toFixed(1)} lb</td>
       <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
@@ -4549,15 +4637,87 @@ function renderHistorial(filter = '') {
         c.nota ? `<span title="${c.nota.replace(/"/g,'&quot;')}">📝 ${c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" style="margin-right:6px" title="Generar PDF">📄</button>
-        <button class="btn btn-whatsapp btn-sm" onclick="enviarWhatsApp(${c.id})" style="margin-right:6px" title="Enviar por WhatsApp">
+        <button class="btn btn-ghost btn-sm" onclick="abrirReciboTermico(${c.id})" title="Recibo imprimible">🧾</button>
+        <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" title="PDF">📄</button>
+        <button class="btn btn-whatsapp btn-sm" onclick="enviarWhatsApp(${c.id})" title="WhatsApp">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         </button>
-        <button class="btn btn-ghost btn-sm" onclick="abrirEdicion(${c.id})" style="margin-right:6px" title="Editar">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdicion(${c.id})" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarCot(${c.id})" title="Eliminar">🗑</button>
       </td>
     </tr>
   `).join('');
+
+  // Paginación UI
+  if (pages <= 1) {
+    pgDiv.style.display = 'none';
+  } else {
+    pgDiv.style.display = 'flex';
+    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+HIST_PER_PAGE,total)} de ${total} órdenes`;
+    prevBtn.disabled = histCurrentPage === 1;
+    nextBtn.disabled = histCurrentPage === pages;
+    // Números de página (máx 7 botones)
+    const range = [];
+    for (let p = 1; p <= pages; p++) {
+      if (p === 1 || p === pages || Math.abs(p - histCurrentPage) <= 2) range.push(p);
+    }
+    let last = 0;
+    numsEl.innerHTML = range.map(p => {
+      const ellipsis = last && p - last > 1 ? `<span style="color:var(--text-muted);padding:0 4px">…</span>` : '';
+      last = p;
+      return `${ellipsis}<button onclick="histGoPage(${p})" class="btn btn-sm ${p===histCurrentPage?'btn-primary':'btn-ghost'}" style="min-width:32px;padding:4px 8px">${p}</button>`;
+    }).join('');
+  }
+}
+
+function renderHistorial(filter = '') {
+  const nombre  = document.getElementById('search-nombre')?.value.toLowerCase() || '';
+  const tel     = document.getElementById('search-tel')?.value.toLowerCase() || '';
+  const cc      = document.getElementById('search-cc')?.value.toLowerCase() || '';
+  const especie = document.getElementById('search-especie')?.value || '';
+  const evFilt  = document.getElementById('search-ev')?.value || '';
+  const tbody   = document.getElementById('historial-tbody');
+  const empty   = document.getElementById('historial-empty');
+
+  // Poblar select de especies (solo primera vez o si está vacío)
+  const selEsp = document.getElementById('search-especie');
+  if (selEsp && selEsp.options.length <= 1) {
+    ESPECIES.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.nombre; opt.textContent = `${e.emoji} ${e.nombre}`;
+      selEsp.appendChild(opt);
+    });
+  }
+
+  // Actualizar píldora y tag de período
+  const label = getHistPeriodLabel();
+  const pillEl = document.getElementById('hist-period-pill');
+  const tagEl  = document.getElementById('hist-period-tag');
+  if (pillEl) pillEl.textContent = label;
+  if (tagEl)  tagEl.textContent  = `· ${label}`;
+
+  // Filtrado completo
+  let lista = getHistFiltered(ordenes);
+  lista = lista.filter(c => {
+    if (nombre  && !c.nombre.toLowerCase().includes(nombre)) return false;
+    if (tel     && !(c.tel||'').includes(tel)) return false;
+    if (cc      && !(c.cc||'').toLowerCase().includes(cc)) return false;
+    if (especie && !c.items.some(it => it.especie === especie)) return false;
+    if (evFilt === 'si' && !(c.totalEviscerado > 0)) return false;
+    if (evFilt === 'no' && (c.totalEviscerado > 0)) return false;
+    return true;
+  });
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('hist-pagination').style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  _histListaFiltrada = lista;
+  histCurrentPage = 1;
+  _renderHistPage();
 }
 
 function filtrarHistorial() { renderHistorial(); }
@@ -5216,6 +5376,17 @@ function renderDashboard() {
 
   // Gráfico 15 días (siempre usa datos completos, sin filtro de período)
   requestAnimationFrame(() => renderChart15dias());
+
+  // ── Comparativa período anterior ──────────────────────
+  const [prevOrdenes, prevMay] = _getPrevPeriodLists();
+  const prevVentas  = prevOrdenes.reduce((s,c)=>s+c.total,0) + prevMay.reduce((s,v)=>s+v.total,0);
+  const prevLibras  = prevOrdenes.reduce((s,c)=>s+c.totalLibras,0) + prevMay.reduce((s,v)=>s+v.totalLibras,0);
+  const prevOrdCount= prevOrdenes.length + prevMay.length;
+  const prevEv      = prevOrdenes.reduce((s,c)=>s+c.totalEviscerado,0);
+  _renderDelta('delta-ventas',     totalVentas,  prevVentas);
+  _renderDelta('delta-libras',     totalLibras,  prevLibras);
+  _renderDelta('delta-ordenes',    totalOrdenes, prevOrdCount);
+  _renderDelta('delta-eviscerado', totalEviscerado, prevEv);
 }
 
 // ─────────────────────────────────────────────
@@ -6643,11 +6814,21 @@ async function uploadDriveFile() {
   }
 }
 
+function _setSyncPendingBadge(pending) {
+  const badge = document.getElementById('drive-pending-badge');
+  if (badge) badge.style.display = pending ? 'inline' : 'none';
+}
+
 // ── Debounce al guardar: sube cambios locales ──
 // Se llama cada vez que el usuario crea/edita/elimina/cambia evDone
 function scheduleDriveSync() {
-  if (!driveToken) return;
+  if (!driveToken) {
+    // Sin drive: marca pendiente para feedback visual aunque no haya token
+    _setSyncPendingBadge(false);
+    return;
+  }
   syncPending = true;
+  _setSyncPendingBadge(true);
   if (syncDebounce) clearTimeout(syncDebounce);
   syncDebounce = setTimeout(async () => {
     if (!syncPending) return;
@@ -6655,10 +6836,12 @@ function scheduleDriveSync() {
     try {
       await uploadDriveFile();
       syncPending = false;
+      _setSyncPendingBadge(false);
       const now = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
       setDriveStatus('connected', '✓ Drive sincronizado', now);
     } catch(e) {
       setDriveStatus('error', 'Error al guardar');
+      _setSyncPendingBadge(false);
       if (e.message !== 'Token expired') showSyncBlock('Error de sincronización', 'No se pudo guardar en Drive. Verifica tu conexión a internet.');
     }
   }, 1500);
@@ -8759,6 +8942,241 @@ function _cdRenderRanking(clts) {
       <td>${ev}</td>
     </tr>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  FEATURE 4: COMPARATIVA PERÍODO ANTERIOR EN DASHBOARD
+// ══════════════════════════════════════════════════════════
+
+function _getPrevPeriodLists() {
+  // Devuelve [ordenesPrev, mayoristasPrev] del período equivalente anterior
+  const now  = new Date();
+  const hoy0 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+  let desde, hasta;
+
+  switch (activePeriod) {
+    case 'today': {
+      const ayer0 = new Date(hoy0); ayer0.setDate(ayer0.getDate() - 1);
+      const ayer23= new Date(ayer0); ayer23.setHours(23,59,59,999);
+      desde = ayer0; hasta = ayer23; break;
+    }
+    case 'week': {
+      const diff   = (now.getDay() === 0) ? 6 : now.getDay() - 1;
+      const lunesA = new Date(hoy0); lunesA.setDate(hoy0.getDate() - diff - 7);
+      const domA   = new Date(lunesA); domA.setDate(lunesA.getDate() + 6); domA.setHours(23,59,59,999);
+      desde = lunesA; hasta = domA; break;
+    }
+    case 'month': {
+      const mesA0  = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+      const mesA23 = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      desde = mesA0; hasta = mesA23; break;
+    }
+    case 'custom': {
+      if (!customDesde || !customHasta) return [[], []];
+      const d0 = new Date(customDesde + 'T00:00:00');
+      const d1 = new Date(customHasta + 'T23:59:59');
+      const ms  = d1 - d0;
+      const prevHasta = new Date(d0.getTime() - 1);
+      const prevDesde = new Date(prevHasta.getTime() - ms);
+      desde = prevDesde; hasta = prevHasta; break;
+    }
+    default: return [[], []];
+  }
+
+  const inRange = (fechaObj) => { const d = new Date(fechaObj); return d >= desde && d <= hasta; };
+  return [
+    ordenes.filter(o => inRange(o.fechaObj)),
+    mayorista.filter(v => inRange(v.fechaObj)),
+  ];
+}
+
+function _renderDelta(elId, current, prev) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (activePeriod === 'all' || prev === 0) { el.innerHTML = ''; return; }
+  const pct = Math.round(((current - prev) / prev) * 100);
+  if (current === prev) {
+    el.innerHTML = `<span class="delta-flat">= igual que período anterior</span>`;
+  } else if (current > prev) {
+    el.innerHTML = `<span class="delta-up">▲ ${pct > 999 ? '+999' : '+'+pct}% vs período anterior</span>`;
+  } else {
+    el.innerHTML = `<span class="delta-down">▼ ${Math.abs(pct)}% vs período anterior</span>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  FEATURE 9: HISTORIAL DE PRECIOS POR COMPRADOR MAYORISTA
+// ══════════════════════════════════════════════════════════
+
+function abrirHistorialPrecios(nombre) {
+  // Filtrar ventas de este comprador, ordenar por fecha
+  const ventas = mayorista
+    .filter(v => v.nombre.trim().toLowerCase() === nombre.trim().toLowerCase())
+    .sort((a, b) => new Date(a.fechaObj) - new Date(b.fechaObj));
+
+  if (!ventas.length) { toast('Sin historial para este comprador', true); return; }
+
+  // Construir mapa especie → [{fecha, qty, precio}]
+  const especieMap = {};
+  ventas.forEach(v => {
+    const f = new Date(v.fechaObj).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'2-digit' });
+    v.items.forEach(it => {
+      if (!especieMap[it.especie]) especieMap[it.especie] = [];
+      especieMap[it.especie].push({ fecha: f, qty: it.qty, precio: it.precio, fechaObj: v.fechaObj });
+    });
+  });
+
+  const especies = Object.keys(especieMap).sort();
+  const espInfo  = {};
+  ESPECIES.forEach(e => { espInfo[e.nombre] = e; });
+
+  let html = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:18px">
+    ${ventas.length} ventas registradas · ${especies.length} especies distintas
+  </p>`;
+
+  especies.forEach(esp => {
+    const rows  = especieMap[esp];
+    const maxP  = Math.max(...rows.map(r => r.precio));
+    const info  = espInfo[esp] || {};
+    const color = info.color || 'var(--teal)';
+    const emoji = info.emoji || '🐟';
+
+    html += `<div class="price-hist-esp">
+      <div class="price-hist-esp-title">
+        <span style="color:${color}">${emoji}</span>
+        ${esp}
+        <span style="font-weight:400;color:var(--text-muted)">· ${rows.length} compras</span>
+      </div>`;
+
+    rows.forEach((r, i) => {
+      const prev   = rows[i-1];
+      let trend    = '';
+      if (prev && r.precio !== prev.precio) {
+        trend = r.precio > prev.precio
+          ? `<span class="price-trend-up">▲ +${fmt(r.precio - prev.precio)}/lb</span>`
+          : `<span class="price-trend-down">▼ ${fmt(r.precio - prev.precio)}/lb</span>`;
+      }
+      const barW = maxP > 0 ? Math.round((r.precio / maxP) * 100) : 0;
+      html += `<div class="price-hist-row">
+        <span class="price-hist-date">${r.fecha}</span>
+        <span class="price-hist-qty">${r.qty.toFixed(1)} lb</span>
+        <div class="price-hist-bar"><div class="price-hist-bar-fill" style="width:${barW}%"></div></div>
+        <span class="price-hist-val">${fmt(r.precio)}/lb</span>
+        ${trend}
+      </div>`;
+    });
+
+    // Promedio y tendencia general
+    const avg = rows.reduce((s,r) => s + r.precio, 0) / rows.length;
+    const first = rows[0].precio, last = rows[rows.length-1].precio;
+    const tendEl = rows.length > 1
+      ? (last > first
+          ? `<span class="price-trend-up">↗ tendencia al alza</span>`
+          : last < first
+            ? `<span class="price-trend-down">↘ tendencia a la baja</span>`
+            : `<span class="delta-flat">→ precio estable</span>`)
+      : '';
+    html += `<div style="font-size:11px;color:var(--text-muted);padding:6px 0 0;display:flex;gap:16px">
+      <span>Promedio: <strong style="color:var(--text-primary)">${fmt(avg)}/lb</strong></span>
+      <span>Mín: <strong>${fmt(Math.min(...rows.map(r=>r.precio)))}/lb</strong></span>
+      <span>Máx: <strong>${fmt(maxP)}/lb</strong></span>
+      ${tendEl}
+    </div>`;
+    html += `</div>`;
+  });
+
+  document.getElementById('may-price-modal-title').textContent = `📊 Precios de ${nombre}`;
+  document.getElementById('may-price-modal-body').innerHTML = html;
+  const overlay = document.getElementById('may-price-modal-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMayPriceModal() {
+  document.getElementById('may-price-modal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ══════════════════════════════════════════════════════════
+//  FEATURE 14: RECIBO TÉRMICO IMPRIMIBLE (80mm)
+// ══════════════════════════════════════════════════════════
+
+function abrirReciboTermico(cotId) {
+  const cot = ordenes.find(c => c.id === cotId);
+  if (!cot) { toast('Orden no encontrada', true); return; }
+
+  const lineSolid = '─'.repeat(32);
+  const lineDash  = '- '.repeat(16);
+
+  const itemsHtml = cot.items.map(it => {
+    const sub = it.subPescado + it.subEviscerado;
+    return `
+      <div style="display:flex;justify-content:space-between;margin:3px 0">
+        <span>${it.especie}</span>
+        <span>${it.qty.toFixed(1)} lb</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;color:#555;margin-bottom:4px">
+        <span style="padding-left:8px">${it.ev ? '🔪 Eviscerado incl.' : ''} ${fmt(it.precio)}/lb</span>
+        <span><strong>${fmt(sub)}</strong></span>
+      </div>`;
+  }).join('');
+
+  const pagoHtml = cot.pagoCon
+    ? `<div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span>Pago con:</span><span>${fmt(cot.pagoCon)}</span>
+       </div>
+       <div style="display:flex;justify-content:space-between">
+        <span>${cot.devuelta >= 0 ? 'Cambio:' : 'Faltó:'}</span>
+        <span style="color:${cot.devuelta >= 0 ? 'green' : 'red'}">${fmt(Math.abs(cot.devuelta))}</span>
+       </div>` : '';
+
+  const notaHtml = cot.nota
+    ? `<div style="margin-top:8px;padding:6px;border:1px dashed #aaa;font-size:11px;color:#555">
+        📝 ${cot.nota}
+       </div>` : '';
+
+  document.getElementById('thermal-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-size:16px;font-weight:900;letter-spacing:1px">LAGOS LA ISABELA</div>
+      <div style="font-size:10px;color:#666;margin-top:2px">Pescadería · Cotizador v3</div>
+    </div>
+    <div style="border-top:2px solid #111;border-bottom:2px solid #111;padding:6px 0;margin:8px 0;font-size:11px">
+      <div><strong>Cliente:</strong> ${cot.nombre}</div>
+      ${cot.cc  ? `<div><strong>CC/NIT:</strong> ${cot.cc}</div>` : ''}
+      ${cot.tel ? `<div><strong>Tel:</strong> ${cot.tel}</div>` : ''}
+      <div><strong>Fecha:</strong> ${cot.fecha}</div>
+      <div><strong>Orden #${ordenes.length - ordenes.indexOf(cot)}</strong></div>
+    </div>
+    <div style="font-size:11px;border-bottom:1px dashed #aaa;padding-bottom:8px;margin-bottom:8px">
+      ${itemsHtml}
+    </div>
+    <div style="font-size:12px">
+      ${cot.totalEviscerado > 0 ? `
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>Pescado:</span><span>${fmt(cot.totalPescado)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>Eviscerado:</span><span>${fmt(cot.totalEviscerado)}</span>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:2px solid #111;padding-top:6px;margin-top:4px">
+        <span>TOTAL:</span><span>${fmt(cot.total)}</span>
+      </div>
+      ${pagoHtml}
+    </div>
+    ${notaHtml}
+    <div style="text-align:center;margin-top:14px;font-size:10px;color:#888;border-top:1px dashed #ccc;padding-top:8px">
+      ¡Gracias por preferirnos! 🐟<br>Lagos La Isabela
+    </div>`;
+
+  const overlay = document.getElementById('thermal-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeThermal() {
+  document.getElementById('thermal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 function showSyncBlock(title, msg) {
