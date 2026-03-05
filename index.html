@@ -335,16 +335,43 @@
     flex-shrink: 0;
   }
 
-  /* Pez nadando libre por todo el header */
+  /* Pez mascota SVG */
   #fish-swimmer {
     position: absolute;
-    font-size: 22px;
     pointer-events: none;
     z-index: 0;
     will-change: transform, left, top;
     user-select: none;
-    line-height: 1;
+    width: 100px;
+    height: 56px;
   }
+  #fish-swimmer svg {
+    display: block;
+    overflow: visible;
+  }
+  /* Cola: oscila continuamente */
+  @keyframes tailWag {
+    0%   { transform-origin: 28px 28px; transform: rotate(-18deg) scaleX(0.9); }
+    50%  { transform-origin: 28px 28px; transform: rotate( 18deg) scaleX(1.1); }
+    100% { transform-origin: 28px 28px; transform: rotate(-18deg) scaleX(0.9); }
+  }
+  /* Aleta dorsal: movimiento suave */
+  @keyframes finWave {
+    0%   { transform-origin: 50px 15px; transform: skewX(-8deg); }
+    50%  { transform-origin: 50px 15px; transform: skewX( 8deg); }
+    100% { transform-origin: 50px 15px; transform: skewX(-8deg); }
+  }
+  /* Burbujas ascienden */
+  @keyframes bubbleRise {
+    0%   { transform: translateY(0);   opacity: 0.8; }
+    80%  { opacity: 0.4; }
+    100% { transform: translateY(-18px); opacity: 0; }
+  }
+  #fish-tail { animation: tailWag 0.55s ease-in-out infinite; }
+  #fish-fin  { animation: finWave 0.55s ease-in-out infinite; }
+  #bub1 { animation: bubbleRise 2.2s ease-out infinite 0s;   }
+  #bub2 { animation: bubbleRise 2.2s ease-out infinite 0.7s; }
+  #bub3 { animation: bubbleRise 2.2s ease-out infinite 1.4s; }
 
   .logo-text {
     font-family: 'DM Sans', sans-serif;
@@ -2459,8 +2486,66 @@
 
 <div id="top-bar">
 <header>
-  <!-- Pez nadador libre -->
-  <span id="fish-swimmer">🐠</span>
+  <!-- Pez mascota SVG animado -->
+  <div id="fish-swimmer">
+    <svg id="fish-svg" viewBox="0 0 100 56" xmlns="http://www.w3.org/2000/svg" width="100" height="56">
+      <defs>
+        <radialGradient id="bodyGrad" cx="45%" cy="38%" r="55%">
+          <stop offset="0%"   stop-color="#b6f0ff"/>
+          <stop offset="45%"  stop-color="#00c8e8"/>
+          <stop offset="100%" stop-color="#005f88"/>
+        </radialGradient>
+        <radialGradient id="bodyGrad2" cx="45%" cy="38%" r="55%">
+          <stop offset="0%"   stop-color="#ffe3a0"/>
+          <stop offset="45%"  stop-color="#ff7b2c"/>
+          <stop offset="100%" stop-color="#8b2200"/>
+        </radialGradient>
+        <linearGradient id="tailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#004d70" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#007ab5"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Cola (se anima) -->
+      <g id="fish-tail">
+        <path d="M28,28 Q18,14 8,8 Q16,26 8,44 Q18,40 28,28Z" fill="url(#tailGrad)" opacity="0.9"/>
+      </g>
+
+      <!-- Cuerpo -->
+      <ellipse id="fish-body" cx="52" cy="28" rx="26" ry="14" fill="url(#bodyGrad)"/>
+
+      <!-- Brillo 3D -->
+      <ellipse cx="52" cy="21" rx="12" ry="5" fill="white" opacity="0.25" transform="rotate(-8,52,21)"/>
+
+      <!-- Aleta dorsal (se anima) -->
+      <path id="fish-fin" d="M48,15 Q54,4 64,7 Q58,14 54,15Z" fill="#0090c0" opacity="0.85"/>
+
+      <!-- Aleta inferior -->
+      <path d="M46,37 Q50,46 42,48 Q40,43 46,37Z" fill="#0090c0" opacity="0.6"/>
+
+      <!-- Rayas escamas -->
+      <path d="M44,19 Q48,26 44,33" stroke="#005f88" stroke-width="1.2" fill="none" opacity="0.35"/>
+      <path d="M52,17 Q56,26 52,35" stroke="#005f88" stroke-width="1.2" fill="none" opacity="0.25"/>
+
+      <!-- Ojo -->
+      <ellipse id="fish-eye-white" cx="70" cy="25" rx="5" ry="5" fill="#001830"/>
+      <ellipse id="fish-eye-iris"  cx="70.5" cy="25" rx="3" ry="3" fill="rgba(0,60,100,0.9)"/>
+      <ellipse id="fish-eye-pupil" cx="71" cy="25" rx="1.5" ry="1.5" fill="white"/>
+      <circle cx="72" cy="23.5" r="1" fill="white" opacity="0.9"/>
+
+      <!-- Boca -->
+      <path d="M77,28 Q79,31 77,33" stroke="#005f88" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+      <!-- Burbujas -->
+      <circle id="bub1" cx="84" cy="18" r="2"   fill="none" stroke="rgba(180,240,255,0.7)" stroke-width="0.8"/>
+      <circle id="bub2" cx="89" cy="12" r="1.3" fill="none" stroke="rgba(180,240,255,0.5)" stroke-width="0.7"/>
+      <circle id="bub3" cx="87" cy="21" r="1"   fill="none" stroke="rgba(180,240,255,0.4)" stroke-width="0.6"/>
+    </svg>
+  </div>
 
   <div class="header-inner">
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
@@ -7835,94 +7920,141 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 const _origToggleEvDone = toggleEvDone;
 
 //  PEZ NADADOR — nada horizontalmente con ondulación natural
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  PEZ MASCOTA SVG — nada por el header con cola animada
+// ══════════════════════════════════════════════════════════
 (function() {
   const fish   = document.getElementById('fish-swimmer');
   const header = fish.closest('header');
+  if (!fish || !header) return;
 
-  const PECES = ['🐠','🐟','🐡','🦈','🐬','🐳','🦐','🦑','🐙','🦞','🦀','🐊','🐋','🦭'];
-  let fishIdx = 0;
+  const FW = 100, FH = 56; // tamaño del pez en px
 
-  function nextFish() {
-    fishIdx = (fishIdx + 1) % PECES.length;
-    fish.textContent = PECES[fishIdx];
+  // Paletas de color del cuerpo [stop1, stop2, stop3, finCol, tailCol]
+  const PALS = [
+    { s0:'#b6f0ff', s1:'#00c8e8', s2:'#005f88', fin:'#0090c0', tail:'#004d70' }, // azul tropical
+    { s0:'#ffe3a0', s1:'#ff7b2c', s2:'#8b2200', fin:'#e05500', tail:'#6b2000' }, // naranja
+    { s0:'#c8ffdf', s1:'#36d67a', s2:'#0f5c30', fin:'#1a9c50', tail:'#0a4020' }, // verde
+    { s0:'#f0d0ff', s1:'#a855f7', s2:'#40007a', fin:'#7c22c8', tail:'#300060' }, // violeta
+    { s0:'#fff3b0', s1:'#f9c74f', s2:'#7a5200', fin:'#d4a020', tail:'#8a5500' }, // dorado
+  ];
+  let palIdx = 0;
+
+  function applyPalette(p) {
+    const svg = document.getElementById('fish-svg');
+    if (!svg) return;
+    // body gradient
+    const bg = svg.getElementById ? svg.getElementById('bodyGrad') : document.getElementById('bodyGrad');
+    const bgStops = (bg || document.getElementById('bodyGrad')).querySelectorAll('stop');
+    if (bgStops[0]) bgStops[0].style.stopColor = p.s0;
+    if (bgStops[1]) bgStops[1].style.stopColor = p.s1;
+    if (bgStops[2]) bgStops[2].style.stopColor = p.s2;
+    // tail & fin
+    const tail = document.getElementById('fish-tail');
+    const fin  = document.getElementById('fish-fin');
+    const tg   = document.getElementById('tailGrad');
+    if (tg) {
+      const ts = tg.querySelectorAll('stop');
+      if (ts[0]) ts[0].style.stopColor = p.tail;
+      if (ts[1]) ts[1].style.stopColor = p.fin;
+    }
+    if (fin) fin.style.fill = p.fin;
   }
 
-  const fw = 26; // ancho emoji aprox
-  const fh = 24; // alto emoji aprox
+  applyPalette(PALS[0]);
 
-  // Posición horizontal y dirección
-  let x   = 80;
-  let dir = 1; // 1 = derecha, -1 = izquierda
+  // Posición y movimiento
+  let x = 80, dir = 1;
+  let speed = 1.2, targetSpd = 1.2, spdTimer = 0;
+  let t = 0, angle = 0;
 
-  // Velocidad base y variación
-  let speed     = 1.0;   // velocidad horizontal actual
-  let targetSpd = 1.0;   // velocidad objetivo (va cambiando)
-  let spdTimer  = 0;     // contador para cambiar velocidad objetivo
+  // Parpadeo
+  let blinkTimer = 0, nextBlink = 200 + Math.random()*200;
+  const eyeIris  = document.getElementById('fish-eye-iris');
+  const eyePupil = document.getElementById('fish-eye-pupil');
+  const eyeWhite = document.getElementById('fish-eye-white');
 
-  // Ondulación vertical: suma de dos senos con distintas frecuencias y amplitudes
-  let t = 0;
+  function setBlink(open) { // open: 0.0 - 1.0
+    if (eyeIris)  { eyeIris.setAttribute('ry',  String(Math.max(0.1, open * 3))); }
+    if (eyePupil) { eyePupil.setAttribute('ry',  String(Math.max(0.1, open * 1.5))); }
+    if (eyeWhite) { eyeWhite.setAttribute('ry',  String(Math.max(0.1, open * 5))); }
+  }
 
-  // Ángulo de inclinación suave
-  let angle = 0;
+  // Ajusta la velocidad de la animación CSS de la cola según velocidad de nado
+  function setTailSpeed(spd) {
+    const dur = Math.max(0.25, 0.75 - spd * 0.12) + 's';
+    const tail = document.getElementById('fish-tail');
+    const fin  = document.getElementById('fish-fin');
+    if (tail) tail.style.animationDuration = dur;
+    if (fin)  fin.style.animationDuration  = dur;
+  }
 
   function loop() {
     const hw = header.offsetWidth;
     const hh = header.offsetHeight;
 
-    // — Cambio gradual de velocidad —
+    // Velocidad variable
     spdTimer++;
-    if (spdTimer > 120) { // cada ~2s a 60fps cambia el objetivo
-      targetSpd = 0.5 + Math.random() * 1.8; // entre 0.5 y 2.3
+    if (spdTimer > 130) {
+      targetSpd = 0.5 + Math.random() * 2.2;
       spdTimer  = 0;
     }
-    speed += (targetSpd - speed) * 0.008; // suaviza hacia el objetivo
+    speed += (targetSpd - speed) * 0.007;
+    setTailSpeed(speed);
 
-    // — Avance horizontal —
+    // Movimiento horizontal
     x += dir * speed;
 
-    // — Rebotar: al llegar al borde cambia dirección y pez —
-    if (x >= hw - fw) {
-      x   = hw - fw;
-      dir = -1;
-      nextFish();
-    } else if (x <= 0) {
-      x   = 0;
-      dir = 1;
-      nextFish();
+    if (x >= hw - FW + 12) {
+      x = hw - FW + 12; dir = -1;
+      palIdx = (palIdx + 1) % PALS.length;
+      applyPalette(PALS[palIdx]);
+    } else if (x <= -12) {
+      x = -12; dir = 1;
+      palIdx = (palIdx + 1) % PALS.length;
+      applyPalette(PALS[palIdx]);
     }
 
-    // — Oscilación vertical: mezcla de dos ondas —
-    t += 0.022;
-    const margin = 6; // margen del borde
-    const centerY   = (hh - fh) / 2;
-    const amplitude = (hh - fh) / 2 - margin;
-    // Onda principal lenta + onda secundaria más rápida y pequeña
-    const rawY = centerY
-      + Math.sin(t * 0.9)          * amplitude * 0.6
-      + Math.sin(t * 2.3 + 1.1)   * amplitude * 0.25
-      + Math.sin(t * 0.4 + 0.5)   * amplitude * 0.15;
-    const y = Math.max(margin, Math.min(hh - fh - margin, rawY));
+    // Oscilación vertical
+    t += 0.035;
+    const margin = 4;
+    const cy = hh / 2;
+    const amp = Math.max(0, (hh - FH) / 2 - margin);
+    const rawY = cy
+      + Math.sin(t * 0.75)        * amp * 0.55
+      + Math.sin(t * 2.0 + 0.9)  * amp * 0.22
+      + Math.sin(t * 0.38 + 0.5) * amp * 0.15;
+    const y = Math.max(margin, Math.min(hh - FH - margin, rawY - FH / 2));
 
-    // — Inclinación: sigue la derivada vertical (subiendo/bajando) —
-    const dy = Math.cos(t * 0.9)  * amplitude * 0.6  * 0.022 * 0.9
-             + Math.cos(t * 2.3 + 1.1) * amplitude * 0.25 * 0.022 * 2.3;
-    const targetAngle = dy * 180; // convierte a grados leve
-    angle += (targetAngle - angle) * 0.1;
-    const clampedAngle = Math.max(-18, Math.min(18, angle));
+    // Inclinación suave
+    const dy = Math.cos(t * 0.75) * amp * 0.55 * 0.035 * 0.75
+             + Math.cos(t * 2.0 + 0.9) * amp * 0.22 * 0.035 * 2.0;
+    angle += (dy * 130 - angle) * 0.07;
+    const clamp = Math.max(-22, Math.min(22, angle));
 
-    // — Espejo horizontal según dirección —
-    const scaleX = dir === 1 ? 1 : -1;
+    // Parpadeo
+    blinkTimer++;
+    if (blinkTimer >= nextBlink) {
+      const ph = blinkTimer - nextBlink;
+      if      (ph < 4)  setBlink(1 - ph / 4);
+      else if (ph < 7)  setBlink(0);
+      else if (ph < 11) setBlink((ph - 7) / 4);
+      else { blinkTimer = 0; nextBlink = 150 + Math.random()*250; setBlink(1); }
+    }
 
+    // Aplicar posición y orientación
+    const flipX = dir < 0 ? -1 : 1;
     fish.style.left      = x + 'px';
     fish.style.top       = y + 'px';
-    fish.style.transform = `scaleX(${scaleX}) rotate(${clampedAngle * scaleX}deg)`;
+    fish.style.transform = `scaleX(${flipX}) rotate(${clamp * flipX}deg)`;
 
     requestAnimationFrame(loop);
   }
 
   requestAnimationFrame(loop);
 })();
+
+
 
 // ─────────────────────────────────────────────
 //  TEMA CLARO / OSCURO
