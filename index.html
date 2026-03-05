@@ -2275,6 +2275,97 @@
   body.light .ev-estimador { background: rgba(255,255,255,0.9); }
   body.light .ev-timer-chip { background: rgba(255,209,102,0.12); }
 
+  /* ══════════════════════════════════════════
+     PÁGINA: PERFILES DE CLIENTES (clientes-dash)
+  ══════════════════════════════════════════ */
+  .cd-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: var(--radius); padding: 12px 18px; margin-bottom: 18px;
+    backdrop-filter: blur(12px);
+  }
+  .cd-seg-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cd-seg {
+    padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(0,180,216,0.25);
+    background: transparent; color: var(--text-secondary); font-size: 12px;
+    font-weight: 600; cursor: pointer; transition: all 0.18s; font-family: inherit;
+  }
+  .cd-seg:hover { background: rgba(0,180,216,0.1); color: var(--text-primary); }
+  .cd-seg.active {
+    background: linear-gradient(135deg,#00b4d8,#06d6a0);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 3px 14px rgba(0,180,216,0.35);
+  }
+  .cd-updated { font-size: 11px; color: var(--text-muted); }
+
+  /* KPI strip */
+  .cd-kpis {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 18px;
+  }
+  .cd-kpi {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+    position: relative; overflow: hidden;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .cd-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-teal); }
+  .cd-kpi-accent {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+  .cd-kpi-icon { font-size: 22px; margin-bottom: 2px; }
+  .cd-kpi-val {
+    font-size: 22px; font-weight: 800; color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace; line-height: 1.1;
+  }
+  .cd-kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+  .cd-kpi-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Cards grid */
+  .cd-grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 16px;
+  }
+  @media (max-width: 860px) { .cd-grid-2 { grid-template-columns: 1fr; } }
+
+  .cd-card { padding: 18px 20px !important; }
+  .cd-card-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--text-secondary);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Ranking table */
+  .cd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cd-table th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px;
+    border-bottom: 1px solid rgba(0,180,216,0.12);
+  }
+  .cd-table td { padding: 9px 10px; border-bottom: 1px solid rgba(0,180,216,0.06); vertical-align: middle; }
+  .cd-table tr:hover td { background: rgba(0,180,216,0.04); }
+  .cd-rank-badge {
+    width: 26px; height: 26px; border-radius: 50%; display: inline-flex;
+    align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+  }
+  .cd-seg-pill {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .cd-seg-pill.detal     { background: rgba(0,180,216,0.15); color: var(--teal); }
+  .cd-seg-pill.mayorista { background: rgba(6,214,160,0.15); color: var(--green); }
+  .cd-seg-pill.ambos     { background: rgba(255,209,102,0.15); color: var(--gold); }
+  .cd-ev-bar-wrap { background: rgba(255,255,255,0.05); border-radius: 6px; height: 7px; overflow: hidden; margin-top: 4px; }
+  .cd-ev-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), var(--teal)); transition: width 0.6s ease; }
+  .cd-select {
+    background: var(--input-bg); border: 1px solid var(--input-border);
+    color: var(--text-primary); border-radius: 8px; padding: 5px 10px;
+    font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+
   /* ── FISH CONFETTI (on cobrar) ── */
   .fish-particle {
     position: fixed;
@@ -2394,6 +2485,9 @@
     </button>
     <button class="tab-btn" onclick="showTab('dashboard')" data-tab="dashboard">
       📊 Dashboard
+    </button>
+    <button class="tab-btn" onclick="showTab('clientes-dash')" data-tab="clientes-dash">
+      🧬 Perfiles
     </button>
   </div>
 </nav>
@@ -2800,6 +2894,100 @@
     </div>
 
   </div><!-- /clientes -->
+
+  <!-- ══════════════ PÁGINA: PERFILES DE CLIENTES ══════════════ -->
+  <div class="page" id="page-clientes-dash">
+
+    <!-- Filtro de segmento -->
+    <div class="cd-topbar">
+      <div class="cd-seg-btns">
+        <button class="cd-seg active" data-seg="todos"     onclick="setCDSeg('todos')">🌐 Todos</button>
+        <button class="cd-seg"        data-seg="detal"     onclick="setCDSeg('detal')">🛒 Detal</button>
+        <button class="cd-seg"        data-seg="mayorista" onclick="setCDSeg('mayorista')">📦 Mayorista</button>
+      </div>
+      <div class="cd-updated" id="cd-updated">—</div>
+    </div>
+
+    <!-- KPIs row -->
+    <div class="cd-kpis" id="cd-kpis"></div>
+
+    <!-- Row 1: Valor por cliente + Frecuencia -->
+    <div class="cd-grid-2">
+      <div class="card cd-card">
+        <div class="cd-card-title">💰 Top 10 — Valor Total Comprado</div>
+        <canvas id="cd-chart-top10" height="260"></canvas>
+      </div>
+      <div class="card cd-card">
+        <div class="cd-card-title">🔁 Top 10 — Frecuencia de Compra</div>
+        <canvas id="cd-chart-freq" height="260"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 2: Ticket promedio + Evolución nuevos clientes -->
+    <div class="cd-grid-2">
+      <div class="card cd-card">
+        <div class="cd-card-title">🎫 Distribución de Ticket Promedio</div>
+        <canvas id="cd-chart-ticket" height="220"></canvas>
+      </div>
+      <div class="card cd-card">
+        <div class="cd-card-title">📈 Nuevos Clientes por Mes</div>
+        <canvas id="cd-chart-nuevos" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 3: Especies preferidas + Retención -->
+    <div class="cd-grid-2">
+      <div class="card cd-card">
+        <div class="cd-card-title">🐟 Especies más Compradas por Segmento</div>
+        <canvas id="cd-chart-especies" height="220"></canvas>
+      </div>
+      <div class="card cd-card">
+        <div class="cd-card-title">📅 Días de la Semana con más Compras</div>
+        <canvas id="cd-chart-diasem" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 4: Mapa de calor horas + Eviscerado adoption -->
+    <div class="cd-grid-2">
+      <div class="card cd-card">
+        <div class="cd-card-title">🕐 Horas Pico de Compra</div>
+        <canvas id="cd-chart-horas" height="200"></canvas>
+      </div>
+      <div class="card cd-card">
+        <div class="cd-card-title">🔪 Adopción de Eviscerado</div>
+        <div id="cd-ev-summary" style="display:flex;flex-direction:column;gap:12px;padding:8px 0"></div>
+        <canvas id="cd-chart-ev" height="140"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 5: Tabla ranking clientes -->
+    <div class="card cd-card">
+      <div class="cd-card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🏆 Ranking de Clientes</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:var(--text-muted)">Ordenar por:</span>
+          <select id="cd-ranking-sort" onchange="renderClientesDash()" class="cd-select">
+            <option value="total">Total comprado</option>
+            <option value="compras">N° compras</option>
+            <option value="ticket">Ticket promedio</option>
+            <option value="reciente">Más reciente</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrapper" style="margin-top:12px">
+        <table class="cd-table">
+          <thead>
+            <tr>
+              <th>Pos.</th><th>Cliente</th><th>Segmento</th><th>Compras</th>
+              <th>Total</th><th>Ticket Prom.</th><th>Última compra</th><th>Eviscerado</th>
+            </tr>
+          </thead>
+          <tbody id="cd-ranking-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /clientes-dash -->
 
   <!-- ══════════════ PÁGINA: MAYORISTA ══════════════ -->
   <div class="page" id="page-mayorista">
@@ -3376,11 +3564,12 @@ function showTab(tab) {
   document.getElementById(`page-${tab}`).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   // Marca si la pestaña activa tiene botones de acción en la parte inferior
-  if (tab === 'historial')   renderHistorial();
-  if (tab === 'dashboard')   renderDashboard();
-  if (tab === 'eviscerado')  renderEviscerado();
-  if (tab === 'clientes')    renderClientes();
-  if (tab === 'mayorista')   renderMayorista();
+  if (tab === 'historial')     renderHistorial();
+  if (tab === 'dashboard')     renderDashboard();
+  if (tab === 'eviscerado')    renderEviscerado();
+  if (tab === 'clientes')      renderClientes();
+  if (tab === 'mayorista')     renderMayorista();
+  if (tab === 'clientes-dash') renderClientesDash();
 }
 
 // ─────────────────────────────────────────────
@@ -5952,6 +6141,7 @@ function refreshUI(uiState) {
   renderClientes();
   renderMayorista();
   if (evFullscreenOpen) renderEvFullscreen();
+  if (activeTab === 'clientes-dash') renderClientesDash();
   if (uiState) restoreUIState(uiState);
 }
 
@@ -7741,6 +7931,634 @@ function launchFishConfetti() {
   }
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD DE PERFILES DE CLIENTES 🧬
+// ══════════════════════════════════════════════════════════
+
+let _cdSeg = 'todos'; // 'todos' | 'detal' | 'mayorista'
+
+function setCDSeg(seg) {
+  _cdSeg = seg;
+  document.querySelectorAll('.cd-seg').forEach(b => b.classList.toggle('active', b.dataset.seg === seg));
+  renderClientesDash();
+}
+
+// ── Helpers de datos ─────────────────────────────────────
+
+function _cdGetOrdenes() {
+  // Retorna órdenes según segmento activo
+  if (_cdSeg === 'detal')     return ordenes;
+  if (_cdSeg === 'mayorista') return [];
+  return ordenes; // 'todos' incluye ambos pero mayorista se maneja aparte
+}
+
+function _cdBuildClientes() {
+  // Construye mapa enriquecido: nombre → datos agregados de ambos canales
+  const map = new Map();
+
+  const addOrden = (o, canal) => {
+    if (!o.nombre) return;
+    const key = o.nombre.trim().toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, {
+        nombre: o.nombre, cc: o.cc || '', tel: o.tel || '',
+        totalDetal: 0, totalMay: 0, comprasDetal: 0, comprasMay: 0,
+        librasDetal: 0, librasMay: 0,
+        evOrdenes: 0, totalOrdenes: 0,
+        especies: {}, diasSemana: Array(7).fill(0), horas: Array(24).fill(0),
+        ultimaFecha: null, primeraFecha: null,
+        perfil: null,
+      });
+    }
+    const e = map.get(key);
+    const fecha = new Date(o.fechaObj);
+    if (!e.ultimaFecha || fecha > e.ultimaFecha) e.ultimaFecha = fecha;
+    if (!e.primeraFecha || fecha < e.primeraFecha) e.primeraFecha = fecha;
+    e.diasSemana[fecha.getDay()]++;
+    e.horas[fecha.getHours()]++;
+    if (canal === 'detal') {
+      e.totalDetal    += o.total || 0;
+      e.comprasDetal++;
+      e.librasDetal   += o.totalLibras || 0;
+      if ((o.totalEviscerado || 0) > 0) e.evOrdenes++;
+      (o.items || []).forEach(it => { e.especies[it.especie] = (e.especies[it.especie]||0) + it.qty; });
+    } else {
+      e.totalMay      += o.total || 0;
+      e.comprasMay++;
+      e.librasMay     += o.totalLibras || 0;
+      (o.items || []).forEach(it => { e.especies[it.especie] = (e.especies[it.especie]||0) + it.qty; });
+    }
+    e.totalOrdenes++;
+  };
+
+  if (_cdSeg !== 'mayorista') ordenes.forEach(o => addOrden(o, 'detal'));
+  if (_cdSeg !== 'detal')     mayorista.forEach(o => addOrden(o, 'mayorista'));
+
+  // Enriquecer con perfil del directorio
+  clientes.forEach(c => {
+    const key = c.nombre.trim().toLowerCase();
+    if (map.has(key) && c.perfil) map.get(key).perfil = c.perfil;
+  });
+
+  return Array.from(map.values()).map(c => ({
+    ...c,
+    total:         c.totalDetal + c.totalMay,
+    compras:       c.comprasDetal + c.comprasMay,
+    libras:        c.librasDetal + c.librasMay,
+    ticketProm:    (c.comprasDetal + c.comprasMay) > 0
+                     ? (c.totalDetal + c.totalMay) / (c.comprasDetal + c.comprasMay) : 0,
+    segmento:      c.comprasDetal > 0 && c.comprasMay > 0 ? 'ambos'
+                 : c.comprasDetal > 0 ? 'detal' : 'mayorista',
+  }));
+}
+
+// ── Render principal ──────────────────────────────────────
+
+function renderClientesDash() {
+  const clts = _cdBuildClientes();
+  if (clts.length === 0) {
+    // Show empty state
+    document.getElementById('cd-kpis').innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)">
+        <div style="font-size:48px;margin-bottom:12px">🐟</div>
+        <p>Aún no hay datos de clientes para el segmento seleccionado.</p>
+      </div>`;
+    ['cd-chart-top10','cd-chart-freq','cd-chart-ticket','cd-chart-nuevos',
+     'cd-chart-especies','cd-chart-diasem','cd-chart-horas','cd-chart-ev']
+      .forEach(id => { const c=document.getElementById(id); if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);} });
+    document.getElementById('cd-ranking-tbody').innerHTML = '';
+    return;
+  }
+
+  // Update timestamp
+  document.getElementById('cd-updated').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-CO')}`;
+
+  _cdRenderKPIs(clts);
+  _cdChartTop10(clts);
+  _cdChartFreq(clts);
+  _cdChartTicket(clts);
+  _cdChartNuevos(clts);
+  _cdChartEspecies(clts);
+  _cdChartDiaSem(clts);
+  _cdChartHoras(clts);
+  _cdChartEviscerado(clts);
+  _cdRenderRanking(clts);
+}
+
+// ── KPIs ─────────────────────────────────────────────────
+
+function _cdRenderKPIs(clts) {
+  const total        = clts.reduce((s,c)=>s+c.total,0);
+  const totalLibras  = clts.reduce((s,c)=>s+c.libras,0);
+  const totalCompras = clts.reduce((s,c)=>s+c.compras,0);
+  const ticketProm   = totalCompras > 0 ? total / totalCompras : 0;
+  const nuevos30     = clts.filter(c => c.primeraFecha && (Date.now()-c.primeraFecha.getTime()) < 30*864e5).length;
+  const recurrentes  = clts.filter(c => c.compras >= 3).length;
+  const topCliente   = clts.sort((a,b)=>b.total-a.total)[0];
+  const evAdopt      = clts.filter(c=>c.comprasDetal>0)
+                           .filter(c=>c.evOrdenes>0).length;
+  const evBase       = clts.filter(c=>c.comprasDetal>0).length;
+  const evPct        = evBase > 0 ? Math.round(evAdopt/evBase*100) : 0;
+
+  const kpis = [
+    { icon:'👥', val: clts.length,              label:'Clientes',        sub:`${recurrentes} recurrentes (≥3 compras)`, color:'#00b4d8' },
+    { icon:'💵', val: fmt(total),                label:'Facturación Total',sub:`${fmtShort(ticketProm)} ticket prom.`,   color:'#06d6a0' },
+    { icon:'⚖️', val: totalLibras.toFixed(0)+' lb', label:'Libras Totales', sub:`${(totalLibras/Math.max(clts.length,1)).toFixed(1)} lb/cliente`, color:'#ffd166' },
+    { icon:'🛒', val: totalCompras,               label:'Compras Totales', sub:`${(totalCompras/Math.max(clts.length,1)).toFixed(1)} prom/cliente`, color:'#9d4edd' },
+    { icon:'🆕', val: nuevos30,                   label:'Nuevos (30 días)', sub:'Clientes con primera compra reciente', color:'#f4845f' },
+    { icon:'🔪', val: evPct+'%',                  label:'Adopción Eviscerado', sub:`${evAdopt} de ${evBase} clientes`, color:'#ef476f' },
+    { icon:'🏆', val: topCliente?.nombre?.split(' ')[0] || '—', label:'Top Cliente', sub: topCliente ? fmt(topCliente.total) : '—', color:'#ffd166' },
+    { icon:'📦', val: clts.filter(c=>c.segmento==='mayorista'||c.segmento==='ambos').length, label:'Con Mayorista', sub:`${clts.filter(c=>c.segmento==='ambos').length} en ambos canales`, color:'#06d6a0' },
+  ];
+
+  document.getElementById('cd-kpis').innerHTML = kpis.map(k=>`
+    <div class="cd-kpi">
+      <div class="cd-kpi-accent" style="background:${k.color}"></div>
+      <div class="cd-kpi-icon">${k.icon}</div>
+      <div class="cd-kpi-val">${k.val}</div>
+      <div class="cd-kpi-label">${k.label}</div>
+      <div class="cd-kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// ── Utilidad canvas ───────────────────────────────────────
+
+function _cdCtx(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  el.width  = el.offsetWidth  || el.parentElement.offsetWidth || 400;
+  el.height = parseInt(el.getAttribute('height')) || 220;
+  return { ctx: el.getContext('2d'), W: el.width, H: el.height };
+}
+
+function _cdClearCanvas(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.width = el.offsetWidth || el.parentElement?.offsetWidth || 400;
+}
+
+const _cdFont = "'Outfit', 'Roboto Mono', sans-serif";
+
+// ── Chart: Top 10 valor ───────────────────────────────────
+
+function _cdChartTop10(clts) {
+  const r = _cdCtx('cd-chart-top10'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  const top = [...clts].sort((a,b)=>b.total-a.total).slice(0,10).reverse();
+  const ML=8, MR=16, MT=10, MB=28;
+  const barW = (H - MT - MB) / top.length;
+  const maxV = top[top.length-1]?.total || 1;
+
+  top.forEach((c, i) => {
+    const y    = MT + i * barW;
+    const pct  = c.total / maxV;
+    const barH = barW * 0.6;
+    const yBar = y + (barW - barH) / 2;
+    // Track bg
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.beginPath(); ctx.roundRect(ML, yBar, W-ML-MR, barH, 4); ctx.fill();
+    // Bar gradient
+    const grad = ctx.createLinearGradient(ML, 0, W-MR, 0);
+    grad.addColorStop(0, c.segmento==='mayorista' ? '#06d6a0' : c.segmento==='ambos' ? '#ffd166' : '#00b4d8');
+    grad.addColorStop(1, c.segmento==='mayorista' ? '#00b4d8' : c.segmento==='ambos' ? '#f4845f' : '#06d6a0');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(ML, yBar, Math.max(4,(W-ML-MR)*pct), barH, 4); ctx.fill();
+    // Label
+    ctx.fillStyle = 'rgba(232,244,248,0.85)';
+    ctx.font = `600 11px ${_cdFont}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.nombre.length>16 ? c.nombre.slice(0,15)+'…' : c.nombre, ML+6, yBar + barH/2);
+    // Value
+    ctx.fillStyle = 'rgba(232,244,248,0.6)';
+    ctx.font = `500 10px ${_cdFont}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtShort(c.total), W-MR-2, yBar + barH/2);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ── Chart: Frecuencia ─────────────────────────────────────
+
+function _cdChartFreq(clts) {
+  const r = _cdCtx('cd-chart-freq'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  const top = [...clts].sort((a,b)=>b.compras-a.compras).slice(0,10).reverse();
+  const ML=8, MR=16, MT=10, MB=28;
+  const barW = (H - MT - MB) / Math.max(top.length, 1);
+  const maxV = top[top.length-1]?.compras || 1;
+
+  top.forEach((c, i) => {
+    const y    = MT + i * barW;
+    const pct  = c.compras / maxV;
+    const barH = barW * 0.6;
+    const yBar = y + (barW - barH) / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.beginPath(); ctx.roundRect(ML, yBar, W-ML-MR, barH, 4); ctx.fill();
+    const grad = ctx.createLinearGradient(ML, 0, W-MR, 0);
+    grad.addColorStop(0, '#9d4edd'); grad.addColorStop(1, '#f4845f');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(ML, yBar, Math.max(4,(W-ML-MR)*pct), barH, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(232,244,248,0.85)';
+    ctx.font = `600 11px ${_cdFont}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.nombre.length>16 ? c.nombre.slice(0,15)+'…' : c.nombre, ML+6, yBar + barH/2);
+    ctx.fillStyle = 'rgba(232,244,248,0.6)';
+    ctx.font = `500 10px ${_cdFont}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${c.compras} compras`, W-MR-2, yBar + barH/2);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ── Chart: Distribución ticket promedio (histograma) ──────
+
+function _cdChartTicket(clts) {
+  const r = _cdCtx('cd-chart-ticket'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  const tickets = clts.filter(c=>c.compras>0).map(c=>c.ticketProm);
+  if (!tickets.length) return;
+
+  const max = Math.max(...tickets);
+  const buckets = 8;
+  const step = max / buckets || 1;
+  const counts = Array(buckets).fill(0);
+  tickets.forEach(t => { const b = Math.min(Math.floor(t/step), buckets-1); counts[b]++; });
+
+  const ML=36, MR=10, MT=12, MB=36;
+  const chartW = W-ML-MR, chartH = H-MT-MB;
+  const maxC = Math.max(...counts, 1);
+  const bW = chartW / buckets;
+
+  // Grid lines
+  for (let g=0; g<=4; g++) {
+    const yg = MT + chartH - (g/4)*chartH;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ML, yg); ctx.lineTo(ML+chartW, yg); ctx.stroke();
+    ctx.fillStyle = 'rgba(180,200,220,0.4)';
+    ctx.font = `10px ${_cdFont}`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round((g/4)*maxC), ML-4, yg);
+  }
+
+  counts.forEach((cnt, i) => {
+    const x = ML + i*bW + bW*0.1;
+    const bh = (cnt/maxC)*chartH;
+    const y  = MT + chartH - bh;
+    const grad = ctx.createLinearGradient(0, y, 0, y+bh);
+    grad.addColorStop(0,'#ffd166'); grad.addColorStop(1,'rgba(255,209,102,0.3)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(x, y, bW*0.8, bh, [4,4,0,0]); ctx.fill();
+    // X label
+    ctx.fillStyle = 'rgba(180,200,220,0.6)';
+    ctx.font = `9px ${_cdFont}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(fmtShort(i*step), ML + i*bW + bW/2, MT+chartH+4);
+  });
+
+  // X axis
+  ctx.strokeStyle = 'rgba(0,180,216,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ML, MT+chartH); ctx.lineTo(ML+chartW, MT+chartH); ctx.stroke();
+}
+
+// ── Chart: Nuevos clientes por mes ────────────────────────
+
+function _cdChartNuevos(clts) {
+  const r = _cdCtx('cd-chart-nuevos'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  // Build last 12 months
+  const now = new Date();
+  const months = [];
+  for (let i=11; i>=0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({ label: d.toLocaleString('es-CO',{month:'short'}), y: d.getFullYear(), m: d.getMonth(), count: 0 });
+  }
+  clts.forEach(c => {
+    if (!c.primeraFecha) return;
+    const y = c.primeraFecha.getFullYear(), m = c.primeraFecha.getMonth();
+    const mo = months.find(mo => mo.y===y && mo.m===m);
+    if (mo) mo.count++;
+  });
+
+  const ML=32, MR=10, MT=12, MB=28;
+  const chartW=W-ML-MR, chartH=H-MT-MB;
+  const maxC = Math.max(...months.map(m=>m.count),1);
+  const pts = months.map((mo,i) => ({
+    x: ML + i*(chartW/(months.length-1)),
+    y: MT + chartH - (mo.count/maxC)*chartH,
+    count: mo.count, label: mo.label
+  }));
+
+  // Grid
+  for (let g=0; g<=4; g++) {
+    const yg = MT + (g/4)*chartH;
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ML,yg); ctx.lineTo(ML+chartW,yg); ctx.stroke();
+    ctx.fillStyle='rgba(180,200,220,0.4)'; ctx.font=`10px ${_cdFont}`;
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(Math.round(((4-g)/4)*maxC), ML-4, yg);
+  }
+
+  // Area fill
+  ctx.beginPath();
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x, MT+chartH);
+  ctx.lineTo(pts[0].x, MT+chartH);
+  ctx.closePath();
+  const agrad = ctx.createLinearGradient(0,MT,0,MT+chartH);
+  agrad.addColorStop(0,'rgba(6,214,160,0.35)'); agrad.addColorStop(1,'rgba(6,214,160,0.02)');
+  ctx.fillStyle = agrad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='#06d6a0'; ctx.lineWidth=2.5;
+  ctx.lineJoin='round'; ctx.stroke();
+
+  // Dots + labels
+  pts.forEach((p,i) => {
+    ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+    ctx.fillStyle=p.count>0?'#06d6a0':'rgba(6,214,160,0.3)'; ctx.fill();
+    if (i%2===0 || months.length<=6) {
+      ctx.fillStyle='rgba(180,200,220,0.6)'; ctx.font=`9px ${_cdFont}`;
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText(p.label, p.x, MT+chartH+4);
+    }
+    if (p.count>0) {
+      ctx.fillStyle='rgba(232,244,248,0.8)'; ctx.font=`bold 9px ${_cdFont}`;
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(p.count, p.x, p.y-5);
+    }
+  });
+}
+
+// ── Chart: Especies por segmento (barras agrupadas) ───────
+
+function _cdChartEspecies(clts) {
+  const r = _cdCtx('cd-chart-especies'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  // Aggregate by especie for each canal
+  const detalMap={}, mayMap={};
+  clts.forEach(c => {
+    const isDetal = c.comprasDetal > 0;
+    const isMay   = c.comprasMay > 0;
+    Object.entries(c.especies).forEach(([esp,lb]) => {
+      if (isDetal) detalMap[esp] = (detalMap[esp]||0) + lb;
+      if (isMay)   mayMap[esp]   = (mayMap[esp]||0)   + lb;
+    });
+  });
+
+  const species = [...new Set([...Object.keys(detalMap),...Object.keys(mayMap)])]
+    .sort((a,b) => ((detalMap[b]||0)+(mayMap[b]||0)) - ((detalMap[a]||0)+(mayMap[a]||0)))
+    .slice(0,7);
+  if (!species.length) return;
+
+  const ML=10, MR=10, MT=10, MB=40;
+  const chartW=W-ML-MR, chartH=H-MT-MB;
+  const maxV = Math.max(...species.map(s=>(detalMap[s]||0)+(mayMap[s]||0)),1);
+  const grpW = chartW/species.length;
+  const bW   = grpW*0.35;
+
+  // Grid
+  for (let g=1; g<=4; g++) {
+    const yg = MT + chartH - (g/4)*chartH;
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ML,yg); ctx.lineTo(ML+chartW,yg); ctx.stroke();
+  }
+
+  species.forEach((esp, i) => {
+    const xCtr = ML + i*grpW + grpW/2;
+    const dVal = detalMap[esp]||0, mVal = mayMap[esp]||0;
+    const dH = (dVal/maxV)*chartH, mH = (mVal/maxV)*chartH;
+
+    // Detal bar
+    if (_cdSeg !== 'mayorista' && dH > 0) {
+      const grad = ctx.createLinearGradient(0,MT+chartH-dH,0,MT+chartH);
+      grad.addColorStop(0,'#00b4d8'); grad.addColorStop(1,'rgba(0,180,216,0.4)');
+      ctx.fillStyle=grad;
+      ctx.beginPath(); ctx.roundRect(xCtr-bW-2, MT+chartH-dH, bW, dH, [4,4,0,0]); ctx.fill();
+    }
+    // Mayorista bar
+    if (_cdSeg !== 'detal' && mH > 0) {
+      const grad = ctx.createLinearGradient(0,MT+chartH-mH,0,MT+chartH);
+      grad.addColorStop(0,'#06d6a0'); grad.addColorStop(1,'rgba(6,214,160,0.4)');
+      ctx.fillStyle=grad;
+      ctx.beginPath(); ctx.roundRect(xCtr+2, MT+chartH-mH, bW, mH, [4,4,0,0]); ctx.fill();
+    }
+
+    // Label
+    const shortName = esp.replace('Tilapia ','T.').slice(0,10);
+    ctx.fillStyle='rgba(180,200,220,0.7)'; ctx.font=`9px ${_cdFont}`;
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(shortName, xCtr, MT+chartH+5);
+  });
+
+  // Legend
+  if (_cdSeg === 'todos') {
+    ctx.fillStyle='#00b4d8'; ctx.fillRect(W-110,H-14,10,8);
+    ctx.fillStyle='rgba(180,200,220,0.7)'; ctx.font=`9px ${_cdFont}`; ctx.textAlign='left';
+    ctx.fillText('Detal', W-97, H-7);
+    ctx.fillStyle='#06d6a0'; ctx.fillRect(W-55,H-14,10,8);
+    ctx.fillText('Mayor.', W-42, H-7);
+  }
+}
+
+// ── Chart: Días de la semana ──────────────────────────────
+
+function _cdChartDiaSem(clts) {
+  const r = _cdCtx('cd-chart-diasem'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const counts = Array(7).fill(0);
+  clts.forEach(c => c.diasSemana.forEach((v,i) => { counts[i] += v; }));
+  const maxC = Math.max(...counts,1);
+
+  const ML=10, MR=10, MT=10, MB=28;
+  const chartW=W-ML-MR, chartH=H-MT-MB;
+  const bW = chartW/7;
+
+  counts.forEach((cnt,i) => {
+    const x  = ML + i*bW + bW*0.15;
+    const bh = (cnt/maxC)*chartH;
+    const y  = MT + chartH - bh;
+    const isWeekend = i===0||i===6;
+    const grad = ctx.createLinearGradient(0,y,0,y+bh);
+    grad.addColorStop(0, isWeekend?'#ef476f':'#9d4edd');
+    grad.addColorStop(1, isWeekend?'rgba(239,71,111,0.3)':'rgba(157,78,221,0.3)');
+    ctx.fillStyle = grad;
+    if (bh > 0) { ctx.beginPath(); ctx.roundRect(x, y, bW*0.7, bh, [4,4,0,0]); ctx.fill(); }
+
+    ctx.fillStyle='rgba(180,200,220,0.7)'; ctx.font=`10px ${_cdFont}`;
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(dias[i], ML+i*bW+bW/2, MT+chartH+4);
+    if (cnt>0) {
+      ctx.fillStyle='rgba(232,244,248,0.75)'; ctx.font=`bold 9px ${_cdFont}`;
+      ctx.textBaseline='bottom'; ctx.fillText(cnt, ML+i*bW+bW/2, y-2);
+    }
+  });
+
+  ctx.strokeStyle='rgba(0,180,216,0.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(ML,MT+chartH); ctx.lineTo(ML+chartW,MT+chartH); ctx.stroke();
+}
+
+// ── Chart: Horas pico ─────────────────────────────────────
+
+function _cdChartHoras(clts) {
+  const r = _cdCtx('cd-chart-horas'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+
+  const counts = Array(24).fill(0);
+  clts.forEach(c => c.horas.forEach((v,i) => { counts[i] += v; }));
+  const maxC = Math.max(...counts,1);
+
+  const ML=10, MR=10, MT=8, MB=24;
+  const chartW=W-ML-MR, chartH=H-MT-MB;
+
+  // Build smooth line
+  const pts = counts.map((c,i) => ({
+    x: ML + i*(chartW/23),
+    y: MT + chartH - (c/maxC)*chartH,
+    val: c
+  }));
+
+  // Area
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[23].x,MT+chartH); ctx.lineTo(pts[0].x,MT+chartH); ctx.closePath();
+  const agrad=ctx.createLinearGradient(0,MT,0,MT+chartH);
+  agrad.addColorStop(0,'rgba(255,209,102,0.4)'); agrad.addColorStop(1,'rgba(255,209,102,0.02)');
+  ctx.fillStyle=agrad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='#ffd166'; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
+
+  // Peak dot
+  const peakIdx = counts.indexOf(Math.max(...counts));
+  ctx.beginPath(); ctx.arc(pts[peakIdx].x,pts[peakIdx].y,4,0,Math.PI*2);
+  ctx.fillStyle='#ffd166'; ctx.fill();
+  ctx.fillStyle='rgba(232,244,248,0.9)'; ctx.font=`bold 10px ${_cdFont}`;
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText(`${String(peakIdx).padStart(2,'0')}h`, pts[peakIdx].x, pts[peakIdx].y-5);
+
+  // X labels every 6h
+  [0,6,12,18,23].forEach(h => {
+    ctx.fillStyle='rgba(180,200,220,0.6)'; ctx.font=`9px ${_cdFont}`;
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(`${String(h).padStart(2,'0')}h`, pts[h].x, MT+chartH+4);
+  });
+}
+
+// ── Chart: Eviscerado pie + progress bars ─────────────────
+
+function _cdChartEviscerado(clts) {
+  const detalClts = clts.filter(c=>c.comprasDetal>0);
+  const conEv   = detalClts.filter(c=>c.evOrdenes>0).length;
+  const sinEv   = detalClts.length - conEv;
+  const evPct   = detalClts.length > 0 ? conEv/detalClts.length : 0;
+
+  // Summary bars
+  const sumEl = document.getElementById('cd-ev-summary');
+  if (sumEl) {
+    sumEl.innerHTML = `
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--green)">🔪 Con eviscerado</span>
+          <span style="color:var(--text-primary);font-weight:700">${conEv} (${Math.round(evPct*100)}%)</span>
+        </div>
+        <div class="cd-ev-bar-wrap"><div class="cd-ev-bar" style="width:${evPct*100}%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--text-muted)">Sin eviscerado</span>
+          <span style="color:var(--text-secondary);font-weight:600">${sinEv} (${Math.round((1-evPct)*100)}%)</span>
+        </div>
+        <div class="cd-ev-bar-wrap"><div class="cd-ev-bar" style="width:${(1-evPct)*100}%;background:rgba(255,255,255,0.1)"></div></div>
+      </div>`;
+  }
+
+  // Donut chart
+  const r = _cdCtx('cd-chart-ev'); if (!r) return;
+  const { ctx, W, H } = r;
+  ctx.clearRect(0,0,W,H);
+  if (detalClts.length === 0) return;
+
+  const cx=W/2, cy=H/2, ro=Math.min(W,H)/2-12, ri=ro*0.55;
+  const segments=[
+    { val:conEv,  color:'#06d6a0', label:'Con ev' },
+    { val:sinEv,  color:'rgba(255,255,255,0.1)', label:'Sin ev' },
+  ];
+  const total = segments.reduce((s,seg)=>s+seg.val,0)||1;
+  let angle=-Math.PI/2;
+  segments.forEach(seg => {
+    const sweep=(seg.val/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,ro,angle,angle+sweep);
+    ctx.closePath(); ctx.fillStyle=seg.color; ctx.fill();
+    angle+=sweep;
+  });
+  // Donut hole
+  ctx.beginPath(); ctx.arc(cx,cy,ri,0,Math.PI*2);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim()||'#0d2240';
+  ctx.fill();
+  // Center text
+  ctx.fillStyle='rgba(232,244,248,0.9)'; ctx.font=`bold 18px ${_cdFont}`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(`${Math.round(evPct*100)}%`, cx, cy-4);
+  ctx.font=`10px ${_cdFont}`; ctx.fillStyle='rgba(180,200,220,0.6)';
+  ctx.fillText('eviscerado', cx, cy+12);
+}
+
+// ── Ranking table ─────────────────────────────────────────
+
+function _cdRenderRanking(clts) {
+  const sortKey = document.getElementById('cd-ranking-sort')?.value || 'total';
+  const sorted = [...clts].sort((a,b) => {
+    if (sortKey==='total')    return b.total - a.total;
+    if (sortKey==='compras')  return b.compras - a.compras;
+    if (sortKey==='ticket')   return b.ticketProm - a.ticketProm;
+    if (sortKey==='reciente') return (b.ultimaFecha||0) - (a.ultimaFecha||0);
+    return 0;
+  });
+
+  const medals = ['🥇','🥈','🥉'];
+  const RANK_COLORS = ['rgba(255,209,102,0.25)','rgba(200,210,220,0.15)','rgba(244,132,95,0.15)'];
+
+  document.getElementById('cd-ranking-tbody').innerHTML = sorted.slice(0,30).map((c,i) => {
+    const rank   = i < 3 ? `<span class="cd-rank-badge" style="background:${RANK_COLORS[i]}">${medals[i]}</span>` : `<span style="color:var(--text-muted);font-size:12px">#${i+1}</span>`;
+    const segPill= `<span class="cd-seg-pill ${c.segmento}">${c.segmento==='ambos'?'🔀 Ambos':c.segmento==='mayorista'?'📦 May.':'🛒 Det.'}</span>`;
+    const ev     = c.comprasDetal > 0 ? `<span style="font-size:11px;color:${c.evOrdenes>0?'var(--green)':'var(--text-muted)'}">${c.evOrdenes>0?'✅ Sí':'—'}</span>` : '—';
+    const ultima = c.ultimaFecha ? c.ultimaFecha.toLocaleDateString('es-CO') : '—';
+    return `<tr>
+      <td>${rank}</td>
+      <td><strong style="color:var(--text-primary)">${c.nombre}</strong>${c.cc?`<div style="font-size:10px;color:var(--text-muted)">${c.cc}</div>`:''}</td>
+      <td>${segPill}</td>
+      <td style="font-weight:600;color:var(--teal)">${c.compras}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-weight:700;color:var(--green)">${fmt(c.total)}</td>
+      <td style="font-family:'Roboto Mono',monospace;color:var(--gold)">${fmt(c.ticketProm)}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${ultima}</td>
+      <td>${ev}</td>
+    </tr>`;
+  }).join('');
+}
 
 function showSyncBlock(title, msg) {
   const overlay = document.getElementById('sync-block-overlay');
