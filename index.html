@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Fix 7: Content Security Policy — bloquea scripts externos no autorizados -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  connect-src https://www.googleapis.com https://accounts.google.com https://anthropic.com;
+  frame-src https://accounts.google.com;
+  img-src 'self' data: https:;
+  object-src 'none';
+  base-uri 'self';
+">
+<!-- Fix 8: X-Frame-Options y otras cabeceras via meta -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Lagos La Isabela — Ordenes</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -3827,6 +3842,20 @@ const safeStorage = (() => {
   };
 })();
 
+// Fix 8: El token OAuth vive en sessionStorage (muere al cerrar la pestaña)
+// Los datos de negocio permanecen en localStorage normalmente
+const safeSessionStorage = (() => {
+  const mem = {};
+  let useSess = true;
+  try { sessionStorage.setItem('__test__', '1'); sessionStorage.removeItem('__test__'); }
+  catch(e) { useSess = false; }
+  return {
+    getItem(k)    { return useSess ? sessionStorage.getItem(k)    : (mem[k] ?? null); },
+    setItem(k, v) { if (useSess) sessionStorage.setItem(k, v);    else mem[k] = v; },
+    removeItem(k) { if (useSess) sessionStorage.removeItem(k);    else delete mem[k]; }
+  };
+})();
+
 let ordenes   = JSON.parse(safeStorage.getItem(STORAGE_KEY)    || '[]');
 let clientes  = JSON.parse(safeStorage.getItem(CLIENTES_KEY)   || '[]');
 let mayorista = JSON.parse(safeStorage.getItem(MAYORISTA_KEY)  || '[]');
@@ -4139,15 +4168,15 @@ function renderMayorista() {
   tbody.innerHTML = lista.map((v) => `
     <tr>
       <td><span class="badge badge-teal">${mayorista.length - mayorista.indexOf(v)}</span></td>
-      <td style="font-size:12px;color:var(--text-secondary)">${v.fecha}</td>
-      <td><strong>${v.nombre}</strong></td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${v.cc || '—'}</td>
-      <td>${v.tel || '—'}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${escHtml(v.fecha)}</td>
+      <td><strong>${escHtml(v.nombre)}</strong></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${escHtml(v.cc) || '—'}</td>
+      <td>${escHtml(v.tel) || '—'}</td>
       <td><span class="badge badge-teal">${v.items.length} esp.</span></td>
       <td>${v.totalLibras.toFixed(1)} lb</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
       <td style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${v.nombre}')" title="Historial de precios">📊</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarVentaMayorista(${v.id})" title="Eliminar">🗑</button>
       </td>
@@ -4712,11 +4741,11 @@ function _renderHistPage() {
   tbody.innerHTML = slice.map(c => `
     <tr>
       <td><span class="badge badge-teal">${ordenes.length - ordenes.indexOf(c)}</span></td>
-      <td style="font-size:12px;color:var(--text-secondary)">${c.fecha}</td>
-      <td><strong>${c.nombre}</strong></td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.cc || '—'}</td>
-      <td>${c.tel || '—'}</td>
-      <td style="font-size:12px">${c.items.map(it => `<span class="badge badge-teal" style="margin:1px">${it.especie.replace('Tilapia ','T.')}</span>`).join(' ')}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${escHtml(c.fecha)}</td>
+      <td><strong>${escHtml(c.nombre)}</strong></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${escHtml(c.cc) || '—'}</td>
+      <td>${escHtml(c.tel) || '—'}</td>
+      <td style="font-size:12px">${c.items.map(it => `<span class="badge badge-teal" style="margin:1px">${escHtml(it.especie.replace('Tilapia ','T.'))}</span>`).join(' ')}</td>
       <td>${c.totalLibras.toFixed(1)} lb</td>
       <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
@@ -4728,7 +4757,7 @@ function _renderHistPage() {
         : `<span style="color:var(--coral)">Faltó ${fmt(Math.abs(c.devuelta))}</span>`
       }</td>
       <td style="font-size:12px;color:var(--text-secondary);max-width:140px;white-space:normal">${
-        c.nota ? `<span title="${c.nota.replace(/"/g,'&quot;')}">📝 ${c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota}</span>` : '—'
+        c.nota ? `<span title="${escHtml(c.nota)}">📝 ${escHtml(c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota)}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
         <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" title="PDF">📄</button>
@@ -5485,6 +5514,14 @@ function renderDashboard() {
 // ─────────────────────────────────────────────
 //  UTILS
 // ─────────────────────────────────────────────
+
+// ── Escape HTML: previene XSS en todo innerHTML con datos del usuario ──
+const _escMap = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":"&#39;", '`':'&#96;' };
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"'`]/g, c => _escMap[c]);
+}
+
 function fmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CO');
 }
@@ -5727,11 +5764,11 @@ function renderClientes() {
     <tr data-cid="${c.id}" data-ckey="${encodeURIComponent(c.nombre.trim().toLowerCase())}">
       <td style="color:var(--text-muted);font-size:12px">${i + 1}</td>
       <td>
-        <strong style="color:var(--text-primary)">${c.nombre}</strong>
+        <strong style="color:var(--text-primary)">${escHtml(c.nombre)}</strong>
         ${c.perfil?.estado === 'vetado' ? '<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--coral);background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.25);border-radius:20px;padding:1px 7px">VETADO</span>' : ''}
       </td>
-      <td style="font-size:13px">${c.tel || '—'}</td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary)">${c.cc || '—'}</td>
+      <td style="font-size:13px">${escHtml(c.tel) || '—'}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary)">${escHtml(c.cc) || '—'}</td>
       <td>
         <span class="cli-compras-badge ${c.compras === 0 ? 'cero' : ''}">
           ${c.compras === 0 ? 'Sin compras' : `${c.compras} compra${c.compras !== 1 ? 's' : ''}`}
@@ -5831,7 +5868,7 @@ function abrirPerfilCliente(cid, ckey) {
   const reg = c.creadoEn ? new Date(c.creadoEn).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' }) : '—';
   metaEl.innerHTML = `
     <span>${c.origen === 'directorio' ? '📁 Directorio' : '🛒 Historial'}</span>
-    <span>· Desde ${reg}</span>
+    <span>· Desde ${escHtml(reg)}</span>
   `;
 
   // Estado
@@ -5843,19 +5880,19 @@ function abrirPerfilCliente(cid, ckey) {
   contactoGrid.innerHTML = `
     <div class="profile-info-item">
       <div class="profile-info-label">📞 Celular</div>
-      <div class="profile-info-value mono ${c.tel ? '' : 'muted'}">${c.tel || '—'}</div>
+      <div class="profile-info-value mono ${c.tel ? '' : 'muted'}">${escHtml(c.tel) || '—'}</div>
     </div>
     <div class="profile-info-item">
       <div class="profile-info-label">🪪 CC / NIT</div>
-      <div class="profile-info-value mono ${c.cc ? '' : 'muted'}">${c.cc || '—'}</div>
+      <div class="profile-info-value mono ${c.cc ? '' : 'muted'}">${escHtml(c.cc) || '—'}</div>
     </div>
     <div class="profile-info-item ${perfil.email ? '' : 'muted'}">
       <div class="profile-info-label">✉️ Correo</div>
-      <div class="profile-info-value ${perfil.email ? '' : 'muted'}">${perfil.email || '—'}</div>
+      <div class="profile-info-value ${perfil.email ? '' : 'muted'}">${escHtml(perfil.email) || '—'}</div>
     </div>
     <div class="profile-info-item">
       <div class="profile-info-label">📍 Residencia</div>
-      <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}">${perfil.residencia || '—'}</div>
+      <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}">${escHtml(perfil.residencia) || '—'}</div>
     </div>
     ${perfil.nacimiento ? `
     <div class="profile-info-item full">
@@ -5894,7 +5931,7 @@ function abrirPerfilCliente(cid, ckey) {
       <div class="top-especie-row">
         <div class="top-especie-rank ${rankClass[i]}">${rankLabel[i]}</div>
         <div class="top-especie-info">
-          <div class="top-especie-name">${esp}</div>
+          <div class="top-especie-name">${escHtml(esp)}</div>
           <div class="top-especie-bar-track">
             <div class="top-especie-bar-fill" style="width:${Math.round(data.lb / maxLb * 100)}%"></div>
           </div>
@@ -6052,24 +6089,52 @@ function toast(msg, isError = false) {
   setTimeout(() => el.className = '', 3000);
 }
 
+// Fix 6: Modal de confirmación tipada para acciones destructivas
+let _dangerConfirmCallback = null;
+
+function showDangerConfirm(title, msg, callback) {
+  document.getElementById('danger-confirm-title').textContent = title;
+  document.getElementById('danger-confirm-msg').textContent   = msg;
+  document.getElementById('danger-confirm-input').value       = '';
+  document.getElementById('danger-confirm-ok').disabled       = true;
+  _dangerConfirmCallback = () => {
+    closeDangerConfirm();
+    callback();
+  };
+  const overlay = document.getElementById('danger-confirm-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(() => document.getElementById('danger-confirm-input').focus(), 80);
+}
+
+function closeDangerConfirm() {
+  document.getElementById('danger-confirm-overlay').style.display = 'none';
+  document.getElementById('danger-confirm-input').value = '';
+  _dangerConfirmCallback = null;
+}
+
 function clearAllData() {
-  if (!confirm('¿Borrar TODAS las ordenes? Esta acción es irreversible y se propagará a todos los dispositivos.')) return;
-  // Registrar cada orden en deletedIds antes de borrar
-  const deleted = getDeletedIds();
-  const ts = new Date().toISOString();
-  ordenes.forEach(c => { deleted[c.id] = ts; });
-  saveDeletedIds(deleted);
-  ordenes = [];
-  safeStorage.removeItem(STORAGE_KEY);
-  // Limpiar evDone y evTimes también
-  setEvDone(new Set());
-  setEvTimes({});
-  updateBadge();
-  updateEvBadge();
-  renderDashboard();
-  renderEviscerado();
-  toast('Historial borrado en todos los dispositivos');
-  scheduleDriveSync();
+  showDangerConfirm(
+    '¿Borrar TODO el historial?',
+    'Esta acción es irreversible y se propagará a todos los dispositivos sincronizados.',
+    () => {
+      // Registrar cada orden en deletedIds antes de borrar
+      const deleted = getDeletedIds();
+      const ts = new Date().toISOString();
+      ordenes.forEach(c => { deleted[c.id] = ts; });
+      saveDeletedIds(deleted);
+      ordenes = [];
+      safeStorage.removeItem(STORAGE_KEY);
+      // Limpiar evDone y evTimes también
+      setEvDone(new Set());
+      setEvTimes({});
+      updateBadge();
+      updateEvBadge();
+      renderDashboard();
+      renderEviscerado();
+      toast('Historial borrado en todos los dispositivos');
+      scheduleDriveSync();
+    }
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -6626,7 +6691,7 @@ function handleOAuthRedirect() {
 function applyNewToken(token, expiresIn, isFirstConnect = false) {
   driveToken = token;
   const expiry = Date.now() + expiresIn * 1000;
-  safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
+  safeSessionStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
   safeStorage.removeItem('aquacot_oauth_pending');
   scheduleRenewal(expiry);
   if (isFirstConnect) {
@@ -6699,7 +6764,7 @@ window.addEventListener('message', (e) => {
 
   driveToken = token;
   const expiry = Date.now() + expiresIn * 1000;
-  safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
+  safeSessionStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
   scheduleRenewal(expiry);
   // Actualizar estado visual solo si había error
   const btn = document.getElementById('drive-status-btn');
@@ -6740,7 +6805,7 @@ function driveDisconnect() {
   if (renewalTimer)   clearTimeout(renewalTimer);
   autoSyncTimer = null;
   renewalTimer  = null;
-  safeStorage.removeItem(DRIVE_TOKEN_KEY);
+  safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
   setDriveStatus('', 'Conectar Drive');
   closeSetupModal();
   toast('Drive desconectado. Los datos siguen en local.');
@@ -6758,7 +6823,7 @@ function restoreDriveSession() {
     safeStorage.removeItem('aquacot_oauth_pending');
   }
   // 3. Restaurar token guardado
-  const saved = safeStorage.getItem(DRIVE_TOKEN_KEY);
+  const saved = safeSessionStorage.getItem(DRIVE_TOKEN_KEY);
   if (!saved) return;
   try {
     const { token, expiry } = JSON.parse(saved);
@@ -6780,7 +6845,7 @@ function restoreDriveSession() {
       scheduleRenewal(Date.now() + 2000); // renovar en 2s
       setDriveStatus('syncing', 'Renovando sesión…');
     }
-  } catch(e) { safeStorage.removeItem(DRIVE_TOKEN_KEY); }
+  } catch(e) { safeSessionStorage.removeItem(DRIVE_TOKEN_KEY); }
 }
 
 // ── Inicializar sincronización ──────────────
@@ -6841,7 +6906,7 @@ async function driveRequest(url, options = {}) {
   });
   if (res.status === 401) {
     driveToken = null;
-    safeStorage.removeItem(DRIVE_TOKEN_KEY);
+    safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
     if (autoSyncTimer) clearInterval(autoSyncTimer);
     setDriveStatus('error', 'Sesión expirada');
     showSyncBlock('Sesión cerrada', 'El token de Google Drive expiró o fue revocado.');
@@ -6862,13 +6927,43 @@ async function findDriveFile() {
   return null;
 }
 
+// Fix 5: Validar estructura del JSON descargado de Drive antes de usarlo
+function validateDriveData(data) {
+  if (!data || typeof data !== 'object') return false;
+  // Validar arrays principales — si existen deben ser arrays
+  const arrayKeys = ['ordenes', 'clientes', 'mayorista', 'evDone'];
+  for (const k of arrayKeys) {
+    if (k in data && !Array.isArray(data[k])) return false;
+  }
+  // Validar que los objetos de tipo deleted sean objetos planos
+  const objKeys = ['deletedIds', 'deletedClientes', 'deletedMayorista', 'evTimes'];
+  for (const k of objKeys) {
+    if (k in data && (typeof data[k] !== 'object' || Array.isArray(data[k]))) return false;
+  }
+  // Validar que cada orden tenga campos mínimos esperados (id, nombre)
+  if (Array.isArray(data.ordenes)) {
+    for (const o of data.ordenes) {
+      if (typeof o !== 'object' || o === null) return false;
+      if (typeof o.id !== 'number' && typeof o.id !== 'string') return false;
+    }
+  }
+  return true;
+}
+
 async function downloadDriveFile() {
   if (!driveFileId) return null;
   const res = await driveRequest(
     `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`
   );
   if (!res.ok) return null;
-  return await res.json();
+  let data;
+  try { data = await res.json(); } catch(e) { console.error('Drive: JSON inválido'); return null; }
+  if (!validateDriveData(data)) {
+    console.error('Drive: estructura de datos inválida — se ignora el archivo remoto');
+    toast('⚠️ Datos de Drive con formato inesperado, se ignoró la sincronización', true);
+    return null;
+  }
+  return data;
 }
 
 async function uploadDriveFile() {
@@ -7140,12 +7235,21 @@ function acNombre(val) {
 
   list.innerHTML = sugs.map((c, i) => `
     <div class="autocomplete-item" data-idx="${i}"
-      onmousedown="acSelect('${c.nombre.replace(/'/g,"\\'")}','${c.tel.replace(/'/g,"\\'")}','${c.cc.replace(/'/g,"\\'")}')">
+      data-nombre="${encodeURIComponent(c.nombre)}"
+      data-tel="${encodeURIComponent(c.tel)}"
+      data-cc="${encodeURIComponent(c.cc)}">
       <span class="ac-name">${highlightMatch(c.nombre, val)}</span>
-      ${c.tel ? `<span class="ac-tel">${c.tel}</span>` : ''}
+      ${c.tel ? `<span class="ac-tel">${escHtml(c.tel)}</span>` : ''}
       <span class="ac-count">${c.count} cot.</span>
     </div>
   `).join('');
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', () => acSelect(
+      decodeURIComponent(el.dataset.nombre),
+      decodeURIComponent(el.dataset.tel),
+      decodeURIComponent(el.dataset.cc)
+    ));
+  });
 
   // Posicionar el dropdown flotante debajo del input
   const anchor = document.getElementById('cliente-nombre');
@@ -7157,11 +7261,13 @@ function acNombre(val) {
 }
 
 function highlightMatch(text, query) {
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
-  return text.slice(0, idx) +
-    `<strong style="color:var(--teal)">${text.slice(idx, idx + query.length)}</strong>` +
-    text.slice(idx + query.length);
+  const safe = escHtml(text);
+  const safeQ = escHtml(query);
+  const idx = safe.toLowerCase().indexOf(safeQ.toLowerCase());
+  if (idx === -1) return safe;
+  return safe.slice(0, idx) +
+    `<strong style="color:var(--teal)">${safe.slice(idx, idx + safeQ.length)}</strong>` +
+    safe.slice(idx + safeQ.length);
 }
 
 function acSelect(nombre, tel, cc) {
@@ -7262,12 +7368,21 @@ function acTel(val) {
 
   list.innerHTML = sugs.map((c, i) => `
     <div class="autocomplete-item" data-idx="${i}"
-      onmousedown="acTelSelect('${c.nombre.replace(/'/g,"\\'")}','${c.tel.replace(/'/g,"\\'")}','${c.cc.replace(/'/g,"\\'")}')">
+      data-nombre="${encodeURIComponent(c.nombre)}"
+      data-tel="${encodeURIComponent(c.tel)}"
+      data-cc="${encodeURIComponent(c.cc)}">
       <span class="ac-name">${highlightMatch(c.tel, val)}</span>
-      <span class="ac-tel">${c.nombre}</span>
+      <span class="ac-tel">${escHtml(c.nombre)}</span>
       <span class="ac-count">${c.count} cot.</span>
     </div>
   `).join('');
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', () => acTelSelect(
+      decodeURIComponent(el.dataset.nombre),
+      decodeURIComponent(el.dataset.tel),
+      decodeURIComponent(el.dataset.cc)
+    ));
+  });
 
   const anchor = document.getElementById('cliente-tel');
   const rect   = anchor.getBoundingClientRect();
@@ -7369,12 +7484,21 @@ function acCC(val) {
 
   list.innerHTML = sugs.map((c, i) => `
     <div class="autocomplete-item" data-idx="${i}"
-      onmousedown="acCCSelect('${c.nombre.replace(/'/g,"\\'")}','${c.tel.replace(/'/g,"\\'")}','${c.cc.replace(/'/g,"\\'")}')">
+      data-nombre="${encodeURIComponent(c.nombre)}"
+      data-tel="${encodeURIComponent(c.tel)}"
+      data-cc="${encodeURIComponent(c.cc)}">
       <span class="ac-name">${highlightMatch(c.cc, val)}</span>
-      <span class="ac-tel">${c.nombre}</span>
+      <span class="ac-tel">${escHtml(c.nombre)}</span>
       <span class="ac-count">${c.count} cot.</span>
     </div>
   `).join('');
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', () => acCCSelect(
+      decodeURIComponent(el.dataset.nombre),
+      decodeURIComponent(el.dataset.tel),
+      decodeURIComponent(el.dataset.cc)
+    ));
+  });
 
   const anchor = document.getElementById('cliente-cc');
   const rect   = anchor.getBoundingClientRect();
@@ -9036,12 +9160,12 @@ function _cdRenderRanking(clts) {
     const ultima = c.ultimaFecha ? c.ultimaFecha.toLocaleDateString('es-CO') : '—';
     return `<tr>
       <td>${rank}</td>
-      <td><strong style="color:var(--text-primary)">${c.nombre}</strong>${c.cc?`<div style="font-size:10px;color:var(--text-muted)">${c.cc}</div>`:''}</td>
+      <td><strong style="color:var(--text-primary)">${escHtml(c.nombre)}</strong>${c.cc?`<div style="font-size:10px;color:var(--text-muted)">${escHtml(c.cc)}</div>`:''}</td>
       <td>${segPill}</td>
       <td style="font-weight:600;color:var(--teal)">${c.compras}</td>
       <td style="font-family:'Roboto Mono',monospace;font-weight:700;color:var(--green)">${fmt(c.total)}</td>
       <td style="font-family:'Roboto Mono',monospace;color:var(--gold)">${fmt(c.ticketProm)}</td>
-      <td style="font-size:12px;color:var(--text-secondary)">${ultima}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${escHtml(ultima)}</td>
       <td>${ev}</td>
     </tr>`;
   }).join('');
@@ -9147,8 +9271,8 @@ function abrirHistorialPrecios(nombre) {
 
     html += `<div class="price-hist-esp">
       <div class="price-hist-esp-title">
-        <span style="color:${color}">${emoji}</span>
-        ${esp}
+        <span style="color:${escHtml(color)}">${emoji}</span>
+        ${escHtml(esp)}
         <span style="font-weight:400;color:var(--text-muted)">· ${rows.length} compras</span>
       </div>`;
 
@@ -9162,7 +9286,7 @@ function abrirHistorialPrecios(nombre) {
       }
       const barW = maxP > 0 ? Math.round((r.precio / maxP) * 100) : 0;
       html += `<div class="price-hist-row">
-        <span class="price-hist-date">${r.fecha}</span>
+        <span class="price-hist-date">${escHtml(r.fecha)}</span>
         <span class="price-hist-qty">${r.qty.toFixed(1)} lb</span>
         <div class="price-hist-bar"><div class="price-hist-bar-fill" style="width:${barW}%"></div></div>
         <span class="price-hist-val">${fmt(r.precio)}/lb</span>
@@ -9217,7 +9341,7 @@ function showSyncBlock(title, msg) {
 function syncBlockDismiss() {
   document.getElementById('sync-block-overlay').style.display = 'none';
   driveToken = null;
-  safeStorage.removeItem(DRIVE_TOKEN_KEY);
+  safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
   if (autoSyncTimer) { clearInterval(autoSyncTimer); autoSyncTimer = null; }
   setDriveStatus('', 'CONECTAR');
   toast('Continuando en modo local — los datos están seguros');
@@ -9332,6 +9456,26 @@ setInterval(() => {
 </script>
 <!-- ══════ PANTALLA DE BLOQUEO ══════ -->
 <div id="sync-block-overlay" style="display:none">
+
+<!-- ══════ MODAL: CONFIRMACIÓN ACCIÓN DESTRUCTIVA ══════ -->
+<div id="danger-confirm-overlay" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(4,11,22,0.88);backdrop-filter:blur(12px);align-items:center;justify-content:center">
+  <div style="background:var(--card-bg);border:1px solid rgba(239,71,111,0.45);border-radius:16px;padding:32px 28px;max-width:400px;width:92%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
+    <div style="font-size:36px;text-align:center;margin-bottom:12px">⚠️</div>
+    <h3 id="danger-confirm-title" style="color:var(--coral);text-align:center;margin:0 0 10px;font-size:17px"></h3>
+    <p id="danger-confirm-msg" style="color:var(--text-secondary);font-size:13px;text-align:center;margin:0 0 20px;line-height:1.5"></p>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:8px;text-align:center">
+      Escribe <strong style="color:var(--coral);font-family:'Roboto Mono',monospace">BORRAR</strong> para confirmar:
+    </p>
+    <input id="danger-confirm-input" type="text" autocomplete="off"
+      placeholder="Escribe BORRAR aquí…"
+      oninput="document.getElementById('danger-confirm-ok').disabled = this.value !== 'BORRAR'"
+      style="width:100%;box-sizing:border-box;background:var(--input-bg);border:1px solid rgba(239,71,111,0.4);border-radius:8px;color:var(--text-primary);font-family:'Roboto Mono',monospace;font-size:14px;padding:10px 14px;outline:none;text-align:center;margin-bottom:20px">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeDangerConfirm()">Cancelar</button>
+      <button id="danger-confirm-ok" class="btn btn-danger" style="flex:1" disabled onclick="_dangerConfirmCallback && _dangerConfirmCallback()">🗑 Confirmar borrado</button>
+    </div>
+  </div>
+</div>
   <div id="sync-block-card">
     <div id="sync-block-icon">⚠️</div>
     <div id="sync-block-title" id="sync-block-title">Sesión cerrada</div>
