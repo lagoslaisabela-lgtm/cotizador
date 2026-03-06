@@ -4499,6 +4499,7 @@ function guardarOrden() {
   ordenes.unshift(cot);
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   updateBadge();
+  actualizarFloatBtn(); // ← actualizar botón flotante de inmediato
   toast('✅ Cobrado y Guardado');
   launchFishConfetti();
   renderDashboard();
@@ -6614,6 +6615,7 @@ function refreshUI(uiState) {
   _dashCache.serial = null;
   updateBadge();
   updateEvBadge();
+  actualizarFloatBtn(); // ← refrescar botón flotante tras sincronización
   renderHistorial();
   renderDashboard();
   renderEviscerado();
@@ -7819,6 +7821,91 @@ function buildEvCard(c, isDone) {
 // ─────────────────────────────────────────────
 let evCountdownInterval = null;
 
+// ── Actualiza el botón flotante de eviscerado SIEMPRE, sin importar la pestaña activa ──
+function actualizarFloatBtn() {
+  const floatBtn  = document.getElementById('ev-float-btn');
+  const floatText = document.getElementById('ev-float-text');
+  if (!floatBtn || !floatText) return;
+
+  const done      = getEvDone();
+  const times     = getEvTimes();
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+
+  function fmtSecsShort(totalSecs) {
+    if (totalSecs <= 0) return '0s';
+    const hh = Math.floor(totalSecs / 3600);
+    const mm = Math.floor((totalSecs % 3600) / 60);
+    const ss = totalSecs % 60;
+    if (hh > 0) return `${hh}h ${mm}m`;
+    if (mm > 0) return `${mm}m ${ss}s`;
+    return `${ss}s`;
+  }
+
+  floatBtn.style.opacity      = '1';
+  floatBtn.style.pointerEvents = 'all';
+
+  if (pendientes.length === 0) {
+    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
+    floatBtn.className    = hayEv ? 'done' : 'pending';
+    floatText.textContent = hayEv ? '¡Listo!' : '—';
+    return;
+  }
+
+  // Calcular segPorLb igual que calcularEstimadorEv
+  const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
+  const completadasHoy = ordenes.filter(c =>
+    c.totalEviscerado > 0 && done.has(c.id) &&
+    times[c.id]?.end && times[c.id]?.start &&
+    new Date(times[c.id].start) >= hoy0
+  );
+  let segPorLb = 20;
+  if (completadasHoy.length > 0) {
+    let totalSeg = 0, totalLb = 0;
+    completadasHoy.forEach(c => {
+      const dur = (times[c.id].end - times[c.id].start) / 1000;
+      const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+      if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
+    });
+    if (totalLb > 0) segPorLb = totalSeg / totalLb;
+  }
+
+  let totalLibrasPend = 0;
+  pendientes.forEach(c => {
+    totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+  });
+  if (totalLibrasPend === 0) {
+    floatBtn.className    = 'pending';
+    floatText.textContent = '—';
+    return;
+  }
+
+  const startRef = pendientes.reduce((min, c) => {
+    const ts = c.evStartedAt || new Date(c.fechaObj).getTime();
+    return ts < min ? ts : min;
+  }, Infinity);
+  const segsTotal   = Math.round(totalLibrasPend * segPorLb);
+  const finEstimado = new Date(startRef + segsTotal * 1000);
+  const diffSecs    = Math.max(0, Math.round((finEstimado - Date.now()) / 1000));
+
+  if (diffSecs <= 0) {
+    floatBtn.className    = 'done';
+    floatText.textContent = '¡Ya!';
+  } else {
+    const isUrgent = diffSecs > 30 * 60;
+    floatBtn.className    = isUrgent ? 'urgent pending' : 'pending';
+    floatText.textContent = fmtSecsShort(diffSecs);
+    floatBtn.title        = `Eviscerado: ${fmtSecsShort(diffSecs)} restantes`;
+  }
+}
+
+// Intervalo global del botón flotante — corre siempre, en cualquier pestaña
+let _floatBtnInterval = null;
+function iniciarFloatBtnInterval() {
+  if (_floatBtnInterval) return; // ya corriendo
+  actualizarFloatBtn();          // ejecutar de inmediato
+  _floatBtnInterval = setInterval(actualizarFloatBtn, 1000);
+}
+
 function calcularEstimadorEv() {
   const done      = getEvDone();
   const times     = getEvTimes();
@@ -7833,8 +7920,8 @@ function calcularEstimadorEv() {
   // Limpiar countdown previo
   if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
 
-  const floatBtn  = document.getElementById('ev-float-btn');
-  const floatText = document.getElementById('ev-float-text');
+  const floatBtn  = null; // float btn ya gestionado por actualizarFloatBtn()
+  const floatText = null;
 
   // Formatear tiempo en segundos a string legible
   function fmtSecs(totalSecs) {
@@ -8319,91 +8406,260 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 // Cuando se marca/desmarca desde fullscreen, también re-renderizar el fullscreen
 const _origToggleEvDone = toggleEvDone;
 
-//  PEZ NADADOR — nada horizontalmente con ondulación natural
-// ══════════════════════════════════════════════════════════
-//  PEZ MASCOTA SVG — nada por el header con cola animada
+//  PEZ MASCOTA SVG — comportamientos: nada, come, duerme, pone huevos, consigue novia, salta
 // ══════════════════════════════════════════════════════════
 (function() {
   const fish   = document.getElementById('fish-swimmer');
-  const header = fish.closest('header');
+  const header = fish?.closest('header');
   if (!fish || !header) return;
 
-  const FW = 100, FH = 56; // tamaño del pez en px
+  const FW = 100, FH = 56;
 
-  // Paletas de color del cuerpo [stop1, stop2, stop3, finCol, tailCol]
+  // ── Paletas de color ───────────────────────────────────
   const PALS = [
-    { s0:'#b6f0ff', s1:'#00c8e8', s2:'#005f88', fin:'#0090c0', tail:'#004d70' }, // azul tropical
-    { s0:'#ffe3a0', s1:'#ff7b2c', s2:'#8b2200', fin:'#e05500', tail:'#6b2000' }, // naranja
-    { s0:'#c8ffdf', s1:'#36d67a', s2:'#0f5c30', fin:'#1a9c50', tail:'#0a4020' }, // verde
-    { s0:'#f0d0ff', s1:'#a855f7', s2:'#40007a', fin:'#7c22c8', tail:'#300060' }, // violeta
-    { s0:'#fff3b0', s1:'#f9c74f', s2:'#7a5200', fin:'#d4a020', tail:'#8a5500' }, // dorado
+    { s0:'#b6f0ff', s1:'#00c8e8', s2:'#005f88', fin:'#0090c0', tail:'#004d70' },
+    { s0:'#ffe3a0', s1:'#ff7b2c', s2:'#8b2200', fin:'#e05500', tail:'#6b2000' },
+    { s0:'#c8ffdf', s1:'#36d67a', s2:'#0f5c30', fin:'#1a9c50', tail:'#0a4020' },
+    { s0:'#f0d0ff', s1:'#a855f7', s2:'#40007a', fin:'#7c22c8', tail:'#300060' },
+    { s0:'#fff3b0', s1:'#f9c74f', s2:'#7a5200', fin:'#d4a020', tail:'#8a5500' },
   ];
   let palIdx = 0;
 
   function applyPalette(p) {
     const svg = document.getElementById('fish-svg');
     if (!svg) return;
-    // body gradient
-    const bg = svg.getElementById ? svg.getElementById('bodyGrad') : document.getElementById('bodyGrad');
-    const bgStops = (bg || document.getElementById('bodyGrad')).querySelectorAll('stop');
-    if (bgStops[0]) bgStops[0].style.stopColor = p.s0;
-    if (bgStops[1]) bgStops[1].style.stopColor = p.s1;
-    if (bgStops[2]) bgStops[2].style.stopColor = p.s2;
-    // tail & fin
-    const tail = document.getElementById('fish-tail');
-    const fin  = document.getElementById('fish-fin');
-    const tg   = document.getElementById('tailGrad');
+    const bg = document.getElementById('bodyGrad');
+    if (bg) {
+      const stops = bg.querySelectorAll('stop');
+      if (stops[0]) stops[0].style.stopColor = p.s0;
+      if (stops[1]) stops[1].style.stopColor = p.s1;
+      if (stops[2]) stops[2].style.stopColor = p.s2;
+    }
+    const tg = document.getElementById('tailGrad');
     if (tg) {
       const ts = tg.querySelectorAll('stop');
       if (ts[0]) ts[0].style.stopColor = p.tail;
       if (ts[1]) ts[1].style.stopColor = p.fin;
     }
+    const fin = document.getElementById('fish-fin');
     if (fin) fin.style.fill = p.fin;
   }
-
   applyPalette(PALS[0]);
 
-  // Posición y movimiento
+  // ── Refs SVG ───────────────────────────────────────────
+  const eyeIris  = document.getElementById('fish-eye-iris');
+  const eyePupil = document.getElementById('fish-eye-pupil');
+  const eyeWhite = document.getElementById('fish-eye-white');
+  const bub1     = document.getElementById('bub1');
+  const bub2     = document.getElementById('bub2');
+  const bub3     = document.getElementById('bub3');
+  const fishBody = document.getElementById('fish-body');
+  const fishMouth= document.querySelector('#fish-svg path[stroke="#005f88"]');
+
+  // ── Helpers visuales ──────────────────────────────────
+  function setBlink(open) {
+    if (eyeIris)  eyeIris.setAttribute('ry',  String(Math.max(0.1, open * 3)));
+    if (eyePupil) eyePupil.setAttribute('ry', String(Math.max(0.1, open * 1.5)));
+    if (eyeWhite) eyeWhite.setAttribute('ry', String(Math.max(0.1, open * 5)));
+  }
+  function setTailSpeed(spd) {
+    const dur = Math.max(0.22, 0.78 - spd * 0.12) + 's';
+    const tail = document.getElementById('fish-tail');
+    const fin  = document.getElementById('fish-fin');
+    if (tail) tail.style.animationDuration = dur;
+    if (fin)  fin.style.animationDuration  = dur;
+  }
+  function pauseTail(yes) {
+    const tail = document.getElementById('fish-tail');
+    const fin  = document.getElementById('fish-fin');
+    if (tail) tail.style.animationPlayState = yes ? 'paused' : 'running';
+    if (fin)  fin.style.animationPlayState  = yes ? 'paused' : 'running';
+  }
+  function hideBubbles(yes) {
+    [bub1,bub2,bub3].forEach(b => { if (b) b.style.display = yes ? 'none' : ''; });
+  }
+
+  // ── Spawner de elementos flotantes ─────────────────────
+  // Crea un elemento SVG externo flotante que aparece cerca del pez
+  function spawnFloating(content, dxRange, dyRange, durMs, fontSize='16px') {
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed;pointer-events:none;z-index:9000;
+      font-size:${fontSize};user-select:none;
+      transition:transform ${durMs}ms ease-out, opacity ${durMs}ms ease-out;
+      will-change:transform,opacity;
+    `;
+    el.textContent = content;
+    // posición inicial relativa al pez
+    const rect = fish.getBoundingClientRect();
+    const ox = rect.left + rect.width/2  + (Math.random()-0.5) * 30;
+    const oy = rect.top  + rect.height/2 + (Math.random()-0.5) * 20;
+    el.style.left = ox + 'px';
+    el.style.top  = oy + 'px';
+    el.style.opacity = '1';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => {
+      const dx = dxRange[0] + Math.random() * (dxRange[1]-dxRange[0]);
+      const dy = dyRange[0] + Math.random() * (dyRange[1]-dyRange[0]);
+      el.style.transform = `translate(${dx}px,${dy}px) scale(1.3)`;
+      el.style.opacity   = '0';
+    });
+    setTimeout(() => el.remove(), durMs + 100);
+  }
+
+  // ── Estado del comportamiento ──────────────────────────
+  // behaviours: 'swim' | 'eat' | 'sleep' | 'egg' | 'love' | 'jump' | 'dizzy' | 'sprint'
+  let behaviour   = 'swim';
+  let behaviourT  = 0;   // frames en el comportamiento actual
+  let behaviourDur= 999; // duración en frames
+  let behaviourCooldowns = {};
+
+  // Parámetros de movimiento base
   let x = 80, dir = 1;
   let speed = 1.2, targetSpd = 1.2, spdTimer = 0;
   let t = 0, angle = 0;
 
   // Parpadeo
   let blinkTimer = 0, nextBlink = 200 + Math.random()*200;
-  const eyeIris  = document.getElementById('fish-eye-iris');
-  const eyePupil = document.getElementById('fish-eye-pupil');
-  const eyeWhite = document.getElementById('fish-eye-white');
 
-  function setBlink(open) { // open: 0.0 - 1.0
-    if (eyeIris)  { eyeIris.setAttribute('ry',  String(Math.max(0.1, open * 3))); }
-    if (eyePupil) { eyePupil.setAttribute('ry',  String(Math.max(0.1, open * 1.5))); }
-    if (eyeWhite) { eyeWhite.setAttribute('ry',  String(Math.max(0.1, open * 5))); }
+  // Parámetros específicos por behavior
+  let sleepZTimer = 0;      // para las Z de dormir
+  let eatBiteTimer = 0;     // para mordidas
+  let loveHeartTimer = 0;   // para corazones
+  let eggTimer = 0;         // para huevos
+  let jumpPhase = 0;        // 0=subiendo 1=bajando
+  let jumpY = 0, jumpVY = 0;
+  let dizzyAngle = 0;
+  let girlfriend = null;    // div del pez novia
+  let girlfriendX = 0, girlfriendDir = 1;
+  let girlfriendActive = false;
+
+  // ── Elegir próximo comportamiento ─────────────────────
+  const BEHAVIOUR_POOL = [
+    { id:'eat',    weight:18, minCool:400  },
+    { id:'sleep',  weight:12, minCool:600  },
+    { id:'egg',    weight:8,  minCool:700  },
+    { id:'love',   weight:10, minCool:800  },
+    { id:'jump',   weight:14, minCool:350  },
+    { id:'sprint', weight:20, minCool:200  },
+    { id:'dizzy',  weight:8,  minCool:500  },
+    { id:'swim',   weight:30, minCool:0    },
+  ];
+
+  function pickBehaviour() {
+    const now = behaviourT + (behaviourCooldowns._tick || 0);
+    const available = BEHAVIOUR_POOL.filter(b =>
+      b.id === 'swim' || !behaviourCooldowns[b.id] || (behaviourCooldowns._tick||0) - behaviourCooldowns[b.id] > b.minCool
+    );
+    const total = available.reduce((s,b) => s+b.weight, 0);
+    let r = Math.random() * total;
+    for (const b of available) { r -= b.weight; if (r <= 0) return b.id; }
+    return 'swim';
   }
 
-  // Ajusta la velocidad de la animación CSS de la cola según velocidad de nado
-  function setTailSpeed(spd) {
-    const dur = Math.max(0.25, 0.75 - spd * 0.12) + 's';
-    const tail = document.getElementById('fish-tail');
-    const fin  = document.getElementById('fish-fin');
-    if (tail) tail.style.animationDuration = dur;
-    if (fin)  fin.style.animationDuration  = dur;
+  function startBehaviour(id) {
+    // Limpiar estado anterior
+    if (behaviour === 'love' && girlfriendActive) removeGirlfriend();
+    if (behaviour === 'sleep') { setBlink(1); hideBubbles(false); pauseTail(false); }
+
+    behaviour    = id;
+    behaviourT   = 0;
+    behaviourCooldowns[id] = behaviourCooldowns._tick || 0;
+
+    switch(id) {
+      case 'eat':    behaviourDur = 140; eatBiteTimer = 0;    break;
+      case 'sleep':  behaviourDur = 320; sleepZTimer  = 0;    break;
+      case 'egg':    behaviourDur = 180; eggTimer     = 0;    break;
+      case 'love':   behaviourDur = 380; loveHeartTimer=0; spawnGirlfriend(); break;
+      case 'jump':   behaviourDur = 100; jumpPhase=0; jumpVY=-5; jumpY=0; break;
+      case 'sprint': behaviourDur = 80;  targetSpd = 5.5;    break;
+      case 'dizzy':  behaviourDur = 160; dizzyAngle=0;       break;
+      case 'swim':   behaviourDur = 160 + Math.random()*200; break;
+    }
   }
 
+  // ── Novia ──────────────────────────────────────────────
+  function spawnGirlfriend() {
+    if (girlfriendActive) return;
+    girlfriendActive = true;
+    girlfriend = document.createElement('div');
+    girlfriend.id = 'fish-girlfriend';
+    girlfriend.style.cssText = `
+      position:absolute;pointer-events:none;z-index:0;
+      font-size:28px;user-select:none;
+      transition:none;
+      will-change:transform,left,top;
+    `;
+    girlfriend.textContent = '🐠';
+    // Empieza desde el lado opuesto al pez
+    const hw = header.offsetWidth;
+    girlfriendX = dir > 0 ? hw - 60 : 20;
+    girlfriendDir = dir > 0 ? -1 : 1;
+    const gy = (header.offsetHeight / 2) + (Math.random()-0.5) * 20;
+    girlfriend.style.left = girlfriendX + 'px';
+    girlfriend.style.top  = gy + 'px';
+    header.appendChild(girlfriend);
+  }
+  function updateGirlfriend() {
+    if (!girlfriend || !girlfriendActive) return;
+    const hw = header.offsetWidth;
+    const hh = header.offsetHeight;
+    // Se mueve hacia el pez
+    const targetX = x + (dir > 0 ? FW/2 : -30);
+    const diffX   = targetX - girlfriendX;
+    girlfriendX  += Math.sign(diffX) * Math.min(Math.abs(diffX)*0.04 + 0.8, 3);
+    girlfriendDir = diffX > 0 ? 1 : -1;
+    const gy = parseFloat(girlfriend.style.top) || hh/2;
+    const newGy = Math.max(4, Math.min(hh-32, gy + Math.sin(behaviourT*0.08)*0.6));
+    girlfriend.style.left      = girlfriendX + 'px';
+    girlfriend.style.top       = newGy + 'px';
+    girlfriend.style.transform = `scaleX(${girlfriendDir})`;
+    // Cuando están cerca: corazones
+    if (Math.abs(diffX) < 30 && behaviourT % 18 === 0) {
+      spawnFloating('❤️', [-25,25], [-40,-15], 900, '14px');
+    }
+  }
+  function removeGirlfriend() {
+    if (girlfriend) { girlfriend.remove(); girlfriend = null; }
+    girlfriendActive = false;
+  }
+
+  // ── Loop principal ────────────────────────────────────
+  let frameCount = 0;
   function loop() {
+    frameCount++;
+    behaviourCooldowns._tick = frameCount;
     const hw = header.offsetWidth;
     const hh = header.offsetHeight;
 
-    // Velocidad variable
-    spdTimer++;
-    if (spdTimer > 130) {
-      targetSpd = 0.5 + Math.random() * 2.2;
-      spdTimer  = 0;
+    // ── Avanzar comportamiento o cambiar ──────────────
+    behaviourT++;
+    if (behaviourT >= behaviourDur && behaviour !== 'jump') {
+      startBehaviour(Math.random() < 0.38 ? pickBehaviour() : 'swim');
     }
-    speed += (targetSpd - speed) * 0.007;
+
+    // ── Velocidad base ────────────────────────────────
+    if (behaviour === 'swim' || behaviour === 'egg' || behaviour === 'dizzy') {
+      spdTimer++;
+      if (spdTimer > 130) { targetSpd = 0.5 + Math.random()*2.2; spdTimer=0; }
+      speed += (targetSpd - speed) * 0.007;
+    } else if (behaviour === 'sprint') {
+      speed += (targetSpd - speed) * 0.05;
+      if (behaviourT > 60) targetSpd = 1.2; // frena gradualmente
+    } else if (behaviour === 'sleep') {
+      speed += (0.15 - speed) * 0.03; // desacelera mucho
+    } else if (behaviour === 'eat') {
+      speed += (0.4 - speed) * 0.06; // casi se detiene
+    } else if (behaviour === 'love') {
+      speed += (0.8 - speed) * 0.04;
+    } else if (behaviour === 'jump') {
+      speed = 1.5;
+    }
     setTailSpeed(speed);
 
-    // Movimiento horizontal
-    x += dir * speed;
+    // ── Movimiento horizontal ─────────────────────────
+    let currentSpeed = (behaviour === 'sleep') ? speed * 0.3 : speed;
+    x += dir * currentSpeed;
 
     if (x >= hw - FW + 12) {
       x = hw - FW + 12; dir = -1;
@@ -8415,42 +8671,124 @@ const _origToggleEvDone = toggleEvDone;
       applyPalette(PALS[palIdx]);
     }
 
-    // Oscilación vertical
+    // ── Oscilación vertical ───────────────────────────
     t += 0.035;
     const margin = 4;
-    const cy = hh / 2;
+    const cy  = hh / 2;
     const amp = Math.max(0, (hh - FH) / 2 - margin);
-    const rawY = cy
-      + Math.sin(t * 0.75)        * amp * 0.55
-      + Math.sin(t * 2.0 + 0.9)  * amp * 0.22
-      + Math.sin(t * 0.38 + 0.5) * amp * 0.15;
-    const y = Math.max(margin, Math.min(hh - FH - margin, rawY - FH / 2));
 
-    // Inclinación suave
-    const dy = Math.cos(t * 0.75) * amp * 0.55 * 0.035 * 0.75
-             + Math.cos(t * 2.0 + 0.9) * amp * 0.22 * 0.035 * 2.0;
-    angle += (dy * 130 - angle) * 0.07;
-    const clamp = Math.max(-22, Math.min(22, angle));
+    let rawY;
+    if (behaviour === 'jump') {
+      // Salto parabólico sobre el header
+      jumpVY += 0.28;
+      jumpY  += jumpVY;
+      rawY    = cy - 30 + jumpY;
+      if (jumpY > 60) {
+        startBehaviour('swim');
+      }
+    } else if (behaviour === 'sleep') {
+      // Deriva suavemente hacia abajo
+      rawY = cy + amp * 0.6 + Math.sin(t * 0.2) * 4;
+    } else {
+      rawY  = cy
+        + Math.sin(t * 0.75)        * amp * 0.55
+        + Math.sin(t * 2.0 + 0.9)  * amp * 0.22
+        + Math.sin(t * 0.38 + 0.5) * amp * 0.15;
+    }
+    const y = Math.max(margin, Math.min(hh - FH - margin, rawY - FH/2));
 
-    // Parpadeo
-    blinkTimer++;
-    if (blinkTimer >= nextBlink) {
-      const ph = blinkTimer - nextBlink;
-      if      (ph < 4)  setBlink(1 - ph / 4);
-      else if (ph < 7)  setBlink(0);
-      else if (ph < 11) setBlink((ph - 7) / 4);
-      else { blinkTimer = 0; nextBlink = 150 + Math.random()*250; setBlink(1); }
+    // ── Inclinación ───────────────────────────────────
+    let clamp;
+    if (behaviour === 'dizzy') {
+      dizzyAngle += 4.5;
+      clamp = dizzyAngle % 360;
+    } else if (behaviour === 'jump') {
+      clamp = jumpVY * 6;
+    } else {
+      const dy = Math.cos(t*0.75)*amp*0.55*0.035*0.75 + Math.cos(t*2.0+0.9)*amp*0.22*0.035*2.0;
+      angle += (dy*130 - angle) * 0.07;
+      clamp = Math.max(-22, Math.min(22, angle));
     }
 
-    // Aplicar posición y orientación
+    // ── Parpadeo ──────────────────────────────────────
+    if (behaviour !== 'sleep' && behaviour !== 'dizzy') {
+      blinkTimer++;
+      if (blinkTimer >= nextBlink) {
+        const ph = blinkTimer - nextBlink;
+        if      (ph < 4)  setBlink(1 - ph/4);
+        else if (ph < 7)  setBlink(0);
+        else if (ph < 11) setBlink((ph-7)/4);
+        else { blinkTimer=0; nextBlink=150+Math.random()*250; setBlink(1); }
+      }
+    }
+
+    // ── Comportamientos especiales ────────────────────
+
+    // DORMIR: ojos cerrados, cola lenta, Zs flotantes, burbuja lenta
+    if (behaviour === 'sleep') {
+      setBlink(0.05);
+      pauseTail(false);
+      hideBubbles(false);
+      sleepZTimer++;
+      if (sleepZTimer % 55 === 0) spawnFloating('💤', [-10,10], [-50,-20], 1200, '13px');
+      if (sleepZTimer % 80 === 20) spawnFloating('Z', [-8,8], [-35,-10], 900, '11px');
+    }
+
+    // COMER: boca abierta (escala Y del cuerpo), partículas de comida
+    if (behaviour === 'eat') {
+      eatBiteTimer++;
+      const bite = Math.sin(eatBiteTimer * 0.25);
+      if (fishBody) fishBody.setAttribute('ry', String(14 + bite*2));
+      if (eatBiteTimer % 22 === 0) spawnFloating(['🦐','🦑','🐛','🫧'][Math.floor(Math.random()*4)], [-20,20], [-30,-5], 800, '13px');
+      if (eatBiteTimer % 14 === 7) spawnFloating('✨', [-15,15], [-20,5], 600, '10px');
+    } else {
+      if (fishBody) fishBody.setAttribute('ry', '14'); // restaurar
+    }
+
+    // PONER HUEVOS: cada N frames suelta un huevo que cae
+    if (behaviour === 'egg') {
+      eggTimer++;
+      if (eggTimer % 28 === 0 && eggTimer < 140) {
+        spawnFloating('🥚', [-5,5], [10,40], 1400, '12px');
+        spawnFloating('🫧', [-8,8], [-15,-5], 700, '8px');
+      }
+      if (eggTimer === 30) spawnFloating('🐣', [-10,10], [-25,-5], 1100, '14px');
+    }
+
+    // AMOR: novia se acerca + corazones
+    if (behaviour === 'love') {
+      updateGirlfriend();
+      loveHeartTimer++;
+      if (loveHeartTimer % 35 === 0) spawnFloating(['💕','💗','💖','🌸'][Math.floor(Math.random()*4)], [-30,30], [-45,-10], 1000, '15px');
+    }
+
+    // MAREO/DIZZY: estrellas girando + ojos en X
+    if (behaviour === 'dizzy') {
+      setBlink(0.6);
+      if (behaviourT % 12 === 0) spawnFloating(['⭐','💫','✨'][Math.floor(Math.random()*3)], [-25,25], [-30,-5], 700, '11px');
+    }
+
+    // SPRINT: partículas de velocidad
+    if (behaviour === 'sprint' && behaviourT % 8 === 0) {
+      spawnFloating(['💨','⚡'][Math.floor(Math.random()*2)], [dir*(-30), dir*(-15)], [-10,10], 500, '11px');
+    }
+
+    // ── Aplicar posición y orientación ───────────────
     const flipX = dir < 0 ? -1 : 1;
     fish.style.left      = x + 'px';
     fish.style.top       = y + 'px';
-    fish.style.transform = `scaleX(${flipX}) rotate(${clamp * flipX}deg)`;
+
+    if (behaviour === 'dizzy') {
+      fish.style.transform = `scaleX(${flipX}) rotate(${clamp}deg)`;
+    } else {
+      fish.style.transform = `scaleX(${flipX}) rotate(${clamp * flipX}deg)`;
+    }
 
     requestAnimationFrame(loop);
   }
 
+  // Iniciar primer comportamiento
+  startBehaviour('swim');
   requestAnimationFrame(loop);
 })();
 
@@ -9358,12 +9696,14 @@ buildSpeciesGrid();
 buildMaySpeciesGrid();
 updateBadge();
 updateEvBadge();
+iniciarFloatBtnInterval(); // ← botón flotante activo desde el primer frame
 restoreDriveSession();
 
 // Pausar/reanudar tickers según visibilidad de la pestaña (ahorra batería en móvil)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     // Al volver: re-render inmediato para mostrar datos frescos
+    actualizarFloatBtn();
     if (activeTab === 'eviscerado') renderEviscerado();
     if (activeTab === 'dashboard')  renderDashboard();
     if (evFullscreenOpen) renderEvFullscreen();
