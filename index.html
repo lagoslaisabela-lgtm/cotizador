@@ -2,8 +2,17 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Fix 7: Content Security Policy — bloquea scripts externos no autorizados -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- PWA: tema y apariencia nativa -->
+<meta name="theme-color" content="#040b16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lagos Isabela">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Sistema de cotización y control de ventas — Lagos La Isabela">
+<!-- PWA manifest inline (evita archivo externo) -->
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Lagos%20La%20Isabela%22%2C%22short_name%22%3A%22Lagos%22%2C%22description%22%3A%22Cotizador%20y%20control%20de%20ventas%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23040b16%22%2C%22theme_color%22%3A%22%23040b16%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%270%2520054%2560%2560%2527%253E%253Ctext%2520y%3D%2527.9em%2527%2520font-size%3D%252748%2527%253E%25F0%259F%2590%259F%253C%2F%2520text%253E%253C%2FSvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<!-- CSP — bloquea scripts externos no autorizados -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
@@ -15,7 +24,6 @@
   object-src 'none';
   base-uri 'self';
 ">
-<!-- Fix 8: X-Frame-Options y otras cabeceras via meta -->
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Lagos La Isabela — Ordenes</title>
@@ -2753,12 +2761,16 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.5.0</span>
       </a>
-      <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
-        <span class="drive-dot"></span>
-        <span id="drive-status-text">CONECTAR</span>
-        <span id="drive-pending-badge" style="display:none;background:rgba(255,209,102,0.25);color:#ffd166;border:1px solid rgba(255,209,102,0.4);border-radius:10px;font-size:9px;font-weight:800;padding:1px 6px;margin-left:4px;letter-spacing:0.4px">PENDIENTE</span>
-      </button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
+          <span class="drive-dot"></span>
+          <span id="drive-status-text">CONECTAR</span>
+          <span id="drive-pending-badge" style="display:none;background:rgba(255,209,102,0.25);color:#ffd166;border:1px solid rgba(255,209,102,0.4);border-radius:10px;font-size:9px;font-weight:800;padding:1px 6px;margin-left:4px;letter-spacing:0.4px">PENDIENTE</span>
+        </button>
+        <span id="stale-sync-badge" style="display:none;background:rgba(255,152,0,0.15);color:#ff9800;border:1px solid rgba(255,152,0,0.35);border-radius:10px;font-size:9px;font-weight:700;padding:2px 7px;letter-spacing:0.3px;cursor:default" title="Hace más de 30 min sin sincronizar">⚠ SYNC</span>
+      </div>
     </div>
     <div class="header-time" style="position:relative;z-index:1;margin-left:auto;text-align:right">
       <strong id="clock-time">--:--:--</strong>
@@ -3586,6 +3598,41 @@
 
     </div>
 
+    <!-- ══ Sección: Respaldo de datos ══ -->
+    <div style="border-top:1px solid var(--card-border);padding:18px 24px 4px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px">💾 Respaldo de datos</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="exportarRespaldoJSON()" style="font-size:12px">
+          📥 Exportar respaldo .json
+        </button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;font-size:12px">
+          📤 Importar respaldo
+          <input type="file" accept=".json" style="display:none" onchange="importarRespaldoJSON(this)">
+        </label>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.4">
+        El respaldo incluye todas las órdenes, clientes y ventas mayorista. Úsalo como copia de emergencia independiente de Drive.
+      </p>
+    </div>
+
+    <!-- ══ Sección: Configuración de precios ══ -->
+    <div style="border-top:1px solid var(--card-border);padding:18px 24px 8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase">💰 Precios por especie</div>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="_resetPrecios()">↩ Restablecer</button>
+      </div>
+      <div id="precios-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px"></div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <label style="font-size:13px;color:var(--text-secondary);font-weight:600;min-width:140px">🔪 Costo eviscerado/lb</label>
+        <input type="number" id="precio-eviscera-config" min="0" step="100"
+          style="width:110px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:7px 10px;font-size:14px;font-family:'Roboto Mono',monospace;text-align:right"
+          oninput="_guardarPrecioEviscera(this.value)">
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.4">
+        Los cambios aplican de inmediato a nuevas órdenes. Las órdenes ya guardadas conservan los precios originales.
+      </p>
+    </div>
+
     <div class="setup-footer">
       <span class="setup-footer-note">🔒 Solo se accede al archivo de datos de esta app. No se leen otros archivos de tu Drive.</span>
       <button class="btn btn-ghost btn-sm" onclick="closeSetupModal()">Cerrar</button>
@@ -3859,6 +3906,44 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
+const APP_VERSION = '3.5.0';
+const PRICES_KEY  = 'aquacot_prices_v1';
+
+// Precios por defecto (hardcoded como referencia inicial)
+const _PRECIOS_DEFAULT = {
+  tilapia_roja:       8000,
+  tilapia_grill:      7000,
+  tilapia_roja_extra: 8500,
+  cachama:            7000,
+  dorada:             8000,
+  bagre:              8000,
+  eviscera:           500,
+};
+
+// Cargar precios configurados o usar defaults
+function _loadPrecios() {
+  try {
+    const saved = safeStorage.getItem(PRICES_KEY);
+    if (!saved) return { ..._PRECIOS_DEFAULT };
+    const p = JSON.parse(saved);
+    // Merge con defaults para no perder keys nuevas
+    return { ..._PRECIOS_DEFAULT, ...p };
+  } catch(e) {
+    return { ..._PRECIOS_DEFAULT };
+  }
+}
+
+let _precios = _loadPrecios();
+
+// Aplica los precios cargados al array ESPECIES y al costo de eviscerado
+function _aplicarPrecios() {
+  ESPECIES.forEach(e => {
+    if (e.precio !== null && _precios[e.id] != null) {
+      e.precio = _precios[e.id];
+    }
+  });
+}
+
 const ESPECIES = [
   { id: 'tilapia_roja',       nombre: 'Tilapia Roja',       precio: 8000, emoji: '🔴', color: '#ef476f'  },
   { id: 'tilapia_grill',      nombre: 'Tilapia Grilla',     precio: 7000, emoji: '🔥', color: '#f4845f'  },
@@ -3869,7 +3954,13 @@ const ESPECIES = [
   { id: 'otro',               nombre: 'Otro Pescado',       precio: null, emoji: '🐟', color: '#a8dadc'  },
 ];
 
-const EVISCERA_COSTO = 500;
+// Aplicar precios guardados sobre el array (debe ir después de definir ESPECIES)
+_aplicarPrecios();
+
+// Getter del costo de eviscerado (siempre usar esta función, no la constante directa)
+function getEvisceradoCosto() { return _precios.eviscera || 500; }
+
+const EVISCERA_COSTO = 500; // mantener por compatibilidad — usar getEvisceradoCosto() para lógica nueva
 const STORAGE_KEY    = 'aquacot_v1';
 const CLIENTES_KEY   = 'aquacot_clientes_v1';
 const MAYORISTA_KEY  = 'aquacot_mayorista_v1';
@@ -3901,9 +3992,40 @@ const safeSessionStorage = (() => {
   };
 })();
 
-let ordenes   = JSON.parse(safeStorage.getItem(STORAGE_KEY)    || '[]');
-let clientes  = JSON.parse(safeStorage.getItem(CLIENTES_KEY)   || '[]');
-let mayorista = JSON.parse(safeStorage.getItem(MAYORISTA_KEY)  || '[]');
+// ── Generador de IDs únicos: crypto.randomUUID con fallback timestamp+random ──
+function _genId() {
+  try {
+    // crypto.randomUUID disponible en todos los navegadores modernos
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+  } catch(_) {}
+  // Fallback: timestamp + random para evitar colisiones entre dispositivos
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+// ── Carga segura de datos: maneja corrupción de localStorage ──
+function _safeLoad(key, fallback) {
+  try {
+    const raw = safeStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    // Verificar que el tipo sea correcto (array esperado)
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) throw new Error('tipo incorrecto');
+    return parsed;
+  } catch(e) {
+    console.warn(`[Lagos] Datos corruptos en "${key}", usando respaldo vacío.`, e);
+    // Guardar copia de seguridad del dato corrupto antes de descartarlo
+    try {
+      safeStorage.setItem(key + '_corrupto_' + Date.now(), safeStorage.getItem(key) || '');
+    } catch(_) {}
+    return fallback;
+  }
+}
+
+let ordenes   = _safeLoad(STORAGE_KEY,    []);
+let clientes  = _safeLoad(CLIENTES_KEY,   []);
+let mayorista = _safeLoad(MAYORISTA_KEY,  []);
 // clientes: [{ id, nombre, tel, cc, creadoEn, lastUpdated }]
 // mayorista: [{ id, fecha, fechaObj, lastUpdated, nombre, tel, cc, items, totalLibras, total }]
 // mayorista items: [{ especie, qty, precio, subTotal }]
@@ -4059,7 +4181,7 @@ function guardarVentaMayorista() {
 
   const now = new Date();
   const venta = {
-    id:          Date.now(),
+    id: _genId(),
     fecha:       now.toLocaleString('es-CO'),
     fechaObj:    now.toISOString(),
     lastUpdated: now.toISOString(),
@@ -4415,7 +4537,7 @@ function calcular() {
     }
 
     const subPescado    = qty * precio;
-    const subEviscerado = ev ? qty * EVISCERA_COSTO : 0;
+    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
     const subTotal      = subPescado + subEviscerado;
 
     totalPescado    += subPescado;
@@ -4510,7 +4632,7 @@ function getFormData() {
       precio = parseFloat(document.getElementById(`precio-${e.id}`).value) || 0;
     }
     const subPescado    = qty * precio;
-    const subEviscerado = ev ? qty * EVISCERA_COSTO : 0;
+    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
     totalPescado    += subPescado;
     totalEviscerado += subEviscerado;
     totalLibras     += qty;
@@ -4529,7 +4651,7 @@ function guardarOrden() {
   const pagoVal = _pagoRaw();
   const nota = (document.getElementById('nota-input')?.value || '').trim();
   const cot = {
-    id: Date.now(),
+    id: _genId(),
     fecha: now.toLocaleString('es-CO'),
     fechaObj: now.toISOString(),
     lastUpdated: now.toISOString(),
@@ -5689,7 +5811,7 @@ function agregarCliente() {
   if (existe) { toast('Ya existe un cliente con ese nombre', true); return; }
 
   const now = new Date().toISOString();
-  const nuevo = { id: Date.now(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
+  const nuevo = { id: _genId(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
   clientes.unshift(nuevo);
   safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
 
@@ -5772,7 +5894,7 @@ function guardarEdicionCliente() {
       toast('Ya existe un cliente con ese nombre en el directorio', true);
       return;
     }
-    const nuevo = { id: Date.now(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
+    const nuevo = { id: _genId(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
     clientes.unshift(nuevo);
     safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
   }
@@ -6094,7 +6216,7 @@ function guardarPerfilCliente() {
     const c = todos.find(x => x.nombre.trim().toLowerCase() === perfilClienteKey);
     if (!c) return;
     const now = new Date().toISOString();
-    dirEntry = { id: Date.now(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', creadoEn: now, lastUpdated: now, perfil: {} };
+    dirEntry = { id: _genId(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', creadoEn: now, lastUpdated: now, perfil: {} };
     clientes.unshift(dirEntry);
     perfilClienteId = dirEntry.id;
   }
@@ -6156,6 +6278,142 @@ function closeDangerConfirm() {
   document.getElementById('danger-confirm-overlay').style.display = 'none';
   document.getElementById('danger-confirm-input').value = '';
   _dangerConfirmCallback = null;
+}
+
+// ══════════════════════════════════════════════════════════
+//  FIX 4: PANEL DE CONFIGURACIÓN DE PRECIOS
+// ══════════════════════════════════════════════════════════
+
+function _initPreciosPanel() {
+  const grid = document.getElementById('precios-grid');
+  if (!grid) return;
+  grid.innerHTML = ESPECIES
+    .filter(e => e.precio !== null)
+    .map(e => `
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">${e.emoji}</span>
+        <label style="font-size:12px;color:var(--text-secondary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.nombre)}">${escHtml(e.nombre)}</label>
+        <input type="number" min="0" step="100"
+          data-especie="${e.id}"
+          value="${e.precio}"
+          style="width:100px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:7px 10px;font-size:13px;font-family:'Roboto Mono',monospace;text-align:right"
+          oninput="_guardarPrecioEspecie('${e.id}', this.value)">
+      </div>
+    `).join('');
+
+  // Precio eviscerado
+  const evInput = document.getElementById('precio-eviscera-config');
+  if (evInput) evInput.value = _precios.eviscera || 500;
+}
+
+function _guardarPrecioEspecie(id, val) {
+  const n = parseInt(val);
+  if (isNaN(n) || n < 0) return;
+  _precios[id] = n;
+  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  // Aplicar al array en memoria
+  const esp = ESPECIES.find(e => e.id === id);
+  if (esp && esp.precio !== null) esp.precio = n;
+  // Redibujar grid de cotización para reflejar nuevo precio
+  buildSpeciesGrid();
+  buildMaySpeciesGrid();
+}
+
+function _guardarPrecioEviscera(val) {
+  const n = parseInt(val);
+  if (isNaN(n) || n < 0) return;
+  _precios.eviscera = n;
+  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+}
+
+function _resetPrecios() {
+  if (!confirm('¿Restablecer todos los precios a los valores originales?')) return;
+  _precios = { ..._PRECIOS_DEFAULT };
+  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  _aplicarPrecios();
+  _initPreciosPanel();
+  buildSpeciesGrid();
+  buildMaySpeciesGrid();
+  toast('Precios restablecidos a valores originales');
+}
+
+// ══════════════════════════════════════════════════════════
+//  FIX 3: RESPALDO JSON — exportar e importar datos completos
+// ══════════════════════════════════════════════════════════
+
+function exportarRespaldoJSON() {
+  const payload = {
+    _version:   APP_VERSION,
+    _exportado: new Date().toISOString(),
+    _info:      'Respaldo Lagos La Isabela — no editar manualmente',
+    ordenes,
+    clientes,
+    mayorista,
+    evDone:           [...getEvDone()],
+    evTimes:          getEvTimes(),
+    deletedIds:       getDeletedIds(),
+    deletedClientes:  getDeletedCli(),
+    deletedMayorista: getDeletedMay(),
+  };
+  const blob  = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  const fecha = new Date().toISOString().slice(0,10);
+  a.href     = url;
+  a.download = `Lagos_Isabela_respaldo_${fecha}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('📥 Respaldo exportado correctamente');
+}
+
+function importarRespaldoJSON(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!file.name.endsWith('.json')) { toast('El archivo debe ser .json', true); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Validar estructura básica
+      if (!data._info?.includes('Lagos La Isabela')) {
+        toast('⚠️ Este archivo no es un respaldo válido de Lagos La Isabela', true);
+        return;
+      }
+      if (!Array.isArray(data.ordenes)) { toast('Respaldo inválido: sin órdenes', true); return; }
+
+      showDangerConfirm(
+        '¿Importar este respaldo?',
+        `Se reemplazarán los datos actuales con: ${data.ordenes.length} órdenes, ${(data.clientes||[]).length} clientes, ${(data.mayorista||[]).length} ventas mayorista. Esta acción se sincronizará a todos los dispositivos.`,
+        () => {
+          ordenes   = data.ordenes   || [];
+          clientes  = data.clientes  || [];
+          mayorista = data.mayorista || [];
+
+          safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
+          safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
+          safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+
+          if (Array.isArray(data.evDone))            setEvDone(new Set(data.evDone));
+          if (data.evTimes && typeof data.evTimes === 'object') setEvTimes(data.evTimes);
+
+          refreshUI();
+          scheduleDriveSync();
+          toast(`✅ Respaldo importado: ${ordenes.length} órdenes restauradas`);
+          closeSetupModal();
+        }
+      );
+      // El modal de confirmación requiere escribir "BORRAR" para evitar importaciones accidentales
+      // Cambiar el texto del modal para que sea más claro en este contexto
+      document.getElementById('danger-confirm-title').textContent = '¿Importar respaldo?';
+      document.getElementById('danger-confirm-msg').textContent   =
+        `${data.ordenes.length} órdenes · ${(data.clientes||[]).length} clientes · exportado ${data._exportado?.slice(0,10)||'desconocido'}. Escribe BORRAR para confirmar reemplazo.`;
+    } catch(err) {
+      toast('❌ Error al leer el archivo. ¿Está corrupto?', true);
+    }
+    input.value = ''; // limpiar input para permitir reimportar el mismo archivo
+  };
+  reader.readAsText(file);
 }
 
 function clearAllData() {
@@ -6242,7 +6500,7 @@ function renderEditItems() {
   const tbody = document.getElementById('edit-items-tbody');
 
   tbody.innerHTML = editItems.map((item, idx) => {
-    const subTotal = (item.qty * item.precio) + (item.ev ? item.qty * EVISCERA_COSTO : 0);
+    const subTotal = (item.qty * item.precio) + (item.ev ? item.qty * getEvisceradoCosto() : 0);
     return `
     <tr>
       <td style="font-weight:600;min-width:120px">${item.especie}</td>
@@ -6281,7 +6539,7 @@ function updateEditItem(idx, field, value) {
   }
   // Actualizar subtotal de esa fila
   const item = editItems[idx];
-  const sub = (item.qty * item.precio) + (item.ev ? item.qty * EVISCERA_COSTO : 0);
+  const sub = (item.qty * item.precio) + (item.ev ? item.qty * getEvisceradoCosto() : 0);
   const cell = document.getElementById(`edit-sub-${idx}`);
   if (cell) cell.textContent = fmt(sub);
   recalcEditTotal();
@@ -6311,7 +6569,7 @@ function addEditItem() {
   }
 
   const subPescado    = qtyVal * precio;
-  const subEviscerado = evVal ? qtyVal * EVISCERA_COSTO : 0;
+  const subEviscerado = evVal ? qtyVal * getEvisceradoCosto() : 0;
 
   editItems.push({
     especie: opt.dataset.nombre,
@@ -6337,7 +6595,7 @@ function recalcEditTotal() {
   let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
   editItems.forEach(item => {
     const sub = item.qty * item.precio;
-    const ev  = item.ev ? item.qty * EVISCERA_COSTO : 0;
+    const ev  = item.ev ? item.qty * getEvisceradoCosto() : 0;
     // Recalcular subPescado / subEviscerado en el objeto también
     item.subPescado    = sub;
     item.subEviscerado = ev;
@@ -6679,6 +6937,11 @@ function setDriveStatus(state, text, syncTime) {
   let label = text;
   if (syncTime) label += ` <span class="drive-sync-time">· ${syncTime}</span>`;
   span.innerHTML = label;
+  // Registrar timestamp de última sync exitosa
+  if (state === 'connected') {
+    _lastSyncTs = Date.now();
+    _actualizarStaleBadge();
+  }
 }
 
 // ── Setup Modal ─────────────────────────────
@@ -6696,6 +6959,8 @@ function openSetupModal() {
     document.getElementById('drive-setup-connected').style.display = 'none';
     document.getElementById('drive-setup-disconnected').style.display = 'block';
   }
+  // Inicializar panel de precios cada vez que se abre el modal
+  _initPreciosPanel();
 }
 
 function closeSetupModal() {
@@ -7945,6 +8210,20 @@ function actualizarFloatBtn() {
 
 // Intervalo global del botón flotante — corre siempre, en cualquier pestaña
 let _floatBtnInterval = null;
+let _lastSyncTs = null; // timestamp de la última sync exitosa con Drive
+
+// Actualiza el badge de sync desactualizado (>30 min sin sincronizar con Drive conectado)
+function _actualizarStaleBadge() {
+  const badge = document.getElementById('stale-sync-badge');
+  if (!badge) return;
+  if (!driveToken || !_lastSyncTs) { badge.style.display = 'none'; return; }
+  const minsSinSync = Math.floor((Date.now() - _lastSyncTs) / 60000);
+  badge.style.display = minsSinSync >= 30 ? 'inline' : 'none';
+  badge.title = minsSinSync >= 30
+    ? `Hace ${minsSinSync} min sin sincronizar con Drive`
+    : '';
+}
+
 function iniciarFloatBtnInterval() {
   if (_floatBtnInterval) return; // ya corriendo
   actualizarFloatBtn();          // ejecutar de inmediato
@@ -9778,8 +10057,70 @@ buildSpeciesGrid();
 buildMaySpeciesGrid();
 updateBadge();
 updateEvBadge();
-iniciarFloatBtnInterval(); // ← botón flotante activo desde el primer frame
+iniciarFloatBtnInterval();
 restoreDriveSession();
+
+// Mostrar versión desde constante
+const _vBadge = document.getElementById('app-version-badge');
+if (_vBadge) _vBadge.textContent = 'v' + APP_VERSION;
+
+// ── Fix 6a: Detector de cambios no guardados en formulario de cotizar ──
+function _formTieneDatos() {
+  const nombre = document.getElementById('cliente-nombre')?.value.trim();
+  if (nombre) return true;
+  return ESPECIES.some(e => {
+    const qty = document.getElementById(`qty-${e.id}`)?.value.trim();
+    return qty && qty !== '0' && qty !== '';
+  });
+}
+
+// Advertir al cambiar de pestaña si hay datos sin guardar
+const _origShowTab = showTab;
+window.showTab = function(tab) {
+  if (tab !== 'cotizar' && activeTab === 'cotizar' && _formTieneDatos()) {
+    if (!confirm('Tienes una orden sin cobrar. ¿Cambiar de pestaña y perder los datos?')) return;
+  }
+  _origShowTab(tab);
+};
+
+// Advertir al cerrar/recargar la página si hay datos sin guardar
+window.addEventListener('beforeunload', (e) => {
+  if (_formTieneDatos()) {
+    e.preventDefault();
+    e.returnValue = ''; // necesario para que Chrome muestre el diálogo
+  }
+});
+
+// ── Fix 6b: Capturar errores JS no manejados y mostrar pantalla amigable ──
+window.onerror = function(msg, src, line, col, err) {
+  // Ignorar errores de extensiones o recursos externos
+  if (src && !src.includes(window.location.hostname) && !src.includes('blob:')) return false;
+  console.error('[Lagos] Error no manejado:', msg, src, line, col, err);
+  // Mostrar banner de error no intrusivo (no bloquear la app entera)
+  const existing = document.getElementById('_crash-banner');
+  if (existing) return false; // solo mostrar uno
+  const banner = document.createElement('div');
+  banner.id = '_crash-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:#1a0a0a;border:1px solid rgba(239,71,111,0.5);
+    border-radius:12px;padding:12px 20px;z-index:9999;
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:480px;width:92%;
+    font-family:'DM Sans',sans-serif;font-size:13px;color:#f8d0d0;
+  `;
+  banner.innerHTML = `
+    <span style="font-size:22px">⚠️</span>
+    <div style="flex:1">
+      <strong style="color:#ef476f">Ocurrió un error inesperado</strong>
+      <div style="font-size:11px;color:#c0a0a0;margin-top:2px">Los datos guardados están seguros. Puedes recargar si algo no funciona.</div>
+    </div>
+    <button onclick="location.reload()" style="background:rgba(239,71,111,0.2);border:1px solid rgba(239,71,111,0.4);border-radius:8px;color:#ef476f;padding:6px 12px;cursor:pointer;font-size:12px;font-family:inherit">Recargar</button>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#c0a0a0;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>
+  `;
+  document.body.appendChild(banner);
+  return false; // no suprimir el error en consola
+};
 
 // Pausar/reanudar tickers según visibilidad de la pestaña (ahorra batería en móvil)
 document.addEventListener('visibilitychange', () => {
@@ -9874,6 +10215,8 @@ setInterval(() => {
   if (document.getElementById('page-dashboard')?.classList.contains('active')) {
     renderChart15dias();
   }
+  // Verificar si la sync está desactualizada (>30 min)
+  _actualizarStaleBadge();
 }, 60000);
 </script>
 <!-- ══════ PANTALLA DE BLOQUEO ══════ -->
