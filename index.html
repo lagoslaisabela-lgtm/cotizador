@@ -1444,6 +1444,41 @@
     flex-shrink: 0;
   }
 
+  /* Separador visual entre grupos de filtros */
+  .filter-bar-sep {
+    width: 1px;
+    height: 22px;
+    background: var(--card-border);
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  /* Botones de canal (Detal / Mayorista / Ambos) */
+  .canal-btns {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  .canal-btn {
+    padding: 6px 13px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,180,216,0.2);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .canal-btn:hover { border-color: rgba(0,180,216,0.4); color: var(--teal); }
+  .canal-btn.active.detal     { background: rgba(0,180,216,0.15); border-color: var(--teal);  color: var(--teal); }
+  .canal-btn.active.mayorista { background: rgba(6,214,160,0.15); border-color: var(--green); color: var(--green); }
+  .canal-btn.active.ambos     { background: rgba(255,209,102,0.15); border-color: var(--gold); color: var(--gold); }
+  body.light .canal-btn { border-color: rgba(0,140,200,0.2); }
+  body.light .canal-btn:hover { border-color: rgba(0,140,200,0.5); }
+
   .period-btns {
     display: flex;
     gap: 6px;
@@ -2999,6 +3034,13 @@
         <input type="date" id="date-desde" onchange="applyCustomRange()">
         <span class="sep">→</span>
         <input type="date" id="date-hasta" onchange="applyCustomRange()">
+      </div>
+      <div class="filter-bar-sep"></div>
+      <span class="filter-bar-label">🏪 Canal</span>
+      <div class="canal-btns">
+        <button class="canal-btn active ambos"     onclick="setCanal('ambos')"     data-canal="ambos">🔀 Ambos</button>
+        <button class="canal-btn detal"            onclick="setCanal('detal')"     data-canal="detal">🛒 Detal</button>
+        <button class="canal-btn mayorista"        onclick="setCanal('mayorista')" data-canal="mayorista">📦 Mayorista</button>
       </div>
       <div class="filter-period-indicator">
         <span class="period-pill" id="period-pill">Hoy</span>
@@ -5437,6 +5479,17 @@ function exportarClientesPDF() {
 let activePeriod = 'today';
 let customDesde  = null;
 let customHasta  = null;
+let activeCanal  = 'ambos'; // 'detal' | 'mayorista' | 'ambos'
+
+function setCanal(canal) {
+  activeCanal = canal;
+  _dashCache.serial = null;
+  // Actualizar botones activos
+  document.querySelectorAll('.canal-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.canal === canal);
+  });
+  renderDashboard();
+}
 
 function setPeriod(period) {
   activePeriod = period;
@@ -5465,6 +5518,9 @@ function applyCustomRange() {
 }
 
 function getFilteredOrdenes() {
+  // Si el canal es solo mayorista, no devolver órdenes detal
+  if (activeCanal === 'mayorista') return [];
+
   const now   = new Date();
   const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
@@ -5514,6 +5570,9 @@ function getFilteredOrdenes() {
 
 // Aplica el mismo filtro de período a las ventas mayoristas
 function getFilteredMayorista() {
+  // Si el canal es solo detal, no devolver ventas mayorista
+  if (activeCanal === 'detal') return [];
+
   const now   = new Date();
   const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
@@ -5569,8 +5628,9 @@ function getPeriodLabel() {
 let _dashCache = { serial: null };
 
 function renderDashboard() {
-  // Cache: si los datos no cambiaron y el período es el mismo, saltar
-  const serial = activePeriod + '|' + (activePeriod === 'custom' ? customDesde + customHasta : '') +
+  // Cache: si los datos no cambiaron y el período/canal es el mismo, saltar
+  const serial = activePeriod + '|' + activeCanal + '|' +
+    (activePeriod === 'custom' ? customDesde + customHasta : '') +
     '|' + ordenes.length + '|' + (ordenes[0]?.lastUpdated || '') +
     '|' + mayorista.length + '|' + (mayorista[0]?.lastUpdated || '');
   if (_dashCache.serial === serial) return;
@@ -5579,14 +5639,19 @@ function renderDashboard() {
   const listaMay    = getFilteredMayorista();
   const periodLabel = getPeriodLabel();
 
-  // Pill y etiquetas de período
-  document.getElementById('period-pill').textContent = periodLabel;
+  // Pill y etiquetas de período + canal
+  const canalLabel = activeCanal === 'detal' ? ' · Solo detal' : activeCanal === 'mayorista' ? ' · Solo mayorista' : '';
+  document.getElementById('period-pill').textContent = periodLabel + canalLabel;
   const sublabel = periodLabel;
   ['stat-period-label-1','stat-period-label-2','stat-period-label-3','stat-period-label-4'].forEach(id => {
     document.getElementById(id).textContent = sublabel;
   });
   document.getElementById('species-period-tag').textContent  = `· ${periodLabel}`;
   document.getElementById('finance-period-tag').textContent  = `· ${periodLabel}`;
+
+  // Mostrar/ocultar card de eviscerado según canal (solo detal tiene eviscerado)
+  const evCard = document.querySelector('.stat-card.coral');
+  if (evCard) evCard.style.display = activeCanal === 'mayorista' ? 'none' : '';
 
   // Acumulados del período — detal
   const totalVentasDetal     = lista.reduce((s, c) => s + c.total, 0);
@@ -5598,9 +5663,9 @@ function renderDashboard() {
   const totalVentasMay  = listaMay.reduce((s, v) => s + v.total, 0);
   const totalLibrasMay  = listaMay.reduce((s, v) => s + v.totalLibras, 0);
 
-  // Totales combinados
-  const totalVentas = totalVentasDetal + totalVentasMay;
-  const totalLibras = totalLibrasDetal + totalLibrasMay;
+  // Totales combinados (según canal activo)
+  const totalVentas  = totalVentasDetal + totalVentasMay;
+  const totalLibras  = totalLibrasDetal + totalLibrasMay;
   const totalOrdenes = lista.length + listaMay.length;
 
   // Stat cards
@@ -5609,20 +5674,30 @@ function renderDashboard() {
   document.getElementById('stat-libras-dia').textContent = totalLibras.toFixed(1) + ' lb';
   document.getElementById('stat-eviscerado').textContent = fmtShort(totalEviscerado);
 
-  // Desglose detal/mayorista bajo la stat de ventas
+  // Desglose detal/mayorista — solo mostrar si canal es 'ambos'
   const desgloseEl = document.getElementById('stat-desglose-ventas');
   if (desgloseEl) {
-    desgloseEl.innerHTML = totalVentasMay > 0
-      ? `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>
-         <span class="dash-pill-mayor">Mayor ${fmtShort(totalVentasMay)}</span>`
-      : `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>`;
+    if (activeCanal === 'ambos' && totalVentasMay > 0) {
+      desgloseEl.innerHTML =
+        `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>
+         <span class="dash-pill-mayor">Mayor ${fmtShort(totalVentasMay)}</span>`;
+    } else if (activeCanal === 'ambos') {
+      desgloseEl.innerHTML = `<span class="dash-pill-detal">Detal ${fmtShort(totalVentasDetal)}</span>`;
+    } else {
+      desgloseEl.innerHTML = ''; // canal único, no hace falta desglose
+    }
   }
   const desgloseLibEl = document.getElementById('stat-desglose-libras');
   if (desgloseLibEl) {
-    desgloseLibEl.innerHTML = totalLibrasMay > 0
-      ? `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>
-         <span class="dash-pill-mayor">${totalLibrasMay.toFixed(1)} lb mayor</span>`
-      : `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>`;
+    if (activeCanal === 'ambos' && totalLibrasMay > 0) {
+      desgloseLibEl.innerHTML =
+        `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>
+         <span class="dash-pill-mayor">${totalLibrasMay.toFixed(1)} lb mayor</span>`;
+    } else if (activeCanal === 'ambos') {
+      desgloseLibEl.innerHTML = `<span class="dash-pill-detal">${totalLibrasDetal.toFixed(1)} lb detal</span>`;
+    } else {
+      desgloseLibEl.innerHTML = '';
+    }
   }
 
   // Resumen financiero
@@ -5646,23 +5721,26 @@ function renderDashboard() {
     document.getElementById('fs-gran-total').textContent = fmt(totalVentas);
   }
 
-  // Estadísticas por especie (solo detal — mayorista tiene precios diferentes)
+  // Estadísticas por especie
   const map = {};
-  lista.forEach(c => {
-    c.items.forEach(item => {
-      if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
-      map[item.especie].lb    += item.qty;
-      map[item.especie].total += item.subPescado + item.subEviscerado;
+  if (activeCanal !== 'mayorista') {
+    lista.forEach(c => {
+      c.items.forEach(item => {
+        if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
+        map[item.especie].lb    += item.qty;
+        map[item.especie].total += item.subPescado + item.subEviscerado;
+      });
     });
-  });
-  // Agregar mayorista al mapa de especies
-  listaMay.forEach(v => {
-    v.items.forEach(item => {
-      if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
-      map[item.especie].lb    += item.qty;
-      map[item.especie].total += item.subTotal;
+  }
+  if (activeCanal !== 'detal') {
+    listaMay.forEach(v => {
+      v.items.forEach(item => {
+        if (!map[item.especie]) map[item.especie] = { lb: 0, total: 0 };
+        map[item.especie].lb    += item.qty;
+        map[item.especie].total += item.subTotal;
+      });
     });
-  });
+  }
 
   const entries = Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   const maxTotal = entries.length > 0 ? entries[0][1].total : 1;
@@ -5670,32 +5748,31 @@ function renderDashboard() {
 
   if (entries.length === 0) {
     cont.innerHTML = `<div class="empty-state" style="padding:24px"><div class="icon">📭</div><p>Sin ventas en el período seleccionado</p></div>`;
-    return;
-  }
-
-  cont.innerHTML = entries.map(([esp, data]) => `
-    <div class="species-bar">
-      <div class="bar-label">${esp}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${Math.round(data.total / maxTotal * 100)}%"></div>
+  } else {
+    cont.innerHTML = entries.map(([esp, data]) => `
+      <div class="species-bar">
+        <div class="bar-label">${escHtml(esp)}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.round(data.total / maxTotal * 100)}%"></div>
+        </div>
+        <div class="bar-value">${data.lb.toFixed(1)} lb</div>
       </div>
-      <div class="bar-value">${data.lb.toFixed(1)} lb</div>
-    </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;padding-left:152px">${fmt(data.total)}</div>
-  `).join('');
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;padding-left:152px">${fmt(data.total)}</div>
+    `).join('');
+  }
 
   // Gráfico 15 días (siempre usa datos completos, sin filtro de período)
   requestAnimationFrame(() => renderChart15dias());
 
   // ── Comparativa período anterior ──────────────────────
   const [prevOrdenes, prevMay] = _getPrevPeriodLists();
-  const prevVentas  = prevOrdenes.reduce((s,c)=>s+c.total,0) + prevMay.reduce((s,v)=>s+v.total,0);
-  const prevLibras  = prevOrdenes.reduce((s,c)=>s+c.totalLibras,0) + prevMay.reduce((s,v)=>s+v.totalLibras,0);
-  const prevOrdCount= prevOrdenes.length + prevMay.length;
-  const prevEv      = prevOrdenes.reduce((s,c)=>s+c.totalEviscerado,0);
-  _renderDelta('delta-ventas',     totalVentas,  prevVentas);
-  _renderDelta('delta-libras',     totalLibras,  prevLibras);
-  _renderDelta('delta-ordenes',    totalOrdenes, prevOrdCount);
+  const prevVentas   = prevOrdenes.reduce((s,c)=>s+c.total,0) + prevMay.reduce((s,v)=>s+v.total,0);
+  const prevLibras   = prevOrdenes.reduce((s,c)=>s+c.totalLibras,0) + prevMay.reduce((s,v)=>s+v.totalLibras,0);
+  const prevOrdCount = prevOrdenes.length + prevMay.length;
+  const prevEv       = prevOrdenes.reduce((s,c)=>s+c.totalEviscerado,0);
+  _renderDelta('delta-ventas',     totalVentas,    prevVentas);
+  _renderDelta('delta-libras',     totalLibras,    prevLibras);
+  _renderDelta('delta-ordenes',    totalOrdenes,   prevOrdCount);
   _renderDelta('delta-eviscerado', totalEviscerado, prevEv);
 }
 
@@ -6810,6 +6887,7 @@ function captureUIState() {
     scrollY:       window.scrollY,
     // Dashboard
     dashPeriod:    activePeriod,
+    dashCanal:     activeCanal,
     dashDesde:     customDesde,
     dashHasta:     customHasta,
     // Eviscerado
@@ -6842,6 +6920,13 @@ function restoreUIState(state) {
       if (customDesde) document.getElementById('date-desde').value = customDesde;
       if (customHasta) document.getElementById('date-hasta').value = customHasta;
     }
+  }
+  // Restaurar filtro de canal
+  if (state.dashCanal && state.dashCanal !== activeCanal) {
+    activeCanal = state.dashCanal;
+    document.querySelectorAll('[data-canal]').forEach(b =>
+      b.classList.toggle('active', b.dataset.canal === activeCanal)
+    );
   }
 
   // Restaurar filtros Eviscerado
@@ -8838,7 +8923,7 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 // Cuando se marca/desmarca desde fullscreen, también re-renderizar el fullscreen
 const _origToggleEvDone = toggleEvDone;
 
-//  PEZ MASCOTA SVG — comportamientos: nada, come, duerme, pone huevos, consigue novia, salta
+//  PEZ MASCOTA SVG — nada, come, duerme, huevos, novia, salta, algas, banco, medusas, más
 // ══════════════════════════════════════════════════════════
 (function() {
   const fish   = document.getElementById('fish-swimmer');
@@ -8847,379 +8932,479 @@ const _origToggleEvDone = toggleEvDone;
 
   const FW = 100, FH = 56;
 
-  // ── Paletas de color ───────────────────────────────────
+  // ══════════════════════════════════════════
+  //  DECORACIÓN AMBIENTAL DEL HEADER
+  // ══════════════════════════════════════════
+  const deco = document.createElement('div');
+  deco.id = 'fish-deco-layer';
+  deco.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden';
+  header.insertBefore(deco, header.firstChild);
+
+  // ── Algas SVG ─────────────────────────────
+  function crearAlga(xPct, altura, color, delaySec) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const w = 18, h = altura;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(h));
+    svg.style.cssText = `position:absolute;bottom:0;left:${xPct}%;opacity:0.5;`;
+
+    const segs = Math.max(2, Math.floor(h/13));
+    let pathD = `M${w/2},${h}`;
+    for (let i = 0; i < segs; i++) {
+      const yFrom = h - i*(h/segs);
+      const yTo   = h - (i+1)*(h/segs);
+      const cx1   = i%2===0 ? w*0.85 : w*0.15;
+      const cx2   = i%2===0 ? w*0.15 : w*0.85;
+      pathD += ` C${cx1},${yFrom} ${cx2},${yTo} ${w/2},${yTo}`;
+    }
+    const stem = document.createElementNS(ns, 'path');
+    stem.setAttribute('d', pathD);
+    stem.setAttribute('stroke', color);
+    stem.setAttribute('stroke-width', '2.5');
+    stem.setAttribute('fill', 'none');
+    stem.setAttribute('stroke-linecap', 'round');
+
+    for (let i = 1; i < segs; i++) {
+      const yLeaf = h - i*(h/segs);
+      const side  = i%2===0 ? 1 : -1;
+      const leaf  = document.createElementNS(ns, 'ellipse');
+      leaf.setAttribute('cx', String(w/2 + side*5));
+      leaf.setAttribute('cy', String(yLeaf));
+      leaf.setAttribute('rx', '4');
+      leaf.setAttribute('ry', '2');
+      leaf.setAttribute('fill', color);
+      leaf.setAttribute('opacity', '0.65');
+      leaf.setAttribute('transform', `rotate(${side*30},${w/2+side*5},${yLeaf})`);
+      svg.appendChild(leaf);
+    }
+    svg.appendChild(stem);
+
+    const kid = `aw${Math.random().toString(36).slice(2,7)}`;
+    const dur = (2.0 + Math.random()*1.6).toFixed(2);
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%,100%{transform-origin:bottom center;transform:rotate(-4deg) scaleX(1);}50%{transform-origin:bottom center;transform:rotate(5deg) scaleX(0.97);}}`;
+    document.head.appendChild(st);
+    svg.style.animation = `${kid} ${dur}s ease-in-out ${delaySec}s infinite`;
+    deco.appendChild(svg);
+  }
+
+  [
+    {x:1,  h:30, c:'#1a9c50', d:0   },
+    {x:4,  h:42, c:'#0d7a3e', d:0.4 },
+    {x:7,  h:24, c:'#36d67a', d:0.9 },
+    {x:10, h:36, c:'#0f5c30', d:0.2 },
+    {x:88, h:34, c:'#1a9c50', d:0.6 },
+    {x:91, h:26, c:'#36d67a', d:1.1 },
+    {x:94, h:44, c:'#0d7a3e', d:0.3 },
+    {x:97, h:28, c:'#0f5c30', d:0.8 },
+  ].forEach(a => crearAlga(a.x, a.h, a.c, a.d));
+
+  // ── Burbujas ambientales ───────────────────
+  for (let i = 0; i < 14; i++) {
+    const el  = document.createElement('div');
+    const sz  = 3 + Math.random()*5;
+    const xp  = 5 + Math.random()*90;
+    const dur = 4 + Math.random()*5;
+    const hh2 = header.offsetHeight || 80;
+    const kid = `ab${Math.random().toString(36).slice(2,7)}`;
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:0.7;}80%{opacity:0.4;}100%{transform:translateY(-${hh2+20}px) translateX(${((Math.random()-0.5)*18).toFixed(1)}px);opacity:0;}}`;
+    document.head.appendChild(st);
+    el.style.cssText = `position:absolute;bottom:-10px;left:${xp}%;width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(180,240,255,${(0.2+Math.random()*0.3).toFixed(2)});pointer-events:none;animation:${kid} ${dur}s ease-in ${(Math.random()*6).toFixed(1)}s infinite;`;
+    deco.appendChild(el);
+  }
+
+  // ── Destellos de luz submarina ─────────────
+  for (let i = 0; i < 6; i++) {
+    const el  = document.createElement('div');
+    const kid = `sh${Math.random().toString(36).slice(2,7)}`;
+    const dur = (3+Math.random()*4).toFixed(2);
+    const del = (Math.random()*5).toFixed(1);
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%,100%{opacity:0;transform:scaleX(1);}50%{opacity:0.16;transform:scaleX(1.25);}}`;
+    document.head.appendChild(st);
+    el.style.cssText = `position:absolute;left:${10+Math.random()*80}%;top:${15+Math.random()*65}%;width:${40+Math.random()*55}px;height:2px;background:linear-gradient(90deg,transparent,rgba(180,240,255,0.75),transparent);border-radius:2px;pointer-events:none;transform-origin:left center;animation:${kid} ${dur}s ease-in-out ${del}s infinite;`;
+    deco.appendChild(el);
+  }
+
+  // ── Coral decorativo ──────────────────────
+  for (let i = 0; i < 4; i++) {
+    const el  = document.createElement('div');
+    const kid = `co${Math.random().toString(36).slice(2,7)}`;
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}`;
+    document.head.appendChild(st);
+    const xp   = [3,15,83,95][i];
+    const emoj = ['🪸','🐚','🪸','🐚'][i];
+    el.style.cssText = `position:absolute;bottom:0;left:${xp}%;font-size:${12+Math.random()*6}px;pointer-events:none;opacity:0.7;animation:${kid} ${(3+Math.random()*2).toFixed(1)}s ease-in-out ${(Math.random()*2).toFixed(1)}s infinite;`;
+    el.textContent = emoj;
+    deco.appendChild(el);
+  }
+
+  // ── Banco de peces ─────────────────────────
+  let schoolActive = false;
+  const schoolFish = [];
+  function spawnSchool() {
+    if (schoolActive) return;
+    schoolActive = true;
+    const count    = 5 + Math.floor(Math.random()*4);
+    const fromLeft = Math.random() < 0.5;
+    const baseY    = 10 + Math.random()*(header.offsetHeight-28);
+    const hw2      = header.offsetWidth;
+    const emojis   = ['🐟','🐡','🐟','🐠','🐟'];
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      const row = Math.floor(i/2), col = i%2;
+      el.style.cssText = `position:absolute;pointer-events:none;z-index:1;font-size:${10+Math.random()*5}px;user-select:none;transform:scaleX(${fromLeft?1:-1});opacity:0;top:${baseY+row*8+(col===1?4:0)}px;left:${fromLeft?-30-i*15:hw2+30+i*15}px;`;
+      el.textContent = emojis[i%emojis.length];
+      header.appendChild(el);
+      schoolFish.push({el, offsetRow: row*8+(col===1?4:0), i});
+    }
+    const speed2 = 1.2 + Math.random()*0.8;
+    const startX = fromLeft ? -(count+1)*20 : hw2+(count+1)*20;
+    let posX = 0, t3 = 0;
+    function animSchool() {
+      posX += fromLeft ? speed2 : -speed2;
+      t3   += 0.04;
+      let allGone = true;
+      schoolFish.forEach(({el, offsetRow, i}) => {
+        const lx = startX + posX + (fromLeft ? -i*8 : i*8);
+        const ly = baseY + offsetRow + Math.sin(t3+i*0.4)*4;
+        el.style.left    = lx+'px';
+        el.style.top     = ly+'px';
+        el.style.opacity = (lx>-50 && lx<header.offsetWidth+50) ? '0.85' : '0';
+        if (lx>-90 && lx<header.offsetWidth+90) allGone=false;
+      });
+      if (!allGone) { requestAnimationFrame(animSchool); }
+      else {
+        schoolFish.forEach(({el})=>el.remove());
+        schoolFish.length=0;
+        schoolActive=false;
+      }
+    }
+    requestAnimationFrame(animSchool);
+  }
+
+  // ── Medusa flotante ────────────────────────
+  function spawnJellyfish() {
+    const el  = document.createElement('div');
+    const kid = `jf${Math.random().toString(36).slice(2,7)}`;
+    const hh2 = header.offsetHeight||80;
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%{transform:translateY(${hh2+20}px) rotate(-5deg);opacity:0;}15%{opacity:0.9;}85%{opacity:0.9;}100%{transform:translateY(-20px) rotate(5deg);opacity:0;}}`;
+    document.head.appendChild(st);
+    el.style.cssText = `position:absolute;pointer-events:none;z-index:1;font-size:${16+Math.random()*10}px;user-select:none;left:${10+Math.random()*80}%;animation:${kid} ${4+Math.random()*3}s ease-in-out forwards;`;
+    el.textContent = '🪼';
+    header.appendChild(el);
+    setTimeout(()=>el.remove(),7500);
+  }
+
+  // ── Estrella de mar / concha ───────────────
+  function spawnStarfish() {
+    const el  = document.createElement('div');
+    const kid = `sf${Math.random().toString(36).slice(2,7)}`;
+    const st  = document.createElement('style');
+    st.textContent = `@keyframes ${kid}{0%{opacity:0;transform:translateY(-8px) rotate(0deg) scale(0.4);}20%{opacity:0.85;transform:translateY(0) rotate(20deg) scale(1);}80%{opacity:0.85;}100%{opacity:0;transform:translateY(4px) rotate(5deg) scale(0.7);}}`;
+    document.head.appendChild(st);
+    el.style.cssText = `position:absolute;pointer-events:none;z-index:1;font-size:${13+Math.random()*8}px;user-select:none;bottom:2px;left:${5+Math.random()*88}%;animation:${kid} 3.5s ease-in-out forwards;`;
+    el.textContent = ['⭐','🌟','🐚','🪸','🦀'][Math.floor(Math.random()*5)];
+    header.appendChild(el);
+    setTimeout(()=>el.remove(),3600);
+  }
+
+  // ══════════════════════════════════════════
+  //  PEZ PRINCIPAL
+  // ══════════════════════════════════════════
   const PALS = [
-    { s0:'#b6f0ff', s1:'#00c8e8', s2:'#005f88', fin:'#0090c0', tail:'#004d70' },
-    { s0:'#ffe3a0', s1:'#ff7b2c', s2:'#8b2200', fin:'#e05500', tail:'#6b2000' },
-    { s0:'#c8ffdf', s1:'#36d67a', s2:'#0f5c30', fin:'#1a9c50', tail:'#0a4020' },
-    { s0:'#f0d0ff', s1:'#a855f7', s2:'#40007a', fin:'#7c22c8', tail:'#300060' },
-    { s0:'#fff3b0', s1:'#f9c74f', s2:'#7a5200', fin:'#d4a020', tail:'#8a5500' },
+    {s0:'#b6f0ff',s1:'#00c8e8',s2:'#005f88',fin:'#0090c0',tail:'#004d70'},
+    {s0:'#ffe3a0',s1:'#ff7b2c',s2:'#8b2200',fin:'#e05500',tail:'#6b2000'},
+    {s0:'#c8ffdf',s1:'#36d67a',s2:'#0f5c30',fin:'#1a9c50',tail:'#0a4020'},
+    {s0:'#f0d0ff',s1:'#a855f7',s2:'#40007a',fin:'#7c22c8',tail:'#300060'},
+    {s0:'#fff3b0',s1:'#f9c74f',s2:'#7a5200',fin:'#d4a020',tail:'#8a5500'},
   ];
-  let palIdx = 0;
+  let palIdx=0;
 
   function applyPalette(p) {
-    const svg = document.getElementById('fish-svg');
-    if (!svg) return;
-    const bg = document.getElementById('bodyGrad');
-    if (bg) {
-      const stops = bg.querySelectorAll('stop');
-      if (stops[0]) stops[0].style.stopColor = p.s0;
-      if (stops[1]) stops[1].style.stopColor = p.s1;
-      if (stops[2]) stops[2].style.stopColor = p.s2;
-    }
-    const tg = document.getElementById('tailGrad');
-    if (tg) {
-      const ts = tg.querySelectorAll('stop');
-      if (ts[0]) ts[0].style.stopColor = p.tail;
-      if (ts[1]) ts[1].style.stopColor = p.fin;
-    }
-    const fin = document.getElementById('fish-fin');
-    if (fin) fin.style.fill = p.fin;
+    const bg=document.getElementById('bodyGrad');
+    if (bg) { const s=bg.querySelectorAll('stop'); if(s[0])s[0].style.stopColor=p.s0; if(s[1])s[1].style.stopColor=p.s1; if(s[2])s[2].style.stopColor=p.s2; }
+    const tg=document.getElementById('tailGrad');
+    if (tg) { const s=tg.querySelectorAll('stop'); if(s[0])s[0].style.stopColor=p.tail; if(s[1])s[1].style.stopColor=p.fin; }
+    const fin=document.getElementById('fish-fin'); if(fin) fin.style.fill=p.fin;
   }
   applyPalette(PALS[0]);
 
-  // ── Refs SVG ───────────────────────────────────────────
-  const eyeIris  = document.getElementById('fish-eye-iris');
-  const eyePupil = document.getElementById('fish-eye-pupil');
-  const eyeWhite = document.getElementById('fish-eye-white');
-  const bub1     = document.getElementById('bub1');
-  const bub2     = document.getElementById('bub2');
-  const bub3     = document.getElementById('bub3');
-  const fishBody = document.getElementById('fish-body');
-  const fishMouth= document.querySelector('#fish-svg path[stroke="#005f88"]');
+  const eyeIris =document.getElementById('fish-eye-iris');
+  const eyePupil=document.getElementById('fish-eye-pupil');
+  const eyeWhite=document.getElementById('fish-eye-white');
+  const bub1=document.getElementById('bub1');
+  const bub2=document.getElementById('bub2');
+  const bub3=document.getElementById('bub3');
+  const fishBody=document.getElementById('fish-body');
 
-  // ── Helpers visuales ──────────────────────────────────
   function setBlink(open) {
-    if (eyeIris)  eyeIris.setAttribute('ry',  String(Math.max(0.1, open * 3)));
-    if (eyePupil) eyePupil.setAttribute('ry', String(Math.max(0.1, open * 1.5)));
-    if (eyeWhite) eyeWhite.setAttribute('ry', String(Math.max(0.1, open * 5)));
+    if(eyeIris)  eyeIris.setAttribute('ry', String(Math.max(0.1,open*3)));
+    if(eyePupil) eyePupil.setAttribute('ry',String(Math.max(0.1,open*1.5)));
+    if(eyeWhite) eyeWhite.setAttribute('ry',String(Math.max(0.1,open*5)));
   }
   function setTailSpeed(spd) {
-    const dur = Math.max(0.22, 0.78 - spd * 0.12) + 's';
-    const tail = document.getElementById('fish-tail');
-    const fin  = document.getElementById('fish-fin');
-    if (tail) tail.style.animationDuration = dur;
-    if (fin)  fin.style.animationDuration  = dur;
+    const dur=Math.max(0.22,0.78-spd*0.12)+'s';
+    const tl=document.getElementById('fish-tail');
+    const fn=document.getElementById('fish-fin');
+    if(tl) tl.style.animationDuration=dur;
+    if(fn) fn.style.animationDuration=dur;
   }
   function pauseTail(yes) {
-    const tail = document.getElementById('fish-tail');
-    const fin  = document.getElementById('fish-fin');
-    if (tail) tail.style.animationPlayState = yes ? 'paused' : 'running';
-    if (fin)  fin.style.animationPlayState  = yes ? 'paused' : 'running';
+    const tl=document.getElementById('fish-tail');
+    const fn=document.getElementById('fish-fin');
+    const s=yes?'paused':'running';
+    if(tl) tl.style.animationPlayState=s;
+    if(fn) fn.style.animationPlayState=s;
   }
-  function hideBubbles(yes) {
-    [bub1,bub2,bub3].forEach(b => { if (b) b.style.display = yes ? 'none' : ''; });
-  }
+  function hideBubbles(yes) { [bub1,bub2,bub3].forEach(b=>{if(b)b.style.display=yes?'none':''}); }
 
-  // ── Spawner de elementos flotantes ─────────────────────
-  // Crea un elemento SVG externo flotante que aparece cerca del pez
-  function spawnFloating(content, dxRange, dyRange, durMs, fontSize='16px') {
-    const el = document.createElement('div');
-    el.style.cssText = `
-      position:fixed;pointer-events:none;z-index:9000;
-      font-size:${fontSize};user-select:none;
-      transition:transform ${durMs}ms ease-out, opacity ${durMs}ms ease-out;
-      will-change:transform,opacity;
-    `;
-    el.textContent = content;
-    // posición inicial relativa al pez
-    const rect = fish.getBoundingClientRect();
-    const ox = rect.left + rect.width/2  + (Math.random()-0.5) * 30;
-    const oy = rect.top  + rect.height/2 + (Math.random()-0.5) * 20;
-    el.style.left = ox + 'px';
-    el.style.top  = oy + 'px';
-    el.style.opacity = '1';
+  function spawnFloating(content,dxRange,dyRange,durMs,fontSize='16px') {
+    const el=document.createElement('div');
+    el.style.cssText=`position:fixed;pointer-events:none;z-index:9000;font-size:${fontSize};user-select:none;transition:transform ${durMs}ms ease-out,opacity ${durMs}ms ease-out;will-change:transform,opacity;`;
+    el.textContent=content;
+    const rect=fish.getBoundingClientRect();
+    const ox=rect.left+rect.width/2+(Math.random()-0.5)*30;
+    const oy=rect.top+rect.height/2+(Math.random()-0.5)*20;
+    el.style.left=ox+'px'; el.style.top=oy+'px'; el.style.opacity='1';
     document.body.appendChild(el);
-    requestAnimationFrame(() => {
-      const dx = dxRange[0] + Math.random() * (dxRange[1]-dxRange[0]);
-      const dy = dyRange[0] + Math.random() * (dyRange[1]-dyRange[0]);
-      el.style.transform = `translate(${dx}px,${dy}px) scale(1.3)`;
-      el.style.opacity   = '0';
+    requestAnimationFrame(()=>{
+      const dx=dxRange[0]+Math.random()*(dxRange[1]-dxRange[0]);
+      const dy=dyRange[0]+Math.random()*(dyRange[1]-dyRange[0]);
+      el.style.transform=`translate(${dx}px,${dy}px) scale(1.3)`;
+      el.style.opacity='0';
     });
-    setTimeout(() => el.remove(), durMs + 100);
+    setTimeout(()=>el.remove(),durMs+100);
   }
 
-  // ── Estado del comportamiento ──────────────────────────
-  // behaviours: 'swim' | 'eat' | 'sleep' | 'egg' | 'love' | 'jump' | 'dizzy' | 'sprint'
-  let behaviour   = 'swim';
-  let behaviourT  = 0;   // frames en el comportamiento actual
-  let behaviourDur= 999; // duración en frames
-  let behaviourCooldowns = {};
+  // ── Estado ───────────────────────────────
+  let behaviour='swim', behaviourT=0, behaviourDur=999;
+  let behaviourCooldowns={};
+  let x=80, dir=1, speed=1.2, targetSpd=1.2, spdTimer=0;
+  let t=0, angle=0;
+  let blinkTimer=0, nextBlink=200+Math.random()*200;
+  let sleepZTimer=0, eatBiteTimer=0, loveHeartTimer=0, eggTimer=0;
+  let jumpY=0, jumpVY=0, dizzyAngle=0;
+  let yawnTimer=0, scratchTimer=0, exploreTimer=0, exploreTargetX=0;
+  let scaredTimer=0, bubblepartyTimer=0;
+  let girlfriend=null, girlfriendX=0, girlfriendDir=1, girlfriendActive=false;
+  let schoolTimer=0, starfishTimer=0, jellyfishTimer=0;
 
-  // Parámetros de movimiento base
-  let x = 80, dir = 1;
-  let speed = 1.2, targetSpd = 1.2, spdTimer = 0;
-  let t = 0, angle = 0;
-
-  // Parpadeo
-  let blinkTimer = 0, nextBlink = 200 + Math.random()*200;
-
-  // Parámetros específicos por behavior
-  let sleepZTimer = 0;      // para las Z de dormir
-  let eatBiteTimer = 0;     // para mordidas
-  let loveHeartTimer = 0;   // para corazones
-  let eggTimer = 0;         // para huevos
-  let jumpPhase = 0;        // 0=subiendo 1=bajando
-  let jumpY = 0, jumpVY = 0;
-  let dizzyAngle = 0;
-  let girlfriend = null;    // div del pez novia
-  let girlfriendX = 0, girlfriendDir = 1;
-  let girlfriendActive = false;
-
-  // ── Elegir próximo comportamiento ─────────────────────
-  const BEHAVIOUR_POOL = [
-    { id:'eat',    weight:18, minCool:400  },
-    { id:'sleep',  weight:12, minCool:600  },
-    { id:'egg',    weight:8,  minCool:700  },
-    { id:'love',   weight:10, minCool:800  },
-    { id:'jump',   weight:14, minCool:350  },
-    { id:'sprint', weight:20, minCool:200  },
-    { id:'dizzy',  weight:8,  minCool:500  },
-    { id:'swim',   weight:30, minCool:0    },
+  const POOL=[
+    {id:'eat',        w:16,cool:350},
+    {id:'sleep',      w:10,cool:600},
+    {id:'egg',        w:7, cool:700},
+    {id:'love',       w:9, cool:800},
+    {id:'jump',       w:12,cool:300},
+    {id:'sprint',     w:18,cool:180},
+    {id:'dizzy',      w:7, cool:500},
+    {id:'yawn',       w:10,cool:400},
+    {id:'scratch',    w:8, cool:350},
+    {id:'explore',    w:12,cool:250},
+    {id:'scared',     w:6, cool:600},
+    {id:'bubbleparty',w:8, cool:500},
+    {id:'swim',       w:28,cool:0  },
   ];
 
   function pickBehaviour() {
-    const now = behaviourT + (behaviourCooldowns._tick || 0);
-    const available = BEHAVIOUR_POOL.filter(b =>
-      b.id === 'swim' || !behaviourCooldowns[b.id] || (behaviourCooldowns._tick||0) - behaviourCooldowns[b.id] > b.minCool
-    );
-    const total = available.reduce((s,b) => s+b.weight, 0);
-    let r = Math.random() * total;
-    for (const b of available) { r -= b.weight; if (r <= 0) return b.id; }
+    const tick=behaviourCooldowns._tick||0;
+    const avail=POOL.filter(b=>b.id==='swim'||!behaviourCooldowns[b.id]||tick-behaviourCooldowns[b.id]>b.cool);
+    const total=avail.reduce((s,b)=>s+b.w,0);
+    let r=Math.random()*total;
+    for(const b of avail){r-=b.w; if(r<=0)return b.id;}
     return 'swim';
   }
 
   function startBehaviour(id) {
-    // Limpiar estado anterior
-    if (behaviour === 'love' && girlfriendActive) removeGirlfriend();
-    if (behaviour === 'sleep') { setBlink(1); hideBubbles(false); pauseTail(false); }
-
-    behaviour    = id;
-    behaviourT   = 0;
-    behaviourCooldowns[id] = behaviourCooldowns._tick || 0;
-
-    switch(id) {
-      case 'eat':    behaviourDur = 140; eatBiteTimer = 0;    break;
-      case 'sleep':  behaviourDur = 320; sleepZTimer  = 0;    break;
-      case 'egg':    behaviourDur = 180; eggTimer     = 0;    break;
-      case 'love':   behaviourDur = 380; loveHeartTimer=0; spawnGirlfriend(); break;
-      case 'jump':   behaviourDur = 100; jumpPhase=0; jumpVY=-5; jumpY=0; break;
-      case 'sprint': behaviourDur = 80;  targetSpd = 5.5;    break;
-      case 'dizzy':  behaviourDur = 160; dizzyAngle=0;       break;
-      case 'swim':   behaviourDur = 160 + Math.random()*200; break;
+    if(behaviour==='love'&&girlfriendActive) removeGirlfriend();
+    if(behaviour==='sleep'){setBlink(1);hideBubbles(false);pauseTail(false);}
+    behaviour=id; behaviourT=0;
+    behaviourCooldowns[id]=behaviourCooldowns._tick||0;
+    switch(id){
+      case 'eat':         behaviourDur=140; eatBiteTimer=0;       break;
+      case 'sleep':       behaviourDur=320; sleepZTimer=0;        break;
+      case 'egg':         behaviourDur=180; eggTimer=0;           break;
+      case 'love':        behaviourDur=380; loveHeartTimer=0; spawnGirlfriend(); break;
+      case 'jump':        behaviourDur=100; jumpVY=-5; jumpY=0;   break;
+      case 'sprint':      behaviourDur=80;  targetSpd=5.5;        break;
+      case 'dizzy':       behaviourDur=160; dizzyAngle=0;         break;
+      case 'yawn':        behaviourDur=90;  yawnTimer=0;          break;
+      case 'scratch':     behaviourDur=80;  scratchTimer=0;       break;
+      case 'explore':     behaviourDur=200; exploreTimer=0;
+                          exploreTargetX=30+Math.random()*(header.offsetWidth-130); break;
+      case 'scared':      behaviourDur=70;  scaredTimer=0;        break;
+      case 'bubbleparty': behaviourDur=120; bubblepartyTimer=0;   break;
+      case 'swim':        behaviourDur=160+Math.random()*200;     break;
     }
   }
 
-  // ── Novia ──────────────────────────────────────────────
   function spawnGirlfriend() {
-    if (girlfriendActive) return;
-    girlfriendActive = true;
-    girlfriend = document.createElement('div');
-    girlfriend.id = 'fish-girlfriend';
-    girlfriend.style.cssText = `
-      position:absolute;pointer-events:none;z-index:0;
-      font-size:28px;user-select:none;
-      transition:none;
-      will-change:transform,left,top;
-    `;
-    girlfriend.textContent = '🐠';
-    // Empieza desde el lado opuesto al pez
-    const hw = header.offsetWidth;
-    girlfriendX = dir > 0 ? hw - 60 : 20;
-    girlfriendDir = dir > 0 ? -1 : 1;
-    const gy = (header.offsetHeight / 2) + (Math.random()-0.5) * 20;
-    girlfriend.style.left = girlfriendX + 'px';
-    girlfriend.style.top  = gy + 'px';
+    if(girlfriendActive)return;
+    girlfriendActive=true;
+    girlfriend=document.createElement('div');
+    girlfriend.style.cssText='position:absolute;pointer-events:none;z-index:0;font-size:26px;user-select:none;will-change:left,top,transform;';
+    girlfriend.textContent='🐠';
+    girlfriendX=dir>0?header.offsetWidth-60:20;
+    girlfriendDir=dir>0?-1:1;
+    girlfriend.style.left=girlfriendX+'px';
+    girlfriend.style.top=(header.offsetHeight/2)+'px';
     header.appendChild(girlfriend);
   }
   function updateGirlfriend() {
-    if (!girlfriend || !girlfriendActive) return;
-    const hw = header.offsetWidth;
-    const hh = header.offsetHeight;
-    // Se mueve hacia el pez
-    const targetX = x + (dir > 0 ? FW/2 : -30);
-    const diffX   = targetX - girlfriendX;
-    girlfriendX  += Math.sign(diffX) * Math.min(Math.abs(diffX)*0.04 + 0.8, 3);
-    girlfriendDir = diffX > 0 ? 1 : -1;
-    const gy = parseFloat(girlfriend.style.top) || hh/2;
-    const newGy = Math.max(4, Math.min(hh-32, gy + Math.sin(behaviourT*0.08)*0.6));
-    girlfriend.style.left      = girlfriendX + 'px';
-    girlfriend.style.top       = newGy + 'px';
-    girlfriend.style.transform = `scaleX(${girlfriendDir})`;
-    // Cuando están cerca: corazones
-    if (Math.abs(diffX) < 30 && behaviourT % 18 === 0) {
-      spawnFloating('❤️', [-25,25], [-40,-15], 900, '14px');
-    }
+    if(!girlfriend||!girlfriendActive)return;
+    const hh2=header.offsetHeight;
+    const tx=x+(dir>0?FW/2:-30);
+    const dx=tx-girlfriendX;
+    girlfriendX+=Math.sign(dx)*Math.min(Math.abs(dx)*0.04+0.8,3);
+    girlfriendDir=dx>0?1:-1;
+    const gy=parseFloat(girlfriend.style.top)||hh2/2;
+    const ngy=Math.max(4,Math.min(hh2-32,gy+Math.sin(behaviourT*0.08)*0.6));
+    girlfriend.style.left=girlfriendX+'px';
+    girlfriend.style.top=ngy+'px';
+    girlfriend.style.transform=`scaleX(${girlfriendDir})`;
+    if(Math.abs(dx)<30&&behaviourT%18===0) spawnFloating('❤️',[-25,25],[-40,-15],900,'14px');
   }
-  function removeGirlfriend() {
-    if (girlfriend) { girlfriend.remove(); girlfriend = null; }
-    girlfriendActive = false;
-  }
+  function removeGirlfriend(){if(girlfriend){girlfriend.remove();girlfriend=null;}girlfriendActive=false;}
 
-  // ── Loop principal ────────────────────────────────────
-  let frameCount = 0;
-  function loop() {
+  // ── Loop ─────────────────────────────────
+  let frameCount=0;
+  function loop(){
     frameCount++;
-    behaviourCooldowns._tick = frameCount;
-    const hw = header.offsetWidth;
-    const hh = header.offsetHeight;
+    behaviourCooldowns._tick=frameCount;
+    const hw=header.offsetWidth, hh=header.offsetHeight;
 
-    // ── Avanzar comportamiento o cambiar ──────────────
     behaviourT++;
-    if (behaviourT >= behaviourDur && behaviour !== 'jump') {
-      startBehaviour(Math.random() < 0.38 ? pickBehaviour() : 'swim');
-    }
+    if(behaviourT>=behaviourDur&&behaviour!=='jump')
+      startBehaviour(Math.random()<0.4?pickBehaviour():'swim');
 
-    // ── Velocidad base ────────────────────────────────
-    if (behaviour === 'swim' || behaviour === 'egg' || behaviour === 'dizzy') {
-      spdTimer++;
-      if (spdTimer > 130) { targetSpd = 0.5 + Math.random()*2.2; spdTimer=0; }
-      speed += (targetSpd - speed) * 0.007;
-    } else if (behaviour === 'sprint') {
-      speed += (targetSpd - speed) * 0.05;
-      if (behaviourT > 60) targetSpd = 1.2; // frena gradualmente
-    } else if (behaviour === 'sleep') {
-      speed += (0.15 - speed) * 0.03; // desacelera mucho
-    } else if (behaviour === 'eat') {
-      speed += (0.4 - speed) * 0.06; // casi se detiene
-    } else if (behaviour === 'love') {
-      speed += (0.8 - speed) * 0.04;
-    } else if (behaviour === 'jump') {
-      speed = 1.5;
-    }
-    setTailSpeed(speed);
+    // Timers ambientales
+    schoolTimer++;    if(schoolTimer>500+Math.random()*800){schoolTimer=0;spawnSchool();}
+    starfishTimer++;  if(starfishTimer>350+Math.random()*500){starfishTimer=0;spawnStarfish();}
+    jellyfishTimer++; if(jellyfishTimer>600+Math.random()*700){jellyfishTimer=0;spawnJellyfish();}
 
-    // ── Movimiento horizontal ─────────────────────────
-    let currentSpeed = (behaviour === 'sleep') ? speed * 0.3 : speed;
-    x += dir * currentSpeed;
+    // Velocidad
+    if(['swim','egg','dizzy','yawn','scratch','explore','bubbleparty'].includes(behaviour)){
+      spdTimer++; if(spdTimer>130){targetSpd=0.5+Math.random()*2.2;spdTimer=0;}
+      speed+=(targetSpd-speed)*0.007;
+    }else if(behaviour==='sprint'){speed+=(targetSpd-speed)*0.05;if(behaviourT>60)targetSpd=1.2;}
+    else if(behaviour==='sleep') speed+=(0.15-speed)*0.03;
+    else if(behaviour==='eat')   speed+=(0.4-speed)*0.06;
+    else if(behaviour==='love')  speed+=(0.8-speed)*0.04;
+    else if(behaviour==='scared')speed+=(4.5-speed)*0.15;
+    else if(behaviour==='explore')speed+=(0.5-speed)*0.04;
+    setTailSpeed(behaviour==='sleep'?speed*0.3:speed);
 
-    if (x >= hw - FW + 12) {
-      x = hw - FW + 12; dir = -1;
-      palIdx = (palIdx + 1) % PALS.length;
-      applyPalette(PALS[palIdx]);
-    } else if (x <= -12) {
-      x = -12; dir = 1;
-      palIdx = (palIdx + 1) % PALS.length;
-      applyPalette(PALS[palIdx]);
-    }
+    // Movimiento horizontal
+    const spd2=behaviour==='sleep'?speed*0.3:speed;
+    if(behaviour==='explore'){
+      const dx2=exploreTargetX-x;
+      if(Math.abs(dx2)>4){dir=dx2>0?1:-1;x+=dir*spd2;}
+    }else{x+=dir*spd2;}
 
-    // ── Oscilación vertical ───────────────────────────
-    t += 0.035;
-    const margin = 4;
-    const cy  = hh / 2;
-    const amp = Math.max(0, (hh - FH) / 2 - margin);
+    if(x>=hw-FW+12){x=hw-FW+12;dir=-1;palIdx=(palIdx+1)%PALS.length;applyPalette(PALS[palIdx]);}
+    else if(x<=-12){x=-12;dir=1;palIdx=(palIdx+1)%PALS.length;applyPalette(PALS[palIdx]);}
 
+    // Posición vertical
+    t+=0.035;
+    const margin=4,cy=hh/2,amp=Math.max(0,(hh-FH)/2-margin);
     let rawY;
-    if (behaviour === 'jump') {
-      // Salto parabólico sobre el header
-      jumpVY += 0.28;
-      jumpY  += jumpVY;
-      rawY    = cy - 30 + jumpY;
-      if (jumpY > 60) {
-        startBehaviour('swim');
-      }
-    } else if (behaviour === 'sleep') {
-      // Deriva suavemente hacia abajo
-      rawY = cy + amp * 0.6 + Math.sin(t * 0.2) * 4;
-    } else {
-      rawY  = cy
-        + Math.sin(t * 0.75)        * amp * 0.55
-        + Math.sin(t * 2.0 + 0.9)  * amp * 0.22
-        + Math.sin(t * 0.38 + 0.5) * amp * 0.15;
-    }
-    const y = Math.max(margin, Math.min(hh - FH - margin, rawY - FH/2));
+    if(behaviour==='jump'){jumpVY+=0.28;jumpY+=jumpVY;rawY=cy-30+jumpY;if(jumpY>60)startBehaviour('swim');}
+    else if(behaviour==='sleep') rawY=cy+amp*0.6+Math.sin(t*0.2)*4;
+    else if(behaviour==='scared') rawY=cy-amp*0.4;
+    else rawY=cy+Math.sin(t*0.75)*amp*0.55+Math.sin(t*2.0+0.9)*amp*0.22+Math.sin(t*0.38+0.5)*amp*0.15;
+    const y=Math.max(margin,Math.min(hh-FH-margin,rawY-FH/2));
 
-    // ── Inclinación ───────────────────────────────────
+    // Inclinación
     let clamp;
-    if (behaviour === 'dizzy') {
-      dizzyAngle += 4.5;
-      clamp = dizzyAngle % 360;
-    } else if (behaviour === 'jump') {
-      clamp = jumpVY * 6;
-    } else {
-      const dy = Math.cos(t*0.75)*amp*0.55*0.035*0.75 + Math.cos(t*2.0+0.9)*amp*0.22*0.035*2.0;
-      angle += (dy*130 - angle) * 0.07;
-      clamp = Math.max(-22, Math.min(22, angle));
-    }
+    if(behaviour==='dizzy'){dizzyAngle+=4.5;clamp=dizzyAngle%360;}
+    else if(behaviour==='jump') clamp=jumpVY*6;
+    else if(behaviour==='scared') clamp=-20*dir;
+    else{const dy=Math.cos(t*0.75)*amp*0.55*0.035*0.75+Math.cos(t*2.0+0.9)*amp*0.22*0.035*2.0;angle+=(dy*130-angle)*0.07;clamp=Math.max(-22,Math.min(22,angle));}
 
-    // ── Parpadeo ──────────────────────────────────────
-    if (behaviour !== 'sleep' && behaviour !== 'dizzy') {
+    // Parpadeo
+    if(!['sleep','dizzy','yawn'].includes(behaviour)){
       blinkTimer++;
-      if (blinkTimer >= nextBlink) {
-        const ph = blinkTimer - nextBlink;
-        if      (ph < 4)  setBlink(1 - ph/4);
-        else if (ph < 7)  setBlink(0);
-        else if (ph < 11) setBlink((ph-7)/4);
-        else { blinkTimer=0; nextBlink=150+Math.random()*250; setBlink(1); }
-      }
+      if(blinkTimer>=nextBlink){const ph=blinkTimer-nextBlink;
+        if(ph<4)setBlink(1-ph/4);else if(ph<7)setBlink(0);else if(ph<11)setBlink((ph-7)/4);
+        else{blinkTimer=0;nextBlink=150+Math.random()*250;setBlink(1);}}
     }
 
-    // ── Comportamientos especiales ────────────────────
-
-    // DORMIR: ojos cerrados, cola lenta, Zs flotantes, burbuja lenta
-    if (behaviour === 'sleep') {
-      setBlink(0.05);
-      pauseTail(false);
-      hideBubbles(false);
-      sleepZTimer++;
-      if (sleepZTimer % 55 === 0) spawnFloating('💤', [-10,10], [-50,-20], 1200, '13px');
-      if (sleepZTimer % 80 === 20) spawnFloating('Z', [-8,8], [-35,-10], 900, '11px');
+    // ── Comportamientos ──────────────────────
+    if(behaviour==='sleep'){
+      setBlink(0.05);pauseTail(false);hideBubbles(false);sleepZTimer++;
+      if(sleepZTimer%55===0) spawnFloating('💤',[-10,10],[-50,-20],1200,'13px');
+      if(sleepZTimer%80===20) spawnFloating('Z',[-8,8],[-35,-10],900,'11px');
+      if(sleepZTimer%90===40) spawnFloating('z',[-6,6],[-25,-5],700,'9px');
     }
-
-    // COMER: boca abierta (escala Y del cuerpo), partículas de comida
-    if (behaviour === 'eat') {
+    if(behaviour==='eat'){
       eatBiteTimer++;
-      const bite = Math.sin(eatBiteTimer * 0.25);
-      if (fishBody) fishBody.setAttribute('ry', String(14 + bite*2));
-      if (eatBiteTimer % 22 === 0) spawnFloating(['🦐','🦑','🐛','🫧'][Math.floor(Math.random()*4)], [-20,20], [-30,-5], 800, '13px');
-      if (eatBiteTimer % 14 === 7) spawnFloating('✨', [-15,15], [-20,5], 600, '10px');
-    } else {
-      if (fishBody) fishBody.setAttribute('ry', '14'); // restaurar
-    }
-
-    // PONER HUEVOS: cada N frames suelta un huevo que cae
-    if (behaviour === 'egg') {
+      const bite=Math.sin(eatBiteTimer*0.25);
+      if(fishBody)fishBody.setAttribute('ry',String(14+bite*2));
+      if(eatBiteTimer%22===0) spawnFloating(['🦐','🦑','🐛','🫧','🐠'][Math.floor(Math.random()*5)],[-20,20],[-30,-5],800,'13px');
+      if(eatBiteTimer%14===7) spawnFloating('✨',[-15,15],[-20,5],600,'10px');
+    }else{if(fishBody)fishBody.setAttribute('ry','14');}
+    if(behaviour==='egg'){
       eggTimer++;
-      if (eggTimer % 28 === 0 && eggTimer < 140) {
-        spawnFloating('🥚', [-5,5], [10,40], 1400, '12px');
-        spawnFloating('🫧', [-8,8], [-15,-5], 700, '8px');
-      }
-      if (eggTimer === 30) spawnFloating('🐣', [-10,10], [-25,-5], 1100, '14px');
+      if(eggTimer%28===0&&eggTimer<140){spawnFloating('🥚',[-5,5],[10,40],1400,'12px');spawnFloating('🫧',[-8,8],[-15,-5],700,'8px');}
+      if(eggTimer===30) spawnFloating('🐣',[-10,10],[-25,-5],1100,'14px');
+      if(eggTimer===90) spawnFloating('🐟',[-15,15],[-30,-10],1300,'12px');
     }
-
-    // AMOR: novia se acerca + corazones
-    if (behaviour === 'love') {
-      updateGirlfriend();
-      loveHeartTimer++;
-      if (loveHeartTimer % 35 === 0) spawnFloating(['💕','💗','💖','🌸'][Math.floor(Math.random()*4)], [-30,30], [-45,-10], 1000, '15px');
+    if(behaviour==='love'){
+      updateGirlfriend();loveHeartTimer++;
+      if(loveHeartTimer%35===0) spawnFloating(['💕','💗','💖','🌸','💝'][Math.floor(Math.random()*5)],[-30,30],[-45,-10],1000,'15px');
+      if(loveHeartTimer%60===0) spawnFloating('🎵',[-20,20],[-35,-5],900,'11px');
     }
-
-    // MAREO/DIZZY: estrellas girando + ojos en X
-    if (behaviour === 'dizzy') {
+    if(behaviour==='dizzy'){
       setBlink(0.6);
-      if (behaviourT % 12 === 0) spawnFloating(['⭐','💫','✨'][Math.floor(Math.random()*3)], [-25,25], [-30,-5], 700, '11px');
+      if(behaviourT%12===0) spawnFloating(['⭐','💫','✨','🌀'][Math.floor(Math.random()*4)],[-25,25],[-30,-5],700,'11px');
+    }
+    if(behaviour==='sprint'&&behaviourT%8===0) spawnFloating(['💨','⚡','🌊'][Math.floor(Math.random()*3)],[dir*(-30),dir*(-15)],[-10,10],500,'11px');
+    if(behaviour==='yawn'){
+      yawnTimer++;
+      if(fishBody)fishBody.setAttribute('ry',String(14+Math.max(0,Math.sin(yawnTimer*0.08)*2)));
+      if(yawnTimer===20) spawnFloating('😪',[-8,8],[-30,-10],1100,'14px');
+      if(yawnTimer===40) spawnFloating('💤',[-5,5],[-40,-15],1000,'12px');
+      if(yawnTimer===60) spawnFloating('🥱',[-8,8],[-25,-5],900,'13px');
+      const p2=yawnTimer/behaviourDur;
+      if(p2>0.3&&p2<0.7)setBlink(1-(p2-0.3)/0.4*0.8);else setBlink(1);
+    }
+    if(behaviour==='scratch'){
+      scratchTimer++;
+      if(scratchTimer%8===0) spawnFloating(['?','!','💭'][Math.floor(Math.random()*3)],[-5,5],[-25,-5],700,'10px');
+      if(scratchTimer===30) spawnFloating('🤔',[-8,8],[-30,-10],1000,'14px');
+    }
+    if(behaviour==='explore'){
+      exploreTimer++;
+      if(exploreTimer===30) spawnFloating('👀',[-10,10],[-25,-5],900,'12px');
+      if(exploreTimer%50===0) spawnFloating(['🔍','❓','💡'][Math.floor(Math.random()*3)],[-12,12],[-30,-5],800,'11px');
+    }
+    if(behaviour==='scared'){
+      scaredTimer++;
+      if(scaredTimer===2) spawnFloating('😱',[-10,10],[-35,-10],800,'14px');
+      if(scaredTimer===5) spawnFloating('❗',[-5,5],[-30,-5],600,'12px');
+      if(scaredTimer%6===0&&scaredTimer<40) spawnFloating('💨',[dir*(-25),dir*(-10)],[-8,8],400,'10px');
+    }
+    if(behaviour==='bubbleparty'){
+      bubblepartyTimer++;
+      if(bubblepartyTimer%5===0) spawnFloating(['🫧','⭕','🔵','🟦'][Math.floor(Math.random()*4)],[-25,25],[-40,-10],900,'11px');
+      if(bubblepartyTimer===30) spawnFloating('🎉',[-15,15],[-35,-5],1100,'13px');
+      if(bubblepartyTimer===60) spawnFloating('🎊',[-15,15],[-35,-5],1100,'13px');
     }
 
-    // SPRINT: partículas de velocidad
-    if (behaviour === 'sprint' && behaviourT % 8 === 0) {
-      spawnFloating(['💨','⚡'][Math.floor(Math.random()*2)], [dir*(-30), dir*(-15)], [-10,10], 500, '11px');
-    }
-
-    // ── Aplicar posición y orientación ───────────────
-    const flipX = dir < 0 ? -1 : 1;
-    fish.style.left      = x + 'px';
-    fish.style.top       = y + 'px';
-
-    if (behaviour === 'dizzy') {
-      fish.style.transform = `scaleX(${flipX}) rotate(${clamp}deg)`;
-    } else {
-      fish.style.transform = `scaleX(${flipX}) rotate(${clamp * flipX}deg)`;
-    }
+    // Aplicar posición
+    const flipX=dir<0?-1:1;
+    fish.style.left=x+'px';
+    fish.style.top=y+'px';
+    fish.style.transform=behaviour==='dizzy'?`scaleX(${flipX}) rotate(${clamp}deg)`:`scaleX(${flipX}) rotate(${clamp*flipX}deg)`;
 
     requestAnimationFrame(loop);
   }
 
-  // Iniciar primer comportamiento
   startBehaviour('swim');
   requestAnimationFrame(loop);
 })();
@@ -10013,8 +10198,8 @@ function _getPrevPeriodLists() {
 
   const inRange = (fechaObj) => { const d = new Date(fechaObj); return d >= desde && d <= hasta; };
   return [
-    ordenes.filter(o => inRange(o.fechaObj)),
-    mayorista.filter(v => inRange(v.fechaObj)),
+    activeCanal === 'mayorista' ? [] : ordenes.filter(o  => inRange(o.fechaObj)),
+    activeCanal === 'detal'     ? [] : mayorista.filter(v => inRange(v.fechaObj)),
   ];
 }
 
