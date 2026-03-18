@@ -3621,16 +3621,36 @@
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase">💰 Precios por especie</div>
         <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="_resetPrecios()">↩ Restablecer</button>
       </div>
-      <div id="precios-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px"></div>
-      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
-        <label style="font-size:13px;color:var(--text-secondary);font-weight:600;min-width:140px">🔪 Costo eviscerado/lb</label>
-        <input type="number" id="precio-eviscera-config" min="0" step="100"
-          style="width:110px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:7px 10px;font-size:14px;font-family:'Roboto Mono',monospace;text-align:right"
-          oninput="_guardarPrecioEviscera(this.value)">
+
+      <!-- Bloqueo por contraseña -->
+      <div id="prices-lock-overlay" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0 8px">
+        <div style="font-size:32px">🔒</div>
+        <p style="font-size:13px;color:var(--text-secondary);text-align:center;margin:0">
+          Solo el administrador puede cambiar los precios.
+        </p>
+        <div style="display:flex;gap:8px;width:100%;max-width:280px">
+          <input id="prices-pwd-input" type="password" placeholder="Contraseña"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') _verificarPasswordPrecios()"
+            style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:8px 12px;font-size:14px;outline:none">
+          <button class="btn btn-primary btn-sm" onclick="_verificarPasswordPrecios()">Entrar</button>
+        </div>
+        <span id="prices-pwd-error" style="display:none;font-size:12px;color:var(--coral);font-weight:600"></span>
       </div>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.4">
-        Los cambios aplican de inmediato a nuevas órdenes. Las órdenes ya guardadas conservan los precios originales.
-      </p>
+
+      <!-- Panel real (oculto hasta validar contraseña) -->
+      <div id="prices-panel-content" style="display:none">
+        <div id="precios-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px"></div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+          <label style="font-size:13px;color:var(--text-secondary);font-weight:600;min-width:140px">🔪 Costo eviscerado/lb</label>
+          <input type="number" id="precio-eviscera-config" min="0" step="100"
+            style="width:110px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:7px 10px;font-size:14px;font-family:'Roboto Mono',monospace;text-align:right"
+            oninput="_guardarPrecioEviscera(this.value)">
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.4">
+          Los cambios aplican de inmediato y se sincronizan a todos los dispositivos conectados a Drive.
+        </p>
+      </div>
     </div>
 
     <div class="setup-footer">
@@ -6284,6 +6304,53 @@ function closeDangerConfirm() {
 //  FIX 4: PANEL DE CONFIGURACIÓN DE PRECIOS
 // ══════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════
+//  CONTRASEÑA DE PRECIOS — SHA-256, nunca texto plano
+// ══════════════════════════════════════════════════════════
+const _PRICES_HASH = '30c04f1fff642282f0e3f695f786a91c3b55755c1dc6bd263075f304370c2cd2';
+let _preciosDesbloqueados = false; // se resetea al cerrar el modal
+
+async function _hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function _verificarPasswordPrecios() {
+  const input = document.getElementById('prices-pwd-input');
+  const errEl = document.getElementById('prices-pwd-error');
+  const val   = input?.value || '';
+  if (!val) return;
+
+  const hash = await _hashStr(val);
+  if (hash === _PRICES_HASH) {
+    _preciosDesbloqueados = true;
+    // Ocultar el bloqueo y mostrar el panel real
+    document.getElementById('prices-lock-overlay').style.display = 'none';
+    document.getElementById('prices-panel-content').style.display = 'block';
+    _initPreciosPanel();
+    if (input) input.value = '';
+  } else {
+    if (errEl) {
+      errEl.textContent = '❌ Contraseña incorrecta';
+      errEl.style.display = 'block';
+    }
+    if (input) { input.value = ''; input.focus(); }
+    // Vibrar en móvil
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  }
+}
+
+function _lockPreciosOnClose() {
+  // Volver a bloquear cuando se cierra el modal
+  _preciosDesbloqueados = false;
+  const lockOverlay = document.getElementById('prices-lock-overlay');
+  const panelContent = document.getElementById('prices-panel-content');
+  if (lockOverlay)  lockOverlay.style.display  = 'flex';
+  if (panelContent) panelContent.style.display = 'none';
+  const errEl = document.getElementById('prices-pwd-error');
+  if (errEl) errEl.style.display = 'none';
+}
+
 function _initPreciosPanel() {
   const grid = document.getElementById('precios-grid');
   if (!grid) return;
@@ -6306,11 +6373,17 @@ function _initPreciosPanel() {
   if (evInput) evInput.value = _precios.eviscera || 500;
 }
 
+function _savePreciosWithTs() {
+  _precios._updatedAt = new Date().toISOString();
+  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  scheduleDriveSync(); // propagar al Drive inmediatamente
+}
+
 function _guardarPrecioEspecie(id, val) {
   const n = parseInt(val);
   if (isNaN(n) || n < 0) return;
   _precios[id] = n;
-  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  _savePreciosWithTs();
   // Aplicar al array en memoria
   const esp = ESPECIES.find(e => e.id === id);
   if (esp && esp.precio !== null) esp.precio = n;
@@ -6323,18 +6396,41 @@ function _guardarPrecioEviscera(val) {
   const n = parseInt(val);
   if (isNaN(n) || n < 0) return;
   _precios.eviscera = n;
-  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  _savePreciosWithTs();
 }
 
 function _resetPrecios() {
   if (!confirm('¿Restablecer todos los precios a los valores originales?')) return;
   _precios = { ..._PRECIOS_DEFAULT };
-  safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+  _savePreciosWithTs();
   _aplicarPrecios();
   _initPreciosPanel();
   buildSpeciesGrid();
   buildMaySpeciesGrid();
   toast('Precios restablecidos a valores originales');
+}
+
+// Merge de precios: gana el más reciente entre local y remoto
+function mergePrecios(localP, remoteP) {
+  if (!remoteP || typeof remoteP !== 'object') return localP;
+  if (!localP._updatedAt && !remoteP._updatedAt) return remoteP; // remoto gana si no hay ts
+  const localTs  = localP._updatedAt  ? new Date(localP._updatedAt).getTime()  : 0;
+  const remoteTs = remoteP._updatedAt ? new Date(remoteP._updatedAt).getTime() : 0;
+  return remoteTs >= localTs ? remoteP : localP;
+}
+
+// Aplicar precios descargados de Drive al estado local
+function _aplicarPreciosRemotos(remoteP) {
+  if (!remoteP || typeof remoteP !== 'object') return;
+  const merged = mergePrecios(_precios, remoteP);
+  if (JSON.stringify(merged) !== JSON.stringify(_precios)) {
+    _precios = merged;
+    safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+    _aplicarPrecios();
+    buildSpeciesGrid();
+    buildMaySpeciesGrid();
+    _initPreciosPanel();
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -6959,13 +7055,13 @@ function openSetupModal() {
     document.getElementById('drive-setup-connected').style.display = 'none';
     document.getElementById('drive-setup-disconnected').style.display = 'block';
   }
-  // Inicializar panel de precios cada vez que se abre el modal
-  _initPreciosPanel();
+  // No auto-iniciar panel de precios — requiere contraseña
 }
 
 function closeSetupModal() {
   document.getElementById('setup-modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
+  _lockPreciosOnClose(); // volver a bloquear precios al cerrar
 }
 
 function closeSetupOutside(e) {
@@ -7183,6 +7279,7 @@ async function initDriveSync() {
         safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
         safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
         safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+        _aplicarPreciosRemotos(remoteData.precios);
         // Subir el resultado del merge para que todos tengan la misma versión
         await uploadDriveFile();
         refreshUI(uiState);
@@ -7288,8 +7385,9 @@ async function uploadDriveFile() {
     deletedIds:       getDeletedIds(),
     deletedClientes:  getDeletedCli(),
     deletedMayorista: getDeletedMay(),
+    precios:          _precios,
     lastUpdated:      new Date().toISOString(),
-    version: '3.0'
+    version: '3.5'
   });
 
   if (!driveFileId) {
@@ -7373,7 +7471,8 @@ async function autoSync() {
     const mayLocalSerial  = JSON.stringify(mayorista.map(v => v.id + (v.lastUpdated||'')).sort());
     const mayMergedSerial = JSON.stringify(mergedMayorista.map(v => v.id + (v.lastUpdated||'')).sort());
     const hayDiferencias  = localSerial !== mergedSerial || evLocalSerial !== evMergedSerial ||
-                            cliLocalSerial !== cliMergedSerial || mayLocalSerial !== mayMergedSerial;
+                            cliLocalSerial !== cliMergedSerial || mayLocalSerial !== mayMergedSerial ||
+                            (remoteData.precios && JSON.stringify(remoteData.precios) !== JSON.stringify(_precios));
 
     if (hayDiferencias) {
       ordenes   = merged;
@@ -7384,6 +7483,7 @@ async function autoSync() {
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+      _aplicarPreciosRemotos(remoteData.precios);
       // Subir el merge para que todos los dispositivos converjan
       await uploadDriveFile();
       refreshUI(uiState);
@@ -7416,6 +7516,7 @@ async function syncNow() {
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+      _aplicarPreciosRemotos(remoteData.precios);
     }
     await uploadDriveFile();
     refreshUI(uiState);
