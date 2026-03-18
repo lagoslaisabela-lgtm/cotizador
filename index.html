@@ -481,9 +481,9 @@
   }
 
   /* Eviscerado fullscreen */
-  #ev-fullscreen-overlay::-webkit-scrollbar { width: 5px; }
-  #ev-fullscreen-overlay::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-  #ev-fullscreen-overlay::-webkit-scrollbar-thumb {
+  #ev-fs-scroll-area::-webkit-scrollbar { width: 5px; }
+  #ev-fs-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+  #ev-fs-scroll-area::-webkit-scrollbar-thumb {
     background: rgba(0,180,216,0.4);
     border-radius: 4px;
   }
@@ -2277,17 +2277,20 @@
     inset: 0;
     z-index: 400;
     background: var(--ocean-deep);
-    overflow-y: auto;
-    padding: 24px;
+    /* No overflow aquí — el scroll va en ev-fs-scroll-area */
+    overflow: hidden;
+    padding: 0;
     flex-direction: column;
-    gap: 20px;
+    gap: 0;
+    height: 100dvh; /* usa dvh para móvil con barra URL */
   }
   #ev-fullscreen-overlay.open { display: flex; }
 
+  /* Header fijo arriba */
   .ev-fs-header {
     display: flex; align-items: center; justify-content: space-between;
     flex-shrink: 0;
-    padding-bottom: 16px;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--card-border);
   }
   .ev-fs-title {
@@ -2308,6 +2311,35 @@
   }
   .ev-fs-close:hover { border-color: var(--teal); color: var(--teal); }
 
+  /* Zona central scrollable: ocupa todo el espacio entre header y completadas */
+  #ev-fs-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0; /* necesario para que flex + overflow funcionen */
+  }
+
+  /* Zona de completadas: sticky al fondo, no scrollea sola */
+  #ev-fs-completadas-footer {
+    flex-shrink: 0;
+    padding: 0 24px 16px;
+    border-top: 1px solid var(--card-border);
+    background: var(--ocean-deep);
+    /* Sombra hacia arriba para indicar que hay contenido encima */
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.12);
+  }
+  body.light #ev-fs-completadas-footer {
+    box-shadow: 0 -4px 16px rgba(0,100,180,0.08);
+  }
+
+  /* El cuerpo de completadas desplegado hace scroll dentro del área central */
+  #ev-fs-completadas-body {
+    padding-bottom: 8px;
+  }
+
   .ev-fs-collapse-btn {
     width: 100%;
     display: flex; align-items: center; gap: 10px;
@@ -2315,6 +2347,7 @@
     border: 1px solid var(--card-border);
     border-radius: var(--radius);
     padding: 14px 20px;
+    margin-top: 12px;
     cursor: pointer;
     color: var(--text-secondary);
     font-family: 'DM Sans', sans-serif;
@@ -2390,7 +2423,8 @@
 
   @media (max-width: 600px) {
     #ev-fullscreen-overlay .ev-cards-grid { grid-template-columns: 1fr; }
-    #ev-fullscreen-overlay { padding: 16px; }
+    #ev-fs-scroll-area { padding: 14px 16px; }
+    #ev-fs-completadas-footer { padding: 0 16px 12px; }
   }
 
   body.light #ev-fullscreen-overlay { background: var(--ocean-deep); }
@@ -2567,8 +2601,11 @@
   .cd-seg-pill.detal     { background: rgba(0,180,216,0.15); color: var(--teal); }
   .cd-seg-pill.mayorista { background: rgba(6,214,160,0.15); color: var(--green); }
   .cd-seg-pill.ambos     { background: rgba(255,209,102,0.15); color: var(--gold); }
-  .cd-ev-bar-wrap { background: rgba(255,255,255,0.05); border-radius: 6px; height: 7px; overflow: hidden; margin-top: 4px; }
+  .cd-ev-bar-wrap { background: rgba(0,0,0,0.12); border-radius: 6px; height: 8px; overflow: hidden; margin-top: 4px; }
+  body.light .cd-ev-bar-wrap { background: rgba(0,100,160,0.12); }
   .cd-ev-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), var(--teal)); transition: width 0.6s ease; }
+  .cd-ev-bar.sin-ev { background: linear-gradient(90deg, rgba(100,130,160,0.55), rgba(80,110,140,0.35)); }
+  body.light .cd-ev-bar.sin-ev { background: linear-gradient(90deg, rgba(0,100,160,0.25), rgba(0,80,140,0.15)); }
   .cd-select {
     background: var(--input-bg); border: 1px solid var(--input-border);
     color: var(--text-primary); border-radius: 8px; padding: 5px 10px;
@@ -3400,6 +3437,7 @@
 
 <!-- ══════════════ OVERLAY: EVISCERADO PANTALLA COMPLETA ══════════════ -->
 <div id="ev-fullscreen-overlay">
+  <!-- Header fijo -->
   <div class="ev-fs-header">
     <div class="ev-fs-title">
       🔪 Eviscerado
@@ -3408,42 +3446,49 @@
     <button class="ev-fs-close" onclick="toggleEvFullscreen()">✕ Salir de pantalla completa</button>
   </div>
 
-  <!-- Estimador -->
-  <div class="ev-estimador sin-datos" id="ev-fs-estimador">
-    <div class="ev-estimador-icon" id="ev-fs-est-icon">⏱️</div>
-    <div class="ev-estimador-body">
-      <div class="ev-estimador-title">Estimado de finalización</div>
-      <div class="ev-estimador-hora" id="ev-fs-est-hora">—</div>
-      <div class="ev-estimador-countdown" id="ev-fs-est-countdown">Sin órdenes pendientes</div>
-      <div class="ev-estimador-basis" id="ev-fs-est-basis"></div>
+  <!-- Zona scrollable: estimador + pendientes -->
+  <div id="ev-fs-scroll-area">
+
+    <!-- Estimador -->
+    <div class="ev-estimador sin-datos" id="ev-fs-estimador">
+      <div class="ev-estimador-icon" id="ev-fs-est-icon">⏱️</div>
+      <div class="ev-estimador-body">
+        <div class="ev-estimador-title">Estimado de finalización</div>
+        <div class="ev-estimador-hora" id="ev-fs-est-hora">—</div>
+        <div class="ev-estimador-countdown" id="ev-fs-est-countdown">Sin órdenes pendientes</div>
+        <div class="ev-estimador-basis" id="ev-fs-est-basis"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Pendientes -->
-  <div>
-    <div class="ev-section-title" id="ev-fs-title-pend">⏳ Pendientes <span class="ev-count">0</span></div>
-    <div class="ev-cards-grid" id="ev-fs-cards-pendientes"></div>
-    <div class="ev-empty" id="ev-fs-empty-pendientes" style="display:none">
-      <div class="icon">✅</div><p>¡Todas las órdenes han sido procesadas!</p>
+    <!-- Pendientes -->
+    <div>
+      <div class="ev-section-title" id="ev-fs-title-pend">⏳ Pendientes <span class="ev-count">0</span></div>
+      <div class="ev-cards-grid" id="ev-fs-cards-pendientes"></div>
+      <div class="ev-empty" id="ev-fs-empty-pendientes" style="display:none">
+        <div class="icon">✅</div><p>¡Todas las órdenes han sido procesadas!</p>
+      </div>
     </div>
-  </div>
 
-  <div class="ev-divider"></div>
-
-  <!-- Completadas — desplegable -->
-  <div>
-    <button class="ev-fs-collapse-btn" id="ev-fs-collapse-btn" onclick="toggleEvFsCompletadas()">
-      <span>✅ Completadas</span>
-      <span class="ev-count" id="ev-fs-badge-completadas">0</span>
-      <span class="ev-fs-collapse-arrow" id="ev-fs-collapse-arrow">▶</span>
-    </button>
-    <div id="ev-fs-completadas-body" style="display:none;margin-top:16px">
+    <!-- Completadas expandidas (solo cuando están abiertas se muestran aquí dentro del scroll) -->
+    <div id="ev-fs-completadas-body" style="display:none;margin-top:4px">
+      <div class="ev-divider"></div>
       <div class="ev-cards-grid" id="ev-fs-cards-completadas"></div>
       <div class="ev-empty" id="ev-fs-empty-completadas" style="display:none">
         <div class="icon">🔪</div><p>Aún no hay órdenes procesadas.</p>
       </div>
     </div>
+
+  </div><!-- /ev-fs-scroll-area -->
+
+  <!-- Footer pegado al fondo: botón desplegable de completadas -->
+  <div id="ev-fs-completadas-footer">
+    <button class="ev-fs-collapse-btn" id="ev-fs-collapse-btn" onclick="toggleEvFsCompletadas()">
+      <span>✅ Completadas</span>
+      <span class="ev-count" id="ev-fs-badge-completadas">0</span>
+      <span class="ev-fs-collapse-arrow" id="ev-fs-collapse-arrow">▶</span>
+    </button>
   </div>
+
 </div>
 
 <!-- ══════════════ MODAL: GOOGLE DRIVE SETUP ══════════════ -->
@@ -8236,11 +8281,18 @@ let evFsTickerSec = null;
 let evFsTickerMin = null;
 
 function toggleEvFsCompletadas() {
-  const body  = document.getElementById('ev-fs-completadas-body');
-  const arrow = document.getElementById('ev-fs-collapse-arrow');
-  const open  = body.style.display === 'none';
-  body.style.display  = open ? 'block' : 'none';
+  const body      = document.getElementById('ev-fs-completadas-body');
+  const arrow     = document.getElementById('ev-fs-collapse-arrow');
+  const scrollArea= document.getElementById('ev-fs-scroll-area');
+  const open      = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
   arrow.classList.toggle('open', open);
+  // Al abrir: desplazar el scroll area hacia abajo para ver las completadas
+  if (open && scrollArea) {
+    setTimeout(() => {
+      scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+    }, 40); // pequeño delay para que el DOM se actualice
+  }
 }
 
 function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
@@ -9430,17 +9482,17 @@ function _cdChartEviscerado(clts) {
     sumEl.innerHTML = `
       <div>
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-          <span style="color:var(--green)">🔪 Con eviscerado</span>
+          <span style="color:var(--green);font-weight:600">🔪 Con eviscerado</span>
           <span style="color:var(--text-primary);font-weight:700">${conEv} (${Math.round(evPct*100)}%)</span>
         </div>
         <div class="cd-ev-bar-wrap"><div class="cd-ev-bar" style="width:${evPct*100}%"></div></div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-          <span style="color:var(--text-muted)">Sin eviscerado</span>
+          <span style="color:var(--text-secondary);font-weight:600">Sin eviscerado</span>
           <span style="color:var(--text-secondary);font-weight:600">${sinEv} (${Math.round((1-evPct)*100)}%)</span>
         </div>
-        <div class="cd-ev-bar-wrap"><div class="cd-ev-bar" style="width:${(1-evPct)*100}%;background:rgba(255,255,255,0.1)"></div></div>
+        <div class="cd-ev-bar-wrap"><div class="cd-ev-bar sin-ev" style="width:${(1-evPct)*100}%"></div></div>
       </div>`;
   }
 
@@ -9450,30 +9502,60 @@ function _cdChartEviscerado(clts) {
   ctx.clearRect(0,0,W,H);
   if (detalClts.length === 0) return;
 
+  const isLight = document.body.classList.contains('light');
+
   const cx=W/2, cy=H/2, ro=Math.min(W,H)/2-12, ri=ro*0.55;
-  const segments=[
-    { val:conEv,  color:'#06d6a0', label:'Con ev' },
-    { val:sinEv,  color:'rgba(255,255,255,0.1)', label:'Sin ev' },
+
+  // Colores adaptativos según tema
+  const colorConEv  = '#06d6a0';
+  const colorSinEv  = isLight ? 'rgba(0,100,160,0.2)' : 'rgba(120,160,200,0.28)';
+  const holeColor   = isLight ? '#ffffff' : (getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#0d2240');
+  const textPct     = isLight ? '#0d4a6a' : 'rgba(232,244,248,0.95)';
+  const textLabel   = isLight ? '#4a7a9b' : 'rgba(180,200,220,0.7)';
+
+  const segments = [
+    { val: conEv, color: colorConEv  },
+    { val: sinEv, color: colorSinEv  },
   ];
   const total = segments.reduce((s,seg)=>s+seg.val,0)||1;
-  let angle=-Math.PI/2;
+  let angle = -Math.PI/2;
+
+  // Sombra/glow en el segmento activo
   segments.forEach(seg => {
-    const sweep=(seg.val/total)*Math.PI*2;
-    ctx.beginPath(); ctx.moveTo(cx,cy);
+    const sweep = (seg.val/total)*Math.PI*2;
+    if (sweep < 0.01) { angle += sweep; return; }
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,ro,angle,angle+sweep);
-    ctx.closePath(); ctx.fillStyle=seg.color; ctx.fill();
-    angle+=sweep;
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    // Borde sutil entre segmentos
+    ctx.strokeStyle = holeColor;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+    angle += sweep;
   });
+
   // Donut hole
   ctx.beginPath(); ctx.arc(cx,cy,ri,0,Math.PI*2);
-  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim()||'#0d2240';
+  ctx.fillStyle = holeColor;
   ctx.fill();
-  // Center text
-  ctx.fillStyle='rgba(232,244,248,0.9)'; ctx.font=`bold 18px ${_cdFont}`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(`${Math.round(evPct*100)}%`, cx, cy-4);
-  ctx.font=`10px ${_cdFont}`; ctx.fillStyle='rgba(180,200,220,0.6)';
-  ctx.fillText('eviscerado', cx, cy+12);
+
+  // Anillo interior sutil para profundidad
+  ctx.beginPath(); ctx.arc(cx,cy,ri,0,Math.PI*2);
+  ctx.strokeStyle = isLight ? 'rgba(0,120,180,0.08)' : 'rgba(255,255,255,0.06)';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // Centro: porcentaje grande + label
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = textPct;
+  ctx.font = `bold 20px ${_cdFont}`;
+  ctx.fillText(`${Math.round(evPct*100)}%`, cx, cy - 5);
+  ctx.font = `10px ${_cdFont}`;
+  ctx.fillStyle = textLabel;
+  ctx.fillText('eviscerado', cx, cy + 12);
 }
 
 // ── Ranking table ─────────────────────────────────────────
