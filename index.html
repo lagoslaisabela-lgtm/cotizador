@@ -2207,7 +2207,18 @@
   body.light .may-species-card.has-value { background: rgba(6,214,160,0.07); border-color: rgba(6,214,160,0.35); }
   body.light .species-card { background: rgba(235,248,255,0.85); border-color: rgba(0,140,200,0.18); }
   body.light .species-card.has-value { background: rgba(6,214,160,0.07); border-color: rgba(6,214,160,0.35); }
-  body.light .ev-species-pill { background: rgba(0,140,200,0.1); border-color: rgba(0,140,200,0.22); }
+  body.light .ev-species-pill {
+    background: rgba(0,120,180,0.12);
+    border-color: rgba(0,120,180,0.4);
+    color: #005a8a;
+    font-weight: 700;
+  }
+  /* Cuando la pill tiene color inline de especie, respetar ese color en modo claro */
+  body.light .ev-species-pill[style] {
+    background: revert;
+    border-color: revert;
+    color: revert;
+  }
   body.light .drive-status-bar { border-color: rgba(0,140,200,0.3); color: var(--text-secondary); }
   body.light .drive-dot { background: var(--text-muted); }
   body.light .drive-status-bar.connected { border-color: rgba(6,214,160,0.45); color: var(--green); }
@@ -3588,47 +3599,9 @@
       </div>
 
       <div id="drive-setup-disconnected">
-        <!-- Paso 1 -->
-        <div class="setup-step">
-          <div class="step-num">1</div>
-          <div class="step-content">
-            <strong>Crea un proyecto en Google Cloud Console</strong>
-            <p>Ve a <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a>, crea un proyecto nuevo (ej: "Lagos La Isabela") y habilita la <strong>Google Drive API</strong>.</p>
-          </div>
+        <div style="padding:8px 0 16px;text-align:center;color:var(--text-muted);font-size:13px">
+          Conecta tu cuenta Google para sincronizar los datos entre dispositivos.
         </div>
-
-        <!-- Paso 2 -->
-        <div class="setup-step">
-          <div class="step-num">2</div>
-          <div class="step-content">
-            <strong>Crea credenciales OAuth 2.0</strong>
-            <p>En <em>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID</em>. Tipo: <strong>Web application</strong>. Agrega estos valores:</p>
-            <p style="margin-top:6px"><strong>Authorized JavaScript origins:</strong><br>
-            <code>https://lagoslaisabela-lgtm.github.io</code></p>
-            <p style="margin-top:6px"><strong>Authorized redirect URIs:</strong><br>
-            <code>https://lagoslaisabela-lgtm.github.io/cotizador/</code></p>
-          </div>
-        </div>
-
-        <!-- Paso 3 -->
-        <div class="setup-step">
-          <div class="step-num">3</div>
-          <div class="step-content">
-            <strong>Configura la pantalla de consentimiento</strong>
-            <p>En <em>OAuth consent screen</em>: tipo <strong>External</strong>, agrega tu email como usuario de prueba. No necesitas publicarla.</p>
-          </div>
-        </div>
-
-        <!-- Paso 4 - Client ID ya configurado -->
-        <div class="setup-step">
-          <div class="step-num">4</div>
-          <div class="step-content">
-            <strong>Client ID ya configurado ✓</strong>
-            <p>El Client ID está integrado en la app. Solo necesitas iniciar sesión con tu cuenta Google.</p>
-          </div>
-        </div>
-
-        <div class="divider-label">Inicia sesión</div>
 
         <!-- Botón Google Sign In -->
         <button class="google-btn" id="google-signin-btn" onclick="driveConnect()">
@@ -8243,9 +8216,22 @@ function buildEvCard(c, isDone) {
   const totalLbsEv = evItems.reduce((s, i) => s + i.qty, 0);
   const totalLbsAll = c.totalLibras;
 
-  const pills = evItems.map(i =>
-    `<span class="ev-species-pill">${i.especie} · ${i.qty} lb</span>`
-  ).join('');
+  // Mapa de nombre→color para colorear las pills por especie
+  const _espColorMap = {};
+  ESPECIES.forEach(e => { _espColorMap[e.nombre] = { color: e.color, emoji: e.emoji }; });
+
+  const pills = evItems.map(i => {
+    const esp   = _espColorMap[i.especie] || { color: 'var(--teal)', emoji: '🐟' };
+    const col   = esp.color;
+    // Generar variantes de color para fondo y borde a partir del color base
+    const style = `
+      color:${col};
+      background:${col}1a;
+      border-color:${col}55;
+      font-weight:700;
+    `.replace(/\s+/g, ' ');
+    return `<span class="ev-species-pill" style="${style}">${esp.emoji} ${i.especie} · ${i.qty} lb</span>`;
+  }).join('');
 
   // Formatear fecha corta
   const d = new Date(c.fechaObj);
