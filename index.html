@@ -4054,16 +4054,11 @@ const safeSessionStorage = (() => {
   };
 })();
 
-// ── Generador de IDs únicos: crypto.randomUUID con fallback timestamp+random ──
+// ── Generador de IDs únicos: timestamp ms + 3 dígitos random → número entero ──
+// Mantiene compatibilidad con parseInt/Number usados en todo el código.
+// La colisión exacta requeriría dos guardados en el mismo milisegundo con mismo random (1/1000).
 function _genId() {
-  try {
-    // crypto.randomUUID disponible en todos los navegadores modernos
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-  } catch(_) {}
-  // Fallback: timestamp + random para evitar colisiones entre dispositivos
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
 }
 
 // ── Carga segura de datos: maneja corrupción de localStorage ──
@@ -4287,7 +4282,7 @@ function resetMayorista(silent = false) {
 
 function eliminarVentaMayorista(id) {
   if (!confirm('¿Eliminar esta venta mayorista?')) return;
-  mayorista = mayorista.filter(v => v.id !== id);
+  mayorista = mayorista.filter(v => String(v.id) !== String(id));
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
   // Registrar eliminación para sync bilateral
   const del = getDeletedMay();
@@ -4407,14 +4402,14 @@ function renderMayorista() {
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="eliminarVentaMayorista(${v.id})" title="Eliminar">🗑</button>
+        <button class="btn btn-danger btn-sm" onclick=\"eliminarVentaMayorista('\${v.id}')\" title="Eliminar">🗑</button>
       </td>
     </tr>
   `).join('');
 
   // Eventos editar con data attributes
   tbody.querySelectorAll('.may-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => abrirEdicionMayorista(Number(btn.dataset.id)));
+    btn.addEventListener('click', () => abrirEdicionMayorista(btn.dataset.id));
   });
 }
 
@@ -4422,7 +4417,7 @@ function renderMayorista() {
 let editingMayoristaId = null;
 
 function abrirEdicionMayorista(id) {
-  const venta = mayorista.find(v => v.id === id);
+  const venta = mayorista.find(v => String(v.id) === String(id));
   if (!venta) return;
   editingMayoristaId = id;
 
@@ -4525,7 +4520,7 @@ function guardarEdicionMayorista() {
 
   if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
 
-  const idx = mayorista.findIndex(v => v.id === editingMayoristaId);
+  const idx = mayorista.findIndex(v => String(v.id) === String(editingMayoristaId));
   if (idx === -1) return;
 
   mayorista[idx] = {
@@ -4743,7 +4738,7 @@ function generarPDF(cotId) {
   // Si se pasa un ID, genera PDF desde el historial; si no, desde el formulario activo
   let data;
   if (cotId !== undefined) {
-    const cot = ordenes.find(c => c.id === cotId);
+    const cot = ordenes.find(c => String(c.id) === String(cotId));
     if (!cot) { toast('Orden no encontrada', true); return; }
     data = { ...cot };
   } else {
@@ -4990,12 +4985,12 @@ function _renderHistPage() {
         c.nota ? `<span title="${escHtml(c.nota)}">📝 ${escHtml(c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota)}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-primary btn-sm" onclick="generarPDF(${c.id})" title="PDF">📄</button>
-        <button class="btn btn-whatsapp btn-sm" onclick="enviarWhatsApp(${c.id})" title="WhatsApp">
+        <button class="btn btn-primary btn-sm" onclick=\"generarPDF('\${c.id}')\" title="PDF">📄</button>
+        <button class="btn btn-whatsapp btn-sm" onclick=\"enviarWhatsApp('\${c.id}')\" title="WhatsApp">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         </button>
-        <button class="btn btn-ghost btn-sm" onclick="abrirEdicion(${c.id})" title="Editar">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="eliminarCot(${c.id})" title="Eliminar">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick=\"abrirEdicion('\${c.id}')\" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick=\"eliminarCot('\${c.id}')\" title="Eliminar">🗑</button>
       </td>
     </tr>
   `).join('');
@@ -5076,15 +5071,15 @@ function filtrarHistorial() { renderHistorial(); }
 
 function eliminarCot(id) {
   if (!confirm('¿Eliminar esta orden?')) return;
-  ordenes = ordenes.filter(c => c.id !== id);
+  ordenes = ordenes.filter(c => String(c.id) !== String(id));
   // Registrar eliminación para sync bilateral
   const deleted = getDeletedIds();
   deleted[id] = new Date().toISOString();
   saveDeletedIds(deleted);
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   // Limpiar evDone y evTimes para esta orden
-  const evDone = getEvDone(); evDone.delete(id); setEvDone(evDone);
-  const evTimes = getEvTimes(); delete evTimes[id]; setEvTimes(evTimes);
+  const evDone = getEvDone(); evDone.delete(String(id)); setEvDone(evDone);
+  const evTimes = getEvTimes(); delete evTimes[String(id)]; setEvTimes(evTimes);
   updateBadge();
   updateEvBadge();
   renderHistorial();
@@ -5976,7 +5971,7 @@ function guardarEdicionCliente() {
 
   if (editingClienteOrig === 'directorio') {
     // Editar entrada existente en el directorio
-    const idx = clientes.findIndex(c => c.id === editingClienteId);
+    const idx = clientes.findIndex(c => String(c.id) === String(editingClienteId));
     if (idx !== -1) {
       clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
@@ -6597,7 +6592,7 @@ function clearAllData() {
       // Registrar cada orden en deletedIds antes de borrar
       const deleted = getDeletedIds();
       const ts = new Date().toISOString();
-      ordenes.forEach(c => { deleted[c.id] = ts; });
+      ordenes.forEach(c => { deleted[String(c.id)] = ts; });
       saveDeletedIds(deleted);
       ordenes = [];
       safeStorage.removeItem(STORAGE_KEY);
@@ -6621,7 +6616,7 @@ let editingId = null;
 let editItems = [];
 
 function abrirEdicion(id) {
-  const cot = ordenes.find(c => c.id === id);
+  const cot = ordenes.find(c => String(c.id) === String(id));
   if (!cot) return;
 
   editingId = id;
@@ -6799,7 +6794,7 @@ function guardarEdicion() {
     totalLibras     += item.qty;
   });
 
-  const idx = ordenes.findIndex(c => c.id === editingId);
+  const idx = ordenes.findIndex(c => String(c.id) === String(editingId));
   if (idx === -1) { toast('Orden no encontrada', true); return; }
 
   const hadEv = ordenes[idx].totalEviscerado > 0;
@@ -6987,12 +6982,12 @@ function mergeBilateral(localOrdenes, remoteData) {
   // Solo la quitamos si el timestamp de eliminación es POSTERIOR al lastUpdated de la orden
   // (evita borrar una orden que fue re-creada después de eliminarse)
   for (const [deletedId, deletedAt] of Object.entries(allDeleted)) {
-    const id = parseInt(deletedId);
-    const existing = map.get(id);
+    const sid = String(deletedId);
+    const existing = map.get(sid) || map.get(Number(sid)) || map.get(sid);
     if (existing) {
       const updatedTs = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
       const deletedTs = new Date(deletedAt).getTime();
-      if (deletedTs >= updatedTs) map.delete(id);
+      if (deletedTs >= updatedTs) { map.delete(sid); map.delete(Number(sid)); }
     }
   }
 
@@ -7050,11 +7045,12 @@ function mergeClientes(localClientes, remoteClientes, remoteDeletedCli) {
 
   // Aplicar borrados
   for (const [deletedId, deletedAt] of Object.entries(allDeleted)) {
-    const existing = map.get(deletedId) || map.get(Number(deletedId));
+    const sid2 = String(deletedId);
+    const existing = map.get(sid2) || map.get(Number(sid2));
     if (existing) {
       const updatedTs = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
       const deletedTs = new Date(deletedAt).getTime();
-      if (deletedTs >= updatedTs) { map.delete(deletedId); map.delete(Number(deletedId)); }
+      if (deletedTs >= updatedTs) { map.delete(sid2); map.delete(Number(sid2)); }
     }
   }
 
@@ -7082,11 +7078,12 @@ function mergeMayorista(localMay, remoteMay, remoteDeletedMay) {
 
   // Aplicar borrados
   for (const [deletedId, deletedAt] of Object.entries(allDeleted)) {
-    const existing = map.get(Number(deletedId)) || map.get(deletedId);
+    const sid3 = String(deletedId);
+    const existing = map.get(sid3) || map.get(Number(sid3));
     if (existing) {
       const updatedTs = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
       const deletedTs = new Date(deletedAt).getTime();
-      if (deletedTs >= updatedTs) { map.delete(Number(deletedId)); map.delete(deletedId); }
+      if (deletedTs >= updatedTs) { map.delete(sid3); map.delete(Number(sid3)); }
     }
   }
 
@@ -7629,7 +7626,7 @@ function parseJwt(token) {
 function enviarWhatsApp(cotId) {
   let data;
   if (cotId !== undefined) {
-    const cot = ordenes.find(c => c.id === cotId);
+    const cot = ordenes.find(c => String(c.id) === String(cotId));
     if (!cot) { toast('Orden no encontrada', true); return; }
     data = { ...cot };
   } else {
@@ -8064,7 +8061,11 @@ const EV_DONE_KEY  = 'aquacot_ev_done'; // Set de IDs marcados como completados
 const EV_TIMES_KEY = 'aquacot_ev_times'; // Map id→{start, end} para medir tiempos
 
 function getEvDone() {
-  try { return new Set(JSON.parse(safeStorage.getItem(EV_DONE_KEY) || '[]')); }
+  try {
+    const arr = JSON.parse(safeStorage.getItem(EV_DONE_KEY) || '[]');
+    // Normalizar todos los IDs a string para comparación consistente
+    return new Set(arr.map(String));
+  }
   catch(e) { return new Set(); }
 }
 
@@ -8081,33 +8082,33 @@ function setEvTimes(map) {
 }
 
 function toggleEvDone(cotId) {
+  const id    = String(cotId); // normalizar siempre a string
   const done  = getEvDone();
   const times = getEvTimes();
   const now   = Date.now();
 
-  if (done.has(cotId)) {
-    // Desmarcar → eliminar timestamp de fin
-    done.delete(cotId);
-    if (times[cotId]) { delete times[cotId].end; }
+  if (done.has(id)) {
+    done.delete(id);
+    if (times[id]) { delete times[id].end; }
   } else {
-    // Marcar como completado → guardar timestamp de completado
-    done.add(cotId);
-    const orden = ordenes.find(c => c.id === cotId);
+    done.add(id);
+    const orden = ordenes.find(c => String(c.id) === id);
     const start = orden ? new Date(orden.fechaObj).getTime() : now;
-    times[cotId] = { start, end: now };
+    times[id] = { start, end: now };
   }
   setEvDone(done);
   setEvTimes(times);
   renderEviscerado();
   if (evFullscreenOpen) renderEvFullscreen();
   updateEvBadge();
+  actualizarFloatBtn();
   scheduleDriveSync();
 }
 
 function updateEvBadge() {
   const done    = getEvDone();
   const total   = ordenes.filter(c => c.totalEviscerado > 0);
-  const pending = total.filter(c => !done.has(c.id)).length;
+  const pending = total.filter(c => !done.has(String(c.id))).length;
   document.getElementById('badge-ev').textContent = pending;
 }
 
@@ -8201,8 +8202,8 @@ function renderEviscerado() {
   // Actualizar pill de período
   document.getElementById('ev-period-pill').textContent = getEvPeriodLabel();
 
-  const pendientes  = conEv.filter(c => !done.has(c.id));
-  const completadas = conEv.filter(c =>  done.has(c.id))
+  const pendientes  = conEv.filter(c => !done.has(String(c.id)));
+  const completadas = conEv.filter(c =>  done.has(String(c.id)))
     .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj)); // más reciente primero
 
   document.getElementById('ev-badge-pendientes').textContent  = pendientes.length;
@@ -8261,8 +8262,8 @@ function buildEvCard(c, isDone) {
   } else {
     // Tiempo total de procesamiento
     const times = getEvTimes();
-    if (times[c.id]?.end && times[c.id]?.start) {
-      const dur = Math.round((times[c.id].end - times[c.id].start) / 60000);
+    if (times[String(c.id)]?.end && times[String(c.id)]?.start) {
+      const dur = Math.round((times[String(c.id)].end - times[String(c.id)].start) / 60000);
       const hrs = Math.floor(dur / 60), min = dur % 60;
       const durStr = hrs > 0 ? `${hrs}h ${min}m` : `${min} min`;
       doneTimeHtml = `<div class="ev-done-time">✅ Procesado en ${durStr}</div>`;
@@ -8271,8 +8272,8 @@ function buildEvCard(c, isDone) {
 
   const footerBtn = isDone
     ? `<div class="ev-done-badge">✅ Eviscerado completado</div>
-       <button class="btn-ev-undo" onclick="toggleEvDone(${c.id})" title="Desmarcar">↩</button>`
-    : `<button class="btn-ev-done" onclick="toggleEvDone(${c.id})">
+       <button class="btn-ev-undo" onclick=\"toggleEvDone('\${c.id}')\" title="Desmarcar">↩</button>`
+    : `<button class="btn-ev-done" onclick=\"toggleEvDone('\${c.id}')\">
          ✓ Marcar como completado
        </button>`;
 
@@ -8325,7 +8326,7 @@ function actualizarFloatBtn() {
 
   const done      = getEvDone();
   const times     = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
 
   function fmtSecsShort(totalSecs) {
     if (totalSecs <= 0) return '0s';
@@ -8350,15 +8351,15 @@ function actualizarFloatBtn() {
   // Calcular segPorLb igual que calcularEstimadorEv
   const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
-    c.totalEviscerado > 0 && done.has(c.id) &&
-    times[c.id]?.end && times[c.id]?.start &&
-    new Date(times[c.id].start) >= hoy0
+    c.totalEviscerado > 0 && done.has(String(c.id)) &&
+    times[String(c.id)]?.end && times[String(c.id)]?.start &&
+    new Date(times[String(c.id)].start) >= hoy0
   );
   let segPorLb = 20;
   if (completadasHoy.length > 0) {
     let totalSeg = 0, totalLb = 0;
     completadasHoy.forEach(c => {
-      const dur = (times[c.id].end - times[c.id].start) / 1000;
+      const dur = (times[String(c.id)].end - times[String(c.id)].start) / 1000;
       const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
       if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
     });
@@ -8419,7 +8420,7 @@ function iniciarFloatBtnInterval() {
 function calcularEstimadorEv() {
   const done      = getEvDone();
   const times     = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
   const el        = document.getElementById('ev-estimador');
   const elHora    = document.getElementById('ev-est-hora');
   const elCount   = document.getElementById('ev-est-countdown');
@@ -8477,9 +8478,9 @@ function calcularEstimadorEv() {
   const hoy0  = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
     c.totalEviscerado > 0 &&
-    done.has(c.id) &&
-    times[c.id]?.end && times[c.id]?.start &&
-    new Date(times[c.id].start) >= hoy0
+    done.has(String(c.id)) &&
+    times[String(c.id)]?.end && times[String(c.id)]?.start &&
+    new Date(times[String(c.id)].start) >= hoy0
   );
 
   let segPorLb = null;
@@ -8488,7 +8489,7 @@ function calcularEstimadorEv() {
   if (completadasHoy.length > 0) {
     let totalSeg = 0, totalLb = 0;
     completadasHoy.forEach(c => {
-      const dur = (times[c.id].end - times[c.id].start) / 1000; // en segundos
+      const dur = (times[String(c.id)].end - times[String(c.id)].start) / 1000; // en segundos
       const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
       if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
     });
@@ -8805,8 +8806,8 @@ function renderEvFullscreen() {
 
   const done      = getEvDone();
   const conEv     = getEvFiltered();
-  const pendientes  = conEv.filter(c => !done.has(c.id));
-  const completadas = conEv.filter(c =>  done.has(c.id))
+  const pendientes  = conEv.filter(c => !done.has(String(c.id)));
+  const completadas = conEv.filter(c =>  done.has(String(c.id)))
     .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
 
   // Badge
@@ -8843,7 +8844,7 @@ function renderEvFullscreen() {
 function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval, setInterval_cb) {
   const done       = getEvDone();
   const times      = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
   const el         = document.getElementById(elId);
   const elHora     = document.getElementById(horaId);
   const elCount    = document.getElementById(countId);
@@ -8865,16 +8866,16 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 
   const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
-    c.totalEviscerado > 0 && done.has(c.id) &&
-    times[c.id]?.end && times[c.id]?.start &&
-    new Date(times[c.id].start) >= hoy0
+    c.totalEviscerado > 0 && done.has(String(c.id)) &&
+    times[String(c.id)]?.end && times[String(c.id)]?.start &&
+    new Date(times[String(c.id)].start) >= hoy0
   );
 
   let minPorLb = null, basisMsg = '';
   if (completadasHoy.length > 0) {
     let totalMin = 0, totalLb = 0;
     completadasHoy.forEach(c => {
-      const dur = (times[c.id].end - times[c.id].start) / 60000;
+      const dur = (times[String(c.id)].end - times[String(c.id)].start) / 60000;
       const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
       if (lb > 0 && dur > 0) { totalMin += dur; totalLb += lb; }
     });
@@ -10469,7 +10470,7 @@ setInterval(() => {
 
   // Alerta sonora+vibración si hay órdenes pendientes >45 min sin completar
   const done = getEvDone();
-  const evPendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(c.id));
+  const evPendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
   evPendientes.forEach(c => {
     const elapsed = Math.floor((Date.now() - new Date(c.fechaObj).getTime()) / 60000);
     if (elapsed >= 45 && !_evAlertedIds.has(c.id)) {
