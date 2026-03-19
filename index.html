@@ -6976,14 +6976,27 @@ function mergeBilateral(localOrdenes, remoteData) {
 // ── evDone bilateral ─────────────────────────
 // evDone también se sincroniza: gana la unión de los sets de ambos dispositivos
 function mergeEvDone(localDone, remoteDone) {
-  const remoteSet = new Set(remoteDone || []);
-  const localSet  = getEvDone();
-  return new Set([...localSet, ...remoteSet]);
+  // No usamos la unión simple — el set final se reconstruye desde mergeEvTimes.
+  // Esta función solo se llama para compatibilidad; el set real lo calcula
+  // _recalcEvDoneFromTimes() después del merge de times.
+  return getEvDone();
+}
+
+// Recalcula el set evDone desde evTimes tras un merge bilateral.
+// Una orden está "done" si tiene 'end' Y ese 'end' es posterior al último 'unmarkedAt'.
+function _recalcEvDoneFromTimes(times) {
+  const newDone = new Set();
+  for (const [id, entry] of Object.entries(times)) {
+    if (!entry.end) continue; // sin end = pendiente
+    if (entry.unmarkedAt && entry.unmarkedAt >= entry.end) continue; // desmarque más reciente
+    newDone.add(String(id));
+  }
+  return newDone;
 }
 
 // ── evTimes bilateral ─────────────────────────
-// evTimes: gana el que tenga 'end' más temprano (primer dispositivo que completó)
-// Si el remoto tiene un entry que el local no tiene, se toma el remoto y viceversa
+// Merge de tiempos: preserva start más temprano, end más reciente,
+// y unmarkedAt más reciente (desmarque gana si es más nuevo que el marcado).
 function mergeEvTimes(localTimes, remoteTimes) {
   const merged = { ...localTimes };
   for (const [id, rEntry] of Object.entries(remoteTimes || {})) {
@@ -6991,12 +7004,17 @@ function mergeEvTimes(localTimes, remoteTimes) {
     if (!lEntry) {
       merged[id] = rEntry;
     } else {
-      // Tomar el start más temprano y el end más temprano (primer dispositivo que marcó completado)
-      merged[id] = {
-        start: Math.min(lEntry.start || Infinity, rEntry.start || Infinity),
-        end:   lEntry.end && rEntry.end ? Math.min(lEntry.end, rEntry.end)
-               : lEntry.end || rEntry.end
-      };
+      const start = Math.min(lEntry.start || Infinity, rEntry.start || Infinity);
+      // end: tomar el más reciente de los dos (último que marcó completado)
+      let end = lEntry.end && rEntry.end ? Math.max(lEntry.end, rEntry.end)
+                : (lEntry.end || rEntry.end || undefined);
+      // unmarkedAt: tomar el más reciente
+      const unmarkedAt = lEntry.unmarkedAt && rEntry.unmarkedAt
+        ? Math.max(lEntry.unmarkedAt, rEntry.unmarkedAt)
+        : (lEntry.unmarkedAt || rEntry.unmarkedAt || undefined);
+      // Si el desmarque es más reciente que el marcado, borrar end
+      if (unmarkedAt && end && unmarkedAt >= end) { end = undefined; }
+      merged[id] = { start: start === Infinity ? undefined : start, ...(end ? { end } : {}), ...(unmarkedAt ? { unmarkedAt } : {}) };
     }
   }
   return merged;
@@ -7326,8 +7344,8 @@ async function initDriveSync() {
       const remoteData = await downloadDriveFile();
       if (remoteData) {
         const merged          = mergeBilateral(ordenes, remoteData);
-        const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
         const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+        const evDone          = _recalcEvDoneFromTimes(mergedEvTimes); // gana el estado más reciente (marca/desmarca)
         const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
         const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
         ordenes   = merged;
@@ -7515,8 +7533,8 @@ async function autoSync() {
 
     const uiState         = captureUIState();
     const merged          = mergeBilateral(ordenes, remoteData);
-    const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
     const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+    const evDone          = _recalcEvDoneFromTimes(mergedEvTimes);
     const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
     const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
 
@@ -7563,8 +7581,8 @@ async function syncNow() {
     const remoteData = await downloadDriveFile();
     if (remoteData) {
       const merged          = mergeBilateral(ordenes, remoteData);
-      const evDone          = mergeEvDone(getEvDone(), remoteData.evDone);
       const mergedEvTimes   = mergeEvTimes(getEvTimes(), remoteData.evTimes);
+      const evDone          = _recalcEvDoneFromTimes(mergedEvTimes);
       const mergedClientes  = mergeClientes(clientes, remoteData.clientes, remoteData.deletedClientes);
       const mergedMayorista = mergeMayorista(mayorista, remoteData.mayorista, remoteData.deletedMayorista);
       ordenes   = merged;
@@ -8059,19 +8077,29 @@ function setEvTimes(map) {
 }
 
 function toggleEvDone(cotId) {
-  const id    = String(cotId); // normalizar siempre a string
+  const id    = String(cotId);
   const done  = getEvDone();
   const times = getEvTimes();
   const now   = Date.now();
 
   if (done.has(id)) {
+    // Desmarcar → registrar timestamp de desmarque para que se propague a otros dispositivos
     done.delete(id);
-    if (times[id]) { delete times[id].end; }
+    if (times[id]) {
+      delete times[id].end;
+      times[id].unmarkedAt = now; // ← clave para el merge bilateral
+    } else {
+      times[id] = { unmarkedAt: now };
+    }
   } else {
+    // Marcar como completado
     done.add(id);
     const orden = ordenes.find(c => String(c.id) === id);
     const start = orden ? new Date(orden.fechaObj).getTime() : now;
-    times[id] = { start, end: now };
+    // Solo sobrescribir si el marcado es más reciente que el último desmarque
+    if (!times[id] || !times[id].unmarkedAt || now > times[id].unmarkedAt) {
+      times[id] = { start, end: now };
+    }
   }
   setEvDone(done);
   setEvTimes(times);
