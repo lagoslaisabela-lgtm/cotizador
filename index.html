@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- PWA: tema y apariencia nativa -->
 <meta name="theme-color" content="#040b16">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1733,9 +1733,13 @@
     color: var(--text-primary);
     line-height: 1.2;
   }
-  .ev-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-family: 'Roboto Mono', monospace; }
+  .ev-card-meta {
+    font-size: 12px; color: var(--text-muted); margin-top: 5px;
+    font-family: 'Roboto Mono', monospace;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  }
   .ev-card-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; text-align: right; }
-  .ev-card-body { display: flex; flex-direction: column; gap: 8px; }
+  .ev-card-body { display: flex; flex-direction: column; gap: 6px; }
   .ev-card-row {
     display: flex;
     align-items: center;
@@ -1745,15 +1749,15 @@
   .ev-card-row .label { color: var(--text-muted); font-size: 13px; }
   .ev-card-row .val { font-family: 'Roboto Mono', monospace; font-weight: 600; color: var(--teal-pale); }
   .ev-card-row .val.big { font-size: 26px; color: var(--teal); }
-  .ev-species-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .ev-species-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .ev-species-pill {
     background: rgba(0,180,216,0.1);
     border: 1px solid rgba(0,180,216,0.2);
     border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
+    padding: 6px 14px;
+    font-size: 14px;
     color: var(--teal-pale);
-    font-weight: 500;
+    font-weight: 600;
   }
   .ev-card-footer { display: flex; gap: 10px; margin-top: 6px; }
   .btn-ev-done {
@@ -2433,7 +2437,7 @@
   #ev-fullscreen-overlay .ev-card-row  { font-size: 15px; }
   #ev-fullscreen-overlay .ev-card-row .label { font-size: 14px; }
   #ev-fullscreen-overlay .ev-card-row .val.big { font-size: 32px; }
-  #ev-fullscreen-overlay .ev-species-pill { font-size: 13px; padding: 5px 14px; }
+  #ev-fullscreen-overlay .ev-species-pill { font-size: 15px; padding: 6px 16px; }
   #ev-fullscreen-overlay .btn-ev-done { padding: 16px; font-size: 15px; }
   #ev-fullscreen-overlay .btn-ev-undo { padding: 16px 20px; font-size: 14px; }
   #ev-fullscreen-overlay .ev-timer-chip { font-size: 12px; padding: 5px 13px; }
@@ -2458,7 +2462,7 @@
   #ev-fs-cards-pendientes .ev-card-row    { font-size: 17px; }
   #ev-fs-cards-pendientes .ev-card-row .label { font-size: 15px; }
   #ev-fs-cards-pendientes .ev-card-row .val.big { font-size: 48px; line-height: 1; }
-  #ev-fs-cards-pendientes .ev-species-pill { font-size: 14px; padding: 7px 16px; }
+  #ev-fs-cards-pendientes .ev-species-pill { font-size: 17px; padding: 8px 18px; font-weight: 700; }
   #ev-fs-cards-pendientes .btn-ev-done    { padding: 20px; font-size: 17px; }
   #ev-fs-cards-pendientes .btn-ev-undo    { padding: 20px 24px; font-size: 15px; }
   #ev-fs-cards-pendientes .ev-timer-chip  { font-size: 13px; padding: 6px 15px; }
@@ -8284,11 +8288,12 @@ function buildEvCard(c, isDone) {
           <div class="ev-card-name">${c.nombre}</div>
           <div class="ev-card-meta">
             ${c.tel  ? `📱 ${c.tel}` : ''}
-            ${c.cc   ? `&nbsp;·&nbsp;CC ${c.cc}` : ''}
+            ${c.cc   ? `<span>&nbsp;·&nbsp;CC ${c.cc}</span>` : ''}
+            ${!isDone ? timerChipHtml : ''}
           </div>
         </div>
         <div class="ev-card-time">
-          ${fechaCorta}<br>${horaCorta}
+          ${isDone ? `${fechaCorta}<br>` : ''}${horaCorta}
         </div>
       </div>
 
@@ -8301,8 +8306,7 @@ function buildEvCard(c, isDone) {
           <span class="label">Total libras (orden)</span>
           <span class="val">${totalLbsAll.toFixed(1)} lb</span>
         </div>
-        ${c.nota ? `<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;padding:7px 10px">📝 ${c.nota}</div>` : ''}
-        ${!isDone ? `<div>${timerChipHtml}</div>` : ''}
+        ${c.nota ? `<div style="margin-top:4px;font-size:12px;color:var(--text-secondary);background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;padding:6px 10px">📝 ${c.nota}</div>` : ''}
       </div>
 
       <div class="ev-species-list">${pills}</div>
@@ -10351,6 +10355,66 @@ restoreDriveSession();
 const _vBadge = document.getElementById('app-version-badge');
 if (_vBadge) _vBadge.textContent = 'v' + APP_VERSION;
 
+// ── Modo inmersivo Android: ocultar barra de navegación ──────────────────
+// Usa la Screen Wake Lock / Fullscreen API combinada con viewport-fit=cover
+// para aprovechar toda la pantalla en Android Chrome/PWA.
+(function initAndroidImmersive() {
+  // Solo en móvil Android
+  const isAndroid = /android/i.test(navigator.userAgent);
+  if (!isAndroid) return;
+
+  // Método 1: Navigation Bar visible=false vía Screen API (solo PWA instalada)
+  function tryHideNavBar() {
+    try {
+      if (window.navigator.windowControlsOverlay?.visible === false) return;
+      // requestFullscreen oculta la nav bar en Android Chrome en modo PWA
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen({ navigationUI: 'hide' })
+          .catch(() => {}); // silenciar error si no hay gesto de usuario aún
+      }
+    } catch(e) {}
+  }
+
+  // Intentar al primer toque del usuario (requerido por el navegador)
+  let immersiveRequested = false;
+  function onFirstInteraction() {
+    if (immersiveRequested) return;
+    immersiveRequested = true;
+    tryHideNavBar();
+    document.removeEventListener('touchstart', onFirstInteraction);
+    document.removeEventListener('click',      onFirstInteraction);
+  }
+  document.addEventListener('touchstart', onFirstInteraction, { passive: true });
+  document.addEventListener('click',      onFirstInteraction, { passive: true });
+
+  // Si la app ya estaba en fullscreen (vuelta desde 2do plano), mantenerlo
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && immersiveRequested) {
+      // El usuario salió de fullscreen manualmente — no forzar de nuevo
+      immersiveRequested = false;
+    }
+  });
+
+  // Método 2: CSS para cubrir la zona de la barra de navegación en Android
+  // viewport-fit=cover ya está en el meta viewport, pero añadimos padding extra
+  const style = document.createElement('style');
+  style.textContent = `
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      body {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      /* Botón flotante sube sobre la barra de navegación */
+      #ev-float-btn {
+        bottom: calc(24px + env(safe-area-inset-bottom));
+      }
+      #theme-toggle {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 // ── Fix 6a: Detector de cambios no guardados en formulario de cotizar ──
 function _formTieneDatos() {
   const nombre = document.getElementById('cliente-nombre')?.value.trim();
@@ -10422,7 +10486,7 @@ document.addEventListener('visibilitychange', () => {
       evFsTickerSec = setInterval(() => {
         document.querySelectorAll('#ev-fs-cards-pendientes .ev-timer-chip[data-start]').forEach(chip => {
           const elapsed = Math.floor((Date.now() - parseInt(chip.dataset.start)) / 60000);
-          chip.textContent = `⏱ ${Math.floor(elapsed/60)>0 ? Math.floor(elapsed/60)+'h ' : ''}${elapsed%60}m esperando`;
+          chip.textContent = `⏱ ${Math.floor(elapsed/60)>0 ? Math.floor(elapsed/60)+'h ' : ''}${elapsed%60}m`;
           chip.classList.toggle('urgent', elapsed > 30);
         });
       }, 1000);
