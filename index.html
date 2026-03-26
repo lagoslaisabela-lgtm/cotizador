@@ -6086,9 +6086,14 @@ function eliminarCliente(id) {
 let editingClienteId   = null;
 let editingClienteOrig = null; // 'directorio' | 'historial'
 
+// Guarda los valores originales del cliente que se está editando
+let _editingClienteOrigData = null;
+
 function abrirEdicionCliente(id, nombre, tel, cc, origen) {
   editingClienteId   = id;
   editingClienteOrig = origen;
+  // Guardar valores originales para preservar campos no modificados
+  _editingClienteOrigData = { nombre, tel, cc };
 
   document.getElementById('cli-edit-nombre').value = nombre;
   document.getElementById('cli-edit-tel').value    = tel;
@@ -6104,8 +6109,9 @@ function abrirEdicionCliente(id, nombre, tel, cc, origen) {
 function closeCliModal() {
   document.getElementById('cli-modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
-  editingClienteId   = null;
-  editingClienteOrig = null;
+  editingClienteId        = null;
+  editingClienteOrig      = null;
+  _editingClienteOrigData = null;
 }
 
 function closeCLiModalOutside(e) {
@@ -6113,34 +6119,68 @@ function closeCLiModalOutside(e) {
 }
 
 function guardarEdicionCliente() {
-  const nombre = toTitleCase(document.getElementById('cli-edit-nombre').value.trim());
-  const tel    = document.getElementById('cli-edit-tel').value.trim();
-  const cc     = document.getElementById('cli-edit-cc').value.trim();
+  const orig = _editingClienteOrigData || {};
+
+  // Solo usar el nuevo valor si el campo no está vacío; de lo contrario conservar el original
+  const nombreRaw = document.getElementById('cli-edit-nombre').value.trim();
+  const telRaw    = document.getElementById('cli-edit-tel').value.trim();
+  const ccRaw     = document.getElementById('cli-edit-cc').value.trim();
+
+  const nombre = toTitleCase(nombreRaw || orig.nombre || '');
+  const tel    = telRaw !== '' ? telRaw : (orig.tel || '');
+  const cc     = ccRaw  !== '' ? ccRaw  : (orig.cc  || '');
 
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
 
   const now = new Date().toISOString();
 
   if (editingClienteOrig === 'directorio') {
-    // Editar entrada existente en el directorio
+    // ── Actualizar en el directorio existente ──────────────────
     const idx = clientes.findIndex(c => String(c.id) === String(editingClienteId));
     if (idx !== -1) {
       clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
     }
   } else {
-    // Cliente del historial: promoverlo al directorio con los datos editados
-    // Verificar que no exista ya en directorio con ese nombre
-    const yaExiste = clientes.find(c =>
-      c.nombre.trim().toLowerCase() === nombre.toLowerCase()
+    // ── Cliente del historial ──────────────────────────────────
+    // Verificar si ya existe en el directorio con ese ID de historial
+    // (puede que ya haya sido promovido antes)
+    const histKey = String(editingClienteId); // 'hist_...' o nombre normalizado
+    const yaPromovido = clientes.find(c =>
+      c._histKey === histKey ||
+      c.nombre.trim().toLowerCase() === (orig.nombre || '').trim().toLowerCase()
     );
-    if (yaExiste) {
-      toast('Ya existe un cliente con ese nombre en el directorio', true);
-      return;
+
+    if (yaPromovido) {
+      // Ya está en directorio — actualizar en lugar de duplicar
+      const idx = clientes.findIndex(c => c.id === yaPromovido.id);
+      if (idx !== -1) {
+        clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
+        safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+      }
+    } else {
+      // Aún no está en directorio — promover por primera vez
+      // Verificar que no haya otro directorio con el nombre nuevo
+      const conflicto = clientes.find(c =>
+        c.nombre.trim().toLowerCase() === nombre.toLowerCase()
+      );
+      if (conflicto) {
+        toast('Ya existe un cliente con ese nombre en el directorio', true);
+        return;
+      }
+      // Promover: guardar _histKey para identificarlo en futuras ediciones
+      const nuevo = {
+        id:          _genId(),
+        _histKey:    histKey,
+        nombre,
+        tel,
+        cc,
+        creadoEn:    now,
+        lastUpdated: now
+      };
+      clientes.unshift(nuevo);
+      safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
     }
-    const nuevo = { id: _genId(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
-    clientes.unshift(nuevo);
-    safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
   }
 
   closeCliModal();
