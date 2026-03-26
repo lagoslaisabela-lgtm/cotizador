@@ -2986,7 +2986,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.5.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.6.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3045,7 +3045,7 @@
       <div class="card-title"> 🧜🏻‍♂️Datos del Cliente</div>
       <div class="grid-3">
         <div class="form-group" style="margin:0">
-          <label>Identificación (CC / NIT)</label>
+          <label>Identificación</label>
           <div id="ac-cc-anchor">
             <input type="text" id="cliente-cc" placeholder="Ej: 66656526"
               oninput="acCC(this.value)"
@@ -4120,7 +4120,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.6.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6000,9 +6000,36 @@ function updateClientesBadge() {
 // aparecen en el historial (sin duplicados por nombre normalizado o tel o cc).
 // Cada entrada incluye: id, nombre, tel, cc, compras (count), totalComprado, origen
 function getTodosClientes() {
-  // Empezar con los del directorio
+  // Construir set de nombres de historial ya absorbidos por el directorio
+  // Soporta _histKey, _histNombre (string) y _histNombres (array)
+  const histKeysAbsorbidos = new Set();
+  // Mapa: nombreHistNorm → entry del directorio (para sumar compras)
+  const histNombreADir = new Map();
+
+  clientes.forEach(c => {
+    if (c._histKey) {
+      histKeysAbsorbidos.add(c._histKey);
+      // Extraer nombre del hist_XXX key para usarlo como mapeo
+      const keyNombre = c._histKey.replace(/^hist_/, '');
+      histNombreADir.set(keyNombre, c.nombre.trim().toLowerCase());
+    }
+    if (c._histNombre) {
+      const k = 'hist_' + c._histNombre.trim().toLowerCase();
+      histKeysAbsorbidos.add(k);
+      histNombreADir.set(c._histNombre.trim().toLowerCase(), c.nombre.trim().toLowerCase());
+    }
+    if (Array.isArray(c._histNombres)) {
+      c._histNombres.forEach(n => {
+        const k = 'hist_' + n.trim().toLowerCase();
+        histKeysAbsorbidos.add(k);
+        histNombreADir.set(n.trim().toLowerCase(), c.nombre.trim().toLowerCase());
+      });
+    }
+  });
+
   const map = new Map(); // key: nombre.toLowerCase()
 
+  // Primero los del directorio
   clientes.forEach(c => {
     const key = c.nombre.trim().toLowerCase();
     map.set(key, {
@@ -6013,29 +6040,56 @@ function getTodosClientes() {
     });
   });
 
-  // Agregar/enriquecer con datos del historial
+  // Agregar/enriquecer con datos del historial de órdenes
   ordenes.forEach(o => {
     if (!o.nombre) return;
-    const key = o.nombre.trim().toLowerCase();
+    const key     = o.nombre.trim().toLowerCase();
+    const histKey = 'hist_' + key;
+
+    // ¿Este nombre del historial fue absorbido por un directorio?
+    const dirKey = histNombreADir.get(key) || (histKeysAbsorbidos.has(histKey) ? null : null);
+
+    if (histKeysAbsorbidos.has(histKey)) {
+      // Orden pertenece a un cliente promovido al directorio
+      // Buscar el directorio que lo absorbió para sumar las compras
+      const dirNombreKey = histNombreADir.get(key);
+      const target = dirNombreKey ? map.get(dirNombreKey) : null;
+      if (target) {
+        target.compras++;
+        target.totalComprado += (o.total || 0);
+        if (!target.tel && o.tel) target.tel = o.tel;
+        if (!target.cc  && o.cc)  target.cc  = o.cc;
+      }
+      return;
+    }
+
     if (map.has(key)) {
+      // Coincide exactamente con un directorio por nombre
       const entry = map.get(key);
       entry.compras++;
       entry.totalComprado += (o.total || 0);
-      // Completar campos vacíos con lo que hay en la orden
       if (!entry.tel && o.tel) entry.tel = o.tel;
       if (!entry.cc  && o.cc)  entry.cc  = o.cc;
     } else {
-      map.set(key, {
-        id:            'hist_' + key,
-        nombre:        o.nombre,
-        tel:           o.tel  || '',
-        cc:            o.cc   || '',
-        creadoEn:      o.fechaObj,
-        lastUpdated:   o.fechaObj,
-        compras:       1,
-        totalComprado: o.total || 0,
-        origen:        'historial'
-      });
+      // Nuevo del historial — no está en directorio
+      if (map.has(histKey)) {
+        // Acumular en entrada ya existente del historial
+        const entry = map.get(histKey);
+        entry.compras++;
+        entry.totalComprado += (o.total || 0);
+      } else {
+        map.set(histKey, {
+          id:            histKey,
+          nombre:        o.nombre,
+          tel:           o.tel  || '',
+          cc:            o.cc   || '',
+          creadoEn:      o.fechaObj,
+          lastUpdated:   o.fechaObj,
+          compras:       1,
+          totalComprado: o.total || 0,
+          origen:        'historial'
+        });
+      }
     }
   });
 
@@ -6138,17 +6192,40 @@ function guardarEdicionCliente() {
     // ── Actualizar en el directorio existente ──────────────────
     const idx = clientes.findIndex(c => String(c.id) === String(editingClienteId));
     if (idx !== -1) {
-      clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
+      const existente = clientes[idx];
+      // Si cambió el nombre, conservar el nombre anterior en _histNombre para
+      // que getTodosClientes siga asociando las órdenes antiguas a este registro
+      const nombreAnterior = existente.nombre || orig.nombre || '';
+      const nombreCambio   = nombreAnterior.trim().toLowerCase() !== nombre.trim().toLowerCase();
+      // Acumular todos los _histNombre anteriores (puede haber varios renombrados)
+      let histNombres = existente._histNombres
+        ? [...existente._histNombres]
+        : (existente._histNombre ? [existente._histNombre] : []);
+      if (nombreCambio && nombreAnterior && !histNombres.includes(nombreAnterior.trim().toLowerCase())) {
+        histNombres.push(nombreAnterior.trim().toLowerCase());
+      }
+      clientes[idx] = {
+        ...existente,
+        nombre,
+        tel,
+        cc,
+        lastUpdated:  now,
+        _histNombres: histNombres.length > 0 ? histNombres : undefined,
+        // _histNombre legacy (compatibilidad)
+        _histNombre:  histNombres[0] || existente._histNombre,
+      };
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
     }
   } else {
     // ── Cliente del historial ──────────────────────────────────
     // Verificar si ya existe en el directorio con ese ID de historial
     // (puede que ya haya sido promovido antes)
-    const histKey = String(editingClienteId); // 'hist_...' o nombre normalizado
+    const histKey = String(editingClienteId); // 'hist_XXX'
+    const origNombreNorm = (orig.nombre || '').trim().toLowerCase();
     const yaPromovido = clientes.find(c =>
       c._histKey === histKey ||
-      c.nombre.trim().toLowerCase() === (orig.nombre || '').trim().toLowerCase()
+      (c._histNombre && c._histNombre.trim().toLowerCase() === origNombreNorm) ||
+      c.nombre.trim().toLowerCase() === origNombreNorm
     );
 
     if (yaPromovido) {
@@ -6168,10 +6245,11 @@ function guardarEdicionCliente() {
         toast('Ya existe un cliente con ese nombre en el directorio', true);
         return;
       }
-      // Promover: guardar _histKey para identificarlo en futuras ediciones
+      // Promover: guardar _histKey Y _histNombre para identificarlo en futuras ediciones
       const nuevo = {
-        id:          _genId(),
-        _histKey:    histKey,
+        id:           _genId(),
+        _histKey:     histKey,
+        _histNombre:  orig.nombre || '',  // nombre original en las órdenes
         nombre,
         tel,
         cc,
@@ -7679,7 +7757,7 @@ async function uploadDriveFile() {
     deletedMayorista: getDeletedMay(),
     precios:          _precios,
     lastUpdated:      new Date().toISOString(),
-    version: '3.5'
+    version: '3.6'
   });
 
   if (!driveFileId) {
