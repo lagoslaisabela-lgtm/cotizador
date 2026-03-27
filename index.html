@@ -3020,7 +3020,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.6.5</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.7.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4154,7 +4154,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '3.6.5';
+const APP_VERSION = '3.7.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6414,14 +6414,23 @@ function abrirPerfilCliente(cid, ckey) {
   perfilClienteKey = ckey;
   perfilDirtyFlag  = false;
 
-  // Obtener el cliente unificado
-  const todos  = getTodosClientes();
-  const c      = todos.find(x => String(x.id) === String(cid) || x.nombre.trim().toLowerCase() === ckey);
+  // Obtener el cliente unificado — buscar primero por ID exacto, luego por nombre
+  const todos = getTodosClientes();
+  const c = todos.find(x => String(x.id) === String(cid))
+         || todos.find(x => x.nombre.trim().toLowerCase() === ckey);
   if (!c) return;
 
-  // Buscar perfil extra en directorio (solo directorio tiene perfil)
-  const dirEntry = clientes.find(x => String(x.id) === String(cid));
-  const perfil   = dirEntry?.perfil || {};
+  // Para historial: el perfilClienteId debe apuntar al directorio si existe allí
+  const dirEntry = clientes.find(x =>
+    String(x.id) === String(cid) ||
+    x.nombre.trim().toLowerCase() === ckey ||
+    x._histKey === String(cid) ||
+    (x._histNombre && x._histNombre.trim().toLowerCase() === ckey) ||
+    (Array.isArray(x._histNombres) && x._histNombres.some(n => n.trim().toLowerCase() === ckey))
+  );
+  // Actualizar perfilClienteId con el ID real del directorio si existe
+  if (dirEntry) perfilClienteId = dirEntry.id;
+  const perfil = dirEntry?.perfil || {};
 
   // ── Cabecera ──
   const genero = perfil.genero || '';
@@ -6946,6 +6955,7 @@ function exportarRespaldoJSON() {
     ordenes,
     clientes,
     mayorista,
+    precios:          _precios,
     evDone:           [...getEvDone()],
     evTimes:          getEvTimes(),
     deletedIds:       getDeletedIds(),
@@ -6993,6 +7003,14 @@ function importarRespaldoJSON(input) {
 
           if (Array.isArray(data.evDone))            setEvDone(new Set(data.evDone));
           if (data.evTimes && typeof data.evTimes === 'object') setEvTimes(data.evTimes);
+          // Restaurar precios configurados
+          if (data.precios && typeof data.precios === 'object') {
+            _precios = { ..._PRECIOS_DEFAULT, ...data.precios };
+            safeStorage.setItem(PRICES_KEY, JSON.stringify(_precios));
+            _aplicarPrecios();
+            buildSpeciesGrid();
+            buildMaySpeciesGrid();
+          }
 
           refreshUI();
           scheduleDriveSync();
@@ -7025,9 +7043,10 @@ function clearAllData() {
       saveDeletedIds(deleted);
       ordenes = [];
       safeStorage.removeItem(STORAGE_KEY);
-      // Limpiar evDone y evTimes también
+      // Limpiar evDone, evTimes y alertas pendientes
       setEvDone(new Set());
       setEvTimes({});
+      _evAlertedIds.clear();
       updateBadge();
       updateEvBadge();
       renderDashboard();
@@ -8334,9 +8353,10 @@ function acTel(val) {
   list.style.display = 'block';
 }
 
-function acTelSelect(nombre, tel) {
+function acTelSelect(nombre, tel, cc) {
   document.getElementById('cliente-tel').value    = tel;
   document.getElementById('cliente-nombre').value = nombre;
+  if (cc) document.getElementById('cliente-cc').value = cc;
   document.getElementById('ac-tel-list').style.display = 'none';
   acTelIndex = -1;
 }
@@ -9268,7 +9288,35 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
 
 // Cierra fullscreen con Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && evFullscreenOpen) toggleEvFullscreen();
+  if (e.key !== 'Escape') return;
+  // Cerrar en orden de prioridad (más al frente primero)
+  if (document.getElementById('tab-lock-overlay')?.style.display !== 'none') {
+    closeLockTab(); return;
+  }
+  if (document.getElementById('danger-confirm-overlay')?.style.display !== 'none') {
+    closeDangerConfirm(); return;
+  }
+  if (document.getElementById('may-price-modal-overlay')?.style.display !== 'none') {
+    closeMayPriceModal(); return;
+  }
+  if (document.getElementById('cli-modal-overlay')?.classList.contains('open')) {
+    closeCliModal(); return;
+  }
+  if (document.getElementById('modal-overlay')?.classList.contains('open')) {
+    closeModal(); return;
+  }
+  if (document.getElementById('may-modal-overlay')?.classList.contains('open')) {
+    closeMayModal(); return;
+  }
+  if (document.getElementById('setup-modal-overlay')?.classList.contains('open')) {
+    closeSetupModal(); return;
+  }
+  if (document.getElementById('cli-profile-panel')?.classList.contains('open')) {
+    cerrarPerfil(); return;
+  }
+  if (evFullscreenOpen) {
+    toggleEvFullscreen(); return;
+  }
 });
 
 function renderEvFullscreen() {
@@ -10007,11 +10055,27 @@ function _cdGetOrdenes() {
 
 function _cdBuildClientes() {
   // Construye mapa enriquecido: nombre → datos agregados de ambos canales
+  // Primero construir mapa de alias: nombre_historial → nombre_actual_directorio
+  const aliasMap = new Map(); // nombreHistNorm → nombreDirNorm
+  clientes.forEach(c => {
+    const dirKey = c.nombre.trim().toLowerCase();
+    if (c._histKey) {
+      const k = c._histKey.replace(/^hist_/, '');
+      aliasMap.set(k, dirKey);
+    }
+    if (c._histNombre) aliasMap.set(c._histNombre.trim().toLowerCase(), dirKey);
+    if (Array.isArray(c._histNombres)) {
+      c._histNombres.forEach(n => aliasMap.set(n.trim().toLowerCase(), dirKey));
+    }
+  });
+
   const map = new Map();
 
   const addOrden = (o, canal) => {
     if (!o.nombre) return;
-    const key = o.nombre.trim().toLowerCase();
+    const rawKey = o.nombre.trim().toLowerCase();
+    // Resolver alias: si este nombre fue renombrado, usar el nombre actual
+    const key = aliasMap.get(rawKey) || rawKey;
     if (!map.has(key)) {
       map.set(key, {
         nombre: o.nombre, cc: o.cc || '', tel: o.tel || '',
@@ -10024,6 +10088,9 @@ function _cdBuildClientes() {
       });
     }
     const e = map.get(key);
+    // Si el nombre del directorio es diferente al de la orden, usar el del directorio
+    const dirEntry = clientes.find(c => c.nombre.trim().toLowerCase() === key);
+    if (dirEntry) { e.nombre = dirEntry.nombre; e.cc = dirEntry.cc || e.cc; e.tel = dirEntry.tel || e.tel; }
     const fecha = new Date(o.fechaObj);
     if (!e.ultimaFecha || fecha > e.ultimaFecha) e.ultimaFecha = fecha;
     if (!e.primeraFecha || fecha < e.primeraFecha) e.primeraFecha = fecha;
@@ -11030,6 +11097,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     // Al volver: re-render inmediato para mostrar datos frescos
     actualizarFloatBtn();
+    iniciarFloatBtnInterval(); // reiniciar si fue pausado
     if (activeTab === 'eviscerado') renderEviscerado();
     if (activeTab === 'dashboard')  renderDashboard();
     if (evFullscreenOpen) renderEvFullscreen();
@@ -11045,10 +11113,11 @@ document.addEventListener('visibilitychange', () => {
       evFsTickerMin = setInterval(() => renderEvFullscreen(), 30000);
     }
   } else {
-    // Al ocultar: detener tickers del fullscreen para ahorrar CPU/batería
+    // Al ocultar: detener tickers del fullscreen y float btn para ahorrar CPU/batería
     if (evFsTickerSec) { clearInterval(evFsTickerSec); evFsTickerSec = null; }
     if (evFsTickerMin) { clearInterval(evFsTickerMin); evFsTickerMin = null; }
     if (evCountdownInterval) { clearInterval(evCountdownInterval); evCountdownInterval = null; }
+    if (_floatBtnInterval)  { clearInterval(_floatBtnInterval);  _floatBtnInterval  = null; }
   }
 });
 if (typeof ResizeObserver !== 'undefined') {
