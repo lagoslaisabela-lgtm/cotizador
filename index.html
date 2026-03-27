@@ -2112,7 +2112,41 @@
     border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    position: relative;
   }
+  .profile-info-item:hover {
+    border-color: rgba(0,180,216,0.45);
+    background: rgba(0,180,216,0.04);
+  }
+  .profile-info-item:hover::after {
+    content: '✏️';
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 10px;
+    opacity: 0.5;
+  }
+  .profile-info-item.editing {
+    border-color: var(--teal);
+    background: rgba(0,180,216,0.06);
+    cursor: default;
+  }
+  .profile-info-item.editing::after { display: none; }
+  .profile-info-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .profile-info-input.mono { font-family: 'Roboto Mono', monospace; font-size: 12px; }
   .profile-info-item.full { grid-column: 1/-1; }
   .profile-info-label { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-bottom: 3px; }
   .profile-info-value {
@@ -2986,7 +3020,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.6.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.6.5</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3045,7 +3079,7 @@
       <div class="card-title"> 🧜🏻‍♂️Datos del Cliente</div>
       <div class="grid-3">
         <div class="form-group" style="margin:0">
-          <label>Identificación</label>
+          <label>Identificación (CC / NIT)</label>
           <div id="ac-cc-anchor">
             <input type="text" id="cliente-cc" placeholder="Ej: 66656526"
               oninput="acCC(this.value)"
@@ -4120,7 +4154,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.6.5';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6193,11 +6227,8 @@ function guardarEdicionCliente() {
     const idx = clientes.findIndex(c => String(c.id) === String(editingClienteId));
     if (idx !== -1) {
       const existente = clientes[idx];
-      // Si cambió el nombre, conservar el nombre anterior en _histNombre para
-      // que getTodosClientes siga asociando las órdenes antiguas a este registro
       const nombreAnterior = existente.nombre || orig.nombre || '';
       const nombreCambio   = nombreAnterior.trim().toLowerCase() !== nombre.trim().toLowerCase();
-      // Acumular todos los _histNombre anteriores (puede haber varios renombrados)
       let histNombres = existente._histNombres
         ? [...existente._histNombres]
         : (existente._histNombre ? [existente._histNombre] : []);
@@ -6211,10 +6242,16 @@ function guardarEdicionCliente() {
         cc,
         lastUpdated:  now,
         _histNombres: histNombres.length > 0 ? histNombres : undefined,
-        // _histNombre legacy (compatibilidad)
         _histNombre:  histNombres[0] || existente._histNombre,
       };
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+
+      // Propagar tel/cc a órdenes (por nombre anterior y nuevo)
+      const nombresAfectados = [nombreAnterior, ...histNombres].filter(Boolean);
+      nombresAfectados.forEach(n => {
+        _propagarDatosAOrdenes(n,    { tel, cc });
+        _propagarDatosAMayorista(n,  { tel, cc });
+      });
     }
   } else {
     // ── Cliente del historial ──────────────────────────────────
@@ -6234,10 +6271,12 @@ function guardarEdicionCliente() {
       if (idx !== -1) {
         clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
         safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+        // Propagar tel/cc a órdenes por nombre original
+        _propagarDatosAOrdenes(orig.nombre || nombre,   { tel, cc });
+        _propagarDatosAMayorista(orig.nombre || nombre, { tel, cc });
       }
     } else {
       // Aún no está en directorio — promover por primera vez
-      // Verificar que no haya otro directorio con el nombre nuevo
       const conflicto = clientes.find(c =>
         c.nombre.trim().toLowerCase() === nombre.toLowerCase()
       );
@@ -6245,11 +6284,10 @@ function guardarEdicionCliente() {
         toast('Ya existe un cliente con ese nombre en el directorio', true);
         return;
       }
-      // Promover: guardar _histKey Y _histNombre para identificarlo en futuras ediciones
       const nuevo = {
         id:           _genId(),
         _histKey:     histKey,
-        _histNombre:  orig.nombre || '',  // nombre original en las órdenes
+        _histNombre:  orig.nombre || '',
         nombre,
         tel,
         cc,
@@ -6405,27 +6443,27 @@ function abrirPerfilCliente(cid, ckey) {
   const estado = perfil.estado || 'activo';
   actualizarBotonesEstado(estado);
 
-  // ── Datos de contacto ──
+  // ── Datos de contacto — tarjetas editables inline ──
   const contactoGrid = document.getElementById('prof-contacto-grid');
   contactoGrid.innerHTML = `
-    <div class="profile-info-item">
+    <div class="profile-info-item" id="prof-card-tel" onclick="_editContactCard('tel')">
       <div class="profile-info-label">📞 Celular</div>
-      <div class="profile-info-value mono ${c.tel ? '' : 'muted'}">${escHtml(c.tel) || '—'}</div>
+      <div class="profile-info-value mono ${c.tel ? '' : 'muted'}" id="prof-val-tel">${escHtml(c.tel) || '—'}</div>
     </div>
-    <div class="profile-info-item">
+    <div class="profile-info-item" id="prof-card-cc" onclick="_editContactCard('cc')">
       <div class="profile-info-label">🪪 CC / NIT</div>
-      <div class="profile-info-value mono ${c.cc ? '' : 'muted'}">${escHtml(c.cc) || '—'}</div>
+      <div class="profile-info-value mono ${c.cc ? '' : 'muted'}" id="prof-val-cc">${escHtml(c.cc) || '—'}</div>
     </div>
-    <div class="profile-info-item ${perfil.email ? '' : 'muted'}">
+    <div class="profile-info-item" id="prof-card-email" onclick="_editContactCard('email')">
       <div class="profile-info-label">✉️ Correo</div>
-      <div class="profile-info-value ${perfil.email ? '' : 'muted'}">${escHtml(perfil.email) || '—'}</div>
+      <div class="profile-info-value ${perfil.email ? '' : 'muted'}" id="prof-val-email">${escHtml(perfil.email) || '—'}</div>
     </div>
-    <div class="profile-info-item">
+    <div class="profile-info-item" id="prof-card-residencia" onclick="_editContactCard('residencia')">
       <div class="profile-info-label">📍 Residencia</div>
-      <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}">${escHtml(perfil.residencia) || '—'}</div>
+      <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}" id="prof-val-residencia">${escHtml(perfil.residencia) || '—'}</div>
     </div>
     ${perfil.nacimiento ? `
-    <div class="profile-info-item full">
+    <div class="profile-info-item full" style="cursor:default">
       <div class="profile-info-label">🎂 Edad</div>
       <div class="profile-info-value" id="prof-edad-display">—</div>
     </div>` : ''}
@@ -6566,6 +6604,127 @@ function marcarCambio() {
 
   // Actualizar edad si cambia la fecha
   actualizarEdad();
+}
+
+// ── Edición inline de tarjetas de contacto del perfil ──────
+const _CONTACT_FIELDS = {
+  tel:        { label:'📞 Celular',    type:'tel',   mono:true,  source:'client' },
+  cc:         { label:'🪪 CC / NIT',   type:'text',  mono:true,  source:'client', inputmode:'numeric' },
+  email:      { label:'✉️ Correo',     type:'email', mono:false, source:'perfil' },
+  residencia: { label:'📍 Residencia', type:'text',  mono:false, source:'perfil' },
+};
+
+function _editContactCard(field) {
+  const card    = document.getElementById(`prof-card-${field}`);
+  const valEl   = document.getElementById(`prof-val-${field}`);
+  if (!card || !valEl) return;
+  if (card.classList.contains('editing')) return; // ya en edición
+
+  const meta    = _CONTACT_FIELDS[field];
+  const current = valEl.textContent === '—' ? '' : valEl.textContent;
+
+  // Convertir la tarjeta a modo edición
+  card.classList.add('editing');
+  card.onclick = null; // desactivar click mientras edita
+
+  const input = document.createElement('input');
+  input.type        = meta.type;
+  input.value       = current;
+  input.placeholder = current || meta.label.replace(/^.*\s/, '');
+  input.className   = 'profile-info-input' + (meta.mono ? ' mono' : '');
+  if (meta.inputmode) input.setAttribute('inputmode', meta.inputmode);
+
+  valEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function commitEdit() {
+    const newVal = input.value.trim();
+    // Restaurar display
+    const newValEl = document.createElement('div');
+    newValEl.id        = `prof-val-${field}`;
+    newValEl.className = 'profile-info-value' + (meta.mono ? ' mono' : '') + (newVal ? '' : ' muted');
+    newValEl.textContent = newVal || '—';
+    input.replaceWith(newValEl);
+    card.classList.remove('editing');
+    card.onclick = () => _editContactCard(field);
+
+    // Solo guardar si hubo cambio real
+    const oldVal = current;
+    if (newVal === oldVal) return;
+
+    // Guardar en el cliente
+    _guardarContactField(field, newVal, meta.source);
+  }
+
+  input.addEventListener('blur', commitEdit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = current; input.blur(); }
+  });
+}
+
+function _guardarContactField(field, newVal, source) {
+  const now = new Date().toISOString();
+
+  // Asegurar que el cliente esté en directorio
+  let dirEntry = clientes.find(x => String(x.id) === String(perfilClienteId));
+  if (!dirEntry) {
+    // Promover historial al directorio
+    const todos = getTodosClientes();
+    const c = todos.find(x => x.nombre.trim().toLowerCase() === perfilClienteKey);
+    if (!c) return;
+    dirEntry = { id: _genId(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '',
+                 creadoEn: now, lastUpdated: now, perfil: {} };
+    clientes.unshift(dirEntry);
+    perfilClienteId = dirEntry.id;
+  }
+
+  const nombreAnterior = dirEntry.nombre;
+
+  if (source === 'client') {
+    // tel o cc — guardar en el registro del cliente
+    dirEntry[field] = newVal;
+    dirEntry.lastUpdated = now;
+
+    // Propagar a TODAS las órdenes que coincidan con este cliente
+    _propagarDatosAOrdenes(nombreAnterior, { [field]: newVal });
+    _propagarDatosAMayorista(nombreAnterior, { [field]: newVal });
+
+  } else {
+    // email o residencia — guardar en perfil
+    dirEntry.perfil = { ...(dirEntry.perfil || {}), [field]: newVal };
+    dirEntry.lastUpdated = now;
+  }
+
+  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  scheduleDriveSync();
+  toast('✅ Dato actualizado');
+  renderClientes();
+}
+
+// Propaga tel/cc a todas las órdenes detal del cliente
+function _propagarDatosAOrdenes(nombreCliente, datos) {
+  const key = nombreCliente.trim().toLowerCase();
+  let cambio = false;
+  ordenes.forEach(o => {
+    if ((o.nombre || '').trim().toLowerCase() !== key) return;
+    if (datos.tel !== undefined && datos.tel !== o.tel) { o.tel = datos.tel; cambio = true; }
+    if (datos.cc  !== undefined && datos.cc  !== o.cc)  { o.cc  = datos.cc;  cambio = true; }
+  });
+  if (cambio) safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+}
+
+// Propaga tel/cc a todas las ventas mayorista del cliente
+function _propagarDatosAMayorista(nombreCliente, datos) {
+  const key = nombreCliente.trim().toLowerCase();
+  let cambio = false;
+  mayorista.forEach(v => {
+    if ((v.nombre || '').trim().toLowerCase() !== key) return;
+    if (datos.tel !== undefined && datos.tel !== v.tel) { v.tel = datos.tel; cambio = true; }
+    if (datos.cc  !== undefined && datos.cc  !== v.cc)  { v.cc  = datos.cc;  cambio = true; }
+  });
+  if (cambio) safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
 }
 
 function guardarPerfilCliente() {
@@ -7757,7 +7916,7 @@ async function uploadDriveFile() {
     deletedMayorista: getDeletedMay(),
     precios:          _precios,
     lastUpdated:      new Date().toISOString(),
-    version: '3.6'
+    version: '3.5'
   });
 
   if (!driveFileId) {
