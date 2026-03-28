@@ -3020,7 +3020,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v3.7.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v4.0.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3602,15 +3602,24 @@
       <div class="grid-3">
         <div class="form-group" style="margin:0">
           <label>CC / NIT</label>
-          <input type="text" id="may-cc" placeholder="Ej: 900123456-1" inputmode="numeric" autocomplete="off">
+          <input type="text" id="may-cc" placeholder="Ej: 900123456-1" inputmode="numeric" autocomplete="off"
+            oninput="acMayCc(this.value)"
+            onfocus="acMayCc(this.value)"
+            onkeydown="acMayCcKeydown(event)">
         </div>
-        <div class="form-group" style="margin:0">
+        <div class="form-group" style="margin:0" id="may-nombre-anchor">
           <label>Nombre / Empresa</label>
-          <input type="text" id="may-nombre" placeholder="Ej: Distribuidora Pérez" autocomplete="off">
+          <input type="text" id="may-nombre" placeholder="Ej: Distribuidora Pérez" autocomplete="off"
+            oninput="acMayNombre(this.value)"
+            onfocus="acMayNombre(this.value)"
+            onkeydown="acMayNombreKeydown(event)">
         </div>
         <div class="form-group" style="margin:0">
           <label>Celular</label>
-          <input type="tel" id="may-tel" placeholder="Ej: 3165266913" autocomplete="off">
+          <input type="tel" id="may-tel" placeholder="Ej: 3165266913" autocomplete="off"
+            oninput="acMayTel(this.value)"
+            onfocus="acMayTel(this.value)"
+            onkeydown="acMayTelKeydown(event)">
         </div>
       </div>
     </div>
@@ -4147,6 +4156,11 @@
 <div class="autocomplete-list" id="ac-tel-list"></div>
 <div class="autocomplete-list" id="ac-cc-list"></div>
 
+<!-- AUTOCOMPLETE FLOTANTE MAYORISTA -->
+<div class="autocomplete-list" id="ac-may-nombre-list"></div>
+<div class="autocomplete-list" id="ac-may-tel-list"></div>
+<div class="autocomplete-list" id="ac-may-cc-list"></div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -4154,7 +4168,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '3.7.0';
+const APP_VERSION = '4.0.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -8287,6 +8301,9 @@ window.addEventListener('scroll', () => {
 window.addEventListener('resize', () => {
   document.getElementById('ac-list').style.display = 'none';
   document.getElementById('ac-tel-list').style.display = 'none';
+  document.getElementById('ac-may-nombre-list').style.display = 'none';
+  document.getElementById('ac-may-tel-list').style.display = 'none';
+  document.getElementById('ac-may-cc-list').style.display = 'none';
 });
 
 // ─────────────────────────────────────────────
@@ -8519,6 +8536,217 @@ window.addEventListener('scroll', () => {
   const rect   = anchor.getBoundingClientRect();
   list.style.top  = (rect.bottom + 4) + 'px';
   list.style.left = rect.left + 'px';
+}, true);
+
+// ═════════════════════════════════════════════
+//  AUTOCOMPLETE MAYORISTA — Nombre, Tel, CC
+// ═════════════════════════════════════════════
+
+// Fuente unificada: historial mayorista + directorio + órdenes detal
+function getMayoristasSugeridos(query, campo) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase().trim();
+  const mapa = {};
+
+  // Fuente 1: historial mayorista (prioridad máxima — son compradores al por mayor)
+  mayorista.forEach(v => {
+    if (!v.nombre) return;
+    const key = v.nombre.toLowerCase();
+    if (!mapa[key]) mapa[key] = { nombre: v.nombre, tel: v.tel || '', cc: v.cc || '', count: 0, fuente: 'mayorista' };
+    mapa[key].count++;
+    if (!mapa[key].tel && v.tel) mapa[key].tel = v.tel;
+    if (!mapa[key].cc  && v.cc)  mapa[key].cc  = v.cc;
+  });
+
+  // Fuente 2: directorio de clientes
+  clientes.forEach(c => {
+    if (!c.nombre) return;
+    const key = c.nombre.toLowerCase();
+    if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', count: 0, fuente: 'directorio' };
+    else {
+      if (!mapa[key].tel && c.tel) mapa[key].tel = c.tel;
+      if (!mapa[key].cc  && c.cc)  mapa[key].cc  = c.cc;
+    }
+  });
+
+  // Fuente 3: historial detal (complementario)
+  ordenes.forEach(o => {
+    if (!o.nombre) return;
+    const key = o.nombre.toLowerCase();
+    if (!mapa[key]) mapa[key] = { nombre: o.nombre, tel: o.tel || '', cc: o.cc || '', count: 0, fuente: 'detal' };
+    if (!mapa[key].tel && o.tel) mapa[key].tel = o.tel;
+    if (!mapa[key].cc  && o.cc)  mapa[key].cc  = o.cc;
+  });
+
+  return Object.values(mapa)
+    .filter(c => {
+      if (campo === 'tel') return c.tel && c.tel.includes(q);
+      if (campo === 'cc')  return c.cc  && c.cc.toLowerCase().includes(q);
+      // nombre: busca en nombre, tel y cc
+      return c.nombre.toLowerCase().includes(q) ||
+             (c.tel && c.tel.includes(q)) ||
+             (c.cc  && c.cc.toLowerCase().includes(q));
+    })
+    .sort((a, b) => {
+      const prioA = a.fuente === 'mayorista' ? 0 : a.fuente === 'directorio' ? 1 : 2;
+      const prioB = b.fuente === 'mayorista' ? 0 : b.fuente === 'directorio' ? 1 : 2;
+      if (prioA !== prioB) return prioA - prioB;
+      const aStart = a.nombre.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStart = b.nombre.toLowerCase().startsWith(q) ? 0 : 1;
+      return aStart - bStart || b.count - a.count;
+    })
+    .slice(0, 8);
+}
+
+// Rellena los tres campos del formulario mayorista
+function acMaySelect(nombre, tel, cc) {
+  if (nombre) document.getElementById('may-nombre').value = nombre;
+  if (tel)    document.getElementById('may-tel').value    = tel;
+  if (cc)     document.getElementById('may-cc').value     = cc;
+  ['ac-may-nombre-list','ac-may-tel-list','ac-may-cc-list'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  acMayNombreIdx = -1; acMayTelIdx = -1; acMayCcIdx = -1;
+  // Disparar recalculo del total si hay especies cargadas
+  calcularMayorista();
+}
+
+// Función genérica para mostrar un dropdown de mayorista
+function _showMayAcList(listId, anchorId, sugs, query, displayField) {
+  const list   = document.getElementById(listId);
+  const anchor = document.getElementById(anchorId);
+  if (!list || !anchor) return;
+
+  if (sugs.length === 0) { list.style.display = 'none'; return; }
+
+  const isNombre = displayField === 'nombre';
+  const isTel    = displayField === 'tel';
+  const isCc     = displayField === 'cc';
+
+  list.innerHTML = sugs.map((c, i) => {
+    const mainText = isNombre ? highlightMatch(c.nombre, query)
+                   : isTel   ? highlightMatch(c.tel, query)
+                   :            highlightMatch(c.cc, query);
+    const subText  = isNombre
+      ? (c.tel ? `<span class="ac-tel">${escHtml(c.tel)}</span>` : '')
+      : `<span class="ac-tel">${escHtml(c.nombre)}</span>`;
+    const badge = c.fuente === 'mayorista'
+      ? `<span class="ac-count" style="color:var(--green)">📦 ${c.count}x</span>`
+      : `<span class="ac-count">${c.count > 0 ? c.count + ' cot.' : '📁'}</span>`;
+    return `<div class="autocomplete-item" data-idx="${i}"
+      data-nombre="${encodeURIComponent(c.nombre)}"
+      data-tel="${encodeURIComponent(c.tel)}"
+      data-cc="${encodeURIComponent(c.cc)}">
+      <span class="ac-name">${mainText}</span>
+      ${subText}
+      ${badge}
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', () => acMaySelect(
+      decodeURIComponent(el.dataset.nombre),
+      decodeURIComponent(el.dataset.tel),
+      decodeURIComponent(el.dataset.cc)
+    ));
+  });
+
+  const rect = anchor.getBoundingClientRect();
+  list.style.top     = (rect.bottom + 4) + 'px';
+  list.style.left    = rect.left + 'px';
+  list.style.width   = Math.max(rect.width, 240) + 'px';
+  list.style.display = 'block';
+}
+
+// ── Por nombre ────────────────────────────────
+let acMayNombreIdx = -1;
+function acMayNombre(val) {
+  acMayNombreIdx = -1;
+  _showMayAcList('ac-may-nombre-list', 'may-nombre-anchor',
+    getMayoristasSugeridos(val, 'nombre'), val, 'nombre');
+}
+function acMayNombreKeydown(e) {
+  const list  = document.getElementById('ac-may-nombre-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (list.style.display === 'none' || !items.length) return;
+  if (e.key === 'ArrowDown')  { e.preventDefault(); acMayNombreIdx = Math.min(acMayNombreIdx+1, items.length-1); _acMayHighlight('ac-may-nombre-list', acMayNombreIdx); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acMayNombreIdx = Math.max(acMayNombreIdx-1, -1); _acMayHighlight('ac-may-nombre-list', acMayNombreIdx); }
+  else if (e.key === 'Enter' && acMayNombreIdx >= 0) { e.preventDefault(); items[acMayNombreIdx].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') { list.style.display = 'none'; acMayNombreIdx = -1; }
+}
+
+// ── Por teléfono ──────────────────────────────
+let acMayTelIdx = -1;
+function acMayTel(val) {
+  acMayTelIdx = -1;
+  _showMayAcList('ac-may-tel-list', 'may-tel',
+    getMayoristasSugeridos(val, 'tel'), val, 'tel');
+}
+function acMayTelKeydown(e) {
+  const list  = document.getElementById('ac-may-tel-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (list.style.display === 'none' || !items.length) return;
+  if (e.key === 'ArrowDown')  { e.preventDefault(); acMayTelIdx = Math.min(acMayTelIdx+1, items.length-1); _acMayHighlight('ac-may-tel-list', acMayTelIdx); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acMayTelIdx = Math.max(acMayTelIdx-1, -1); _acMayHighlight('ac-may-tel-list', acMayTelIdx); }
+  else if (e.key === 'Enter' && acMayTelIdx >= 0) { e.preventDefault(); items[acMayTelIdx].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') { list.style.display = 'none'; acMayTelIdx = -1; }
+}
+
+// ── Por CC/NIT ────────────────────────────────
+let acMayCcIdx = -1;
+function acMayCc(val) {
+  acMayCcIdx = -1;
+  _showMayAcList('ac-may-cc-list', 'may-cc',
+    getMayoristasSugeridos(val, 'cc'), val, 'cc');
+}
+function acMayCcKeydown(e) {
+  const list  = document.getElementById('ac-may-cc-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (list.style.display === 'none' || !items.length) return;
+  if (e.key === 'ArrowDown')  { e.preventDefault(); acMayCcIdx = Math.min(acMayCcIdx+1, items.length-1); _acMayHighlight('ac-may-cc-list', acMayCcIdx); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acMayCcIdx = Math.max(acMayCcIdx-1, -1); _acMayHighlight('ac-may-cc-list', acMayCcIdx); }
+  else if (e.key === 'Enter' && acMayCcIdx >= 0) { e.preventDefault(); items[acMayCcIdx].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') { list.style.display = 'none'; acMayCcIdx = -1; }
+}
+
+// ── Highlight ─────────────────────────────────
+function _acMayHighlight(listId, idx) {
+  const items = document.getElementById(listId).querySelectorAll('.autocomplete-item');
+  items.forEach((el, i) => el.classList.toggle('selected', i === idx));
+  if (idx >= 0) items[idx].scrollIntoView({ block: 'nearest' });
+}
+
+// Cerrar al hacer clic fuera de cualquier dropdown mayorista
+document.addEventListener('click', e => {
+  const mayIds = ['ac-may-nombre-list','ac-may-tel-list','ac-may-cc-list'];
+  const anchors = ['may-nombre-anchor','may-nombre','may-tel','may-cc'];
+  const dentroDeAlguno = mayIds.concat(anchors).some(id => e.target.closest('#'+id));
+  if (!dentroDeAlguno) {
+    mayIds.forEach(id => { document.getElementById(id).style.display = 'none'; });
+    acMayNombreIdx = -1; acMayTelIdx = -1; acMayCcIdx = -1;
+  }
+});
+
+// Reposicionar al scroll
+window.addEventListener('scroll', () => {
+  // Nombre
+  const nl = document.getElementById('ac-may-nombre-list');
+  if (nl && nl.style.display !== 'none') {
+    const r = document.getElementById('may-nombre-anchor')?.getBoundingClientRect();
+    if (r) { nl.style.top = (r.bottom+4)+'px'; nl.style.left = r.left+'px'; }
+  }
+  // Tel
+  const tl = document.getElementById('ac-may-tel-list');
+  if (tl && tl.style.display !== 'none') {
+    const r = document.getElementById('may-tel')?.getBoundingClientRect();
+    if (r) { tl.style.top = (r.bottom+4)+'px'; tl.style.left = r.left+'px'; }
+  }
+  // CC
+  const cl = document.getElementById('ac-may-cc-list');
+  if (cl && cl.style.display !== 'none') {
+    const r = document.getElementById('may-cc')?.getBoundingClientRect();
+    if (r) { cl.style.top = (r.bottom+4)+'px'; cl.style.left = r.left+'px'; }
+  }
 }, true);
 
 // ═════════════════════════════════════════════
@@ -9289,6 +9517,13 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
 // Cierra fullscreen con Escape
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  // Cerrar dropdowns de autocomplete mayorista si están abiertos
+  const mayLists = ['ac-may-nombre-list','ac-may-tel-list','ac-may-cc-list'];
+  const anyMayOpen = mayLists.some(id => document.getElementById(id)?.style.display !== 'none');
+  if (anyMayOpen) {
+    mayLists.forEach(id => { document.getElementById(id).style.display = 'none'; });
+    return;
+  }
   // Cerrar en orden de prioridad (más al frente primero)
   if (document.getElementById('tab-lock-overlay')?.style.display !== 'none') {
     closeLockTab(); return;
