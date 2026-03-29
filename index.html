@@ -3074,6 +3074,16 @@
   <!-- ══════════════ PÁGINA: COTIZAR ══════════════ -->
   <div class="page active" id="page-cotizar">
 
+  <!-- ══ ÓRDENES EN ESPERA ══ -->
+  <div class="card section" id="espera-card" style="display:none;border-color:rgba(0,180,216,0.35);background:rgba(0,180,216,0.04)">
+    <div class="card-title" style="display:flex;align-items:center;gap:10px">
+      <span>⏸ Órdenes en espera</span>
+      <span id="espera-badge" style="background:rgba(0,180,216,0.18);color:var(--teal);border:1px solid rgba(0,180,216,0.35);border-radius:20px;font-size:11px;font-weight:800;padding:1px 9px">0</span>
+      <span style="font-size:12px;color:var(--text-muted);font-weight:400;margin-left:4px">— Haz clic en ▶ para recuperar y continuar</span>
+    </div>
+    <div id="espera-lista"></div>
+  </div>
+
     <!-- Datos del Cliente -->
     <div class="card section">
       <div class="card-title"> 🧜🏻‍♂️Datos del Cliente</div>
@@ -3143,6 +3153,7 @@
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetForm()">✨ Limpiar</button>
+          <button class="btn btn-ghost" onclick="ponerEnEspera()" title="Guardar temporalmente para registrar otra orden" style="border-color:rgba(0,180,216,0.4);color:var(--teal)">⏸ En espera</button>
           <button class="btn btn-success" id="btn-cobrar" onclick="guardarOrden()">💵 Cobrar</button>
         </div>
       </div>
@@ -4932,6 +4943,110 @@ function guardarOrden() {
 }
 
 // ─────────────────────────────────────────────
+//  ÓRDENES EN ESPERA
+// ─────────────────────────────────────────────
+const ESPERA_KEY = 'aquacot_espera_v1';
+let ordenesEnEspera = _safeLoad(ESPERA_KEY, []);
+
+function _capturarEstadoFormulario() {
+  const nombre = document.getElementById('cliente-nombre').value;
+  const tel    = document.getElementById('cliente-tel').value;
+  const cc     = document.getElementById('cliente-cc').value;
+  const nota   = document.getElementById('nota-input')?.value || '';
+  const pago   = document.getElementById('pago-input').value;
+  const especiesData = {};
+  ESPECIES.forEach(e => {
+    const qty = document.getElementById(`qty-${e.id}`)?.value || '';
+    const ev  = document.getElementById(`ev-${e.id}`)?.checked || false;
+    const precioLibre = e.precio === null ? (document.getElementById(`precio-${e.id}`)?.value || '') : null;
+    if (qty || ev) especiesData[e.id] = { qty, ev, precioLibre };
+  });
+  return { nombre, tel, cc, nota, pago, especiesData };
+}
+
+function ponerEnEspera() {
+  const estado = _capturarEstadoFormulario();
+  const tieneContenido = estado.nombre ||
+    Object.values(estado.especiesData).some(d => parseFloat(d.qty) > 0);
+  if (!tieneContenido) { toast('No hay nada en el formulario para poner en espera', true); return; }
+
+  ordenesEnEspera.push({ id: _genId(), timestamp: new Date().toISOString(), ...estado });
+  safeStorage.setItem(ESPERA_KEY, JSON.stringify(ordenesEnEspera));
+  resetForm(true);
+  renderOrdenesEnEspera();
+  toast('⏸ Orden puesta en espera — puedes registrar la siguiente');
+}
+
+function recuperarOrdenEspera(id) {
+  const idx = ordenesEnEspera.findIndex(o => String(o.id) === String(id));
+  if (idx === -1) return;
+  const orden = ordenesEnEspera[idx];
+
+  document.getElementById('cliente-nombre').value = orden.nombre || '';
+  document.getElementById('cliente-tel').value    = orden.tel    || '';
+  document.getElementById('cliente-cc').value     = orden.cc     || '';
+  const notaEl = document.getElementById('nota-input');
+  if (notaEl) notaEl.value = orden.nota || '';
+  document.getElementById('pago-input').value = orden.pago || '';
+
+  ESPECIES.forEach(e => {
+    const d = orden.especiesData?.[e.id];
+    const qtyEl = document.getElementById(`qty-${e.id}`);
+    const evEl  = document.getElementById(`ev-${e.id}`);
+    if (qtyEl) qtyEl.value   = d?.qty || '';
+    if (evEl)  evEl.checked  = d?.ev  || false;
+    if (e.precio === null) {
+      const pEl = document.getElementById(`precio-${e.id}`);
+      if (pEl && d?.precioLibre != null) pEl.value = d.precioLibre;
+    }
+  });
+
+  ordenesEnEspera.splice(idx, 1);
+  safeStorage.setItem(ESPERA_KEY, JSON.stringify(ordenesEnEspera));
+  calcular();
+  calcDevuelta();
+  renderOrdenesEnEspera();
+  toast('▶ Orden recuperada');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function eliminarOrdenEspera(id) {
+  if (!confirm('¿Descartar esta orden en espera?')) return;
+  ordenesEnEspera = ordenesEnEspera.filter(o => String(o.id) !== String(id));
+  safeStorage.setItem(ESPERA_KEY, JSON.stringify(ordenesEnEspera));
+  renderOrdenesEnEspera();
+  toast('Orden descartada');
+}
+
+function renderOrdenesEnEspera() {
+  const cont = document.getElementById('espera-lista');
+  const card = document.getElementById('espera-card');
+  if (!cont || !card) return;
+  if (ordenesEnEspera.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  cont.innerHTML = ordenesEnEspera.map(o => {
+    const hora  = new Date(o.timestamp).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    const fecha = new Date(o.timestamp).toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+    const espec = ESPECIES.filter(e => {
+      const d = o.especiesData?.[e.id];
+      return d && parseFloat(d.qty) > 0;
+    }).map(e => `${e.emoji}${e.nombre.split(' ')[0]} ${o.especiesData[e.id].qty}lb`).join(' · ');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.2);border-radius:10px;margin-bottom:8px">
+      <div style="font-size:22px;flex-shrink:0">⏸</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:var(--text-primary);font-size:14px;margin-bottom:3px">${escHtml(o.nombre || '(sin nombre)')}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${hora} · ${fecha}${espec ? ' &nbsp;·&nbsp; ' + escHtml(espec) : ''}</div>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="recuperarOrdenEspera(${o.id})" style="flex-shrink:0">▶ Recuperar</button>
+      <button class="btn btn-ghost btn-sm" onclick="eliminarOrdenEspera(${o.id})" style="flex-shrink:0;color:var(--coral);border-color:rgba(239,71,111,0.3)" title="Descartar">✕</button>
+    </div>`;
+  }).join('');
+  // Actualizar badge del botón
+  const badge = document.getElementById('espera-badge');
+  if (badge) badge.textContent = ordenesEnEspera.length;
+}
+
+// ─────────────────────────────────────────────
 //  GENERAR PDF
 // ─────────────────────────────────────────────
 function generarPDF(cotId) {
@@ -6141,8 +6256,13 @@ function getTodosClientes() {
     }
   });
 
+  // Ordenar por fecha de creación ascendente (orden en que fueron añadidos)
   return Array.from(map.values())
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    .sort((a, b) => {
+      const tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      const tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return tA - tB;
+    });
 }
 
 function agregarCliente() {
@@ -7661,7 +7781,8 @@ function handleOAuthRedirect() {
 function applyNewToken(token, expiresIn, isFirstConnect = false) {
   driveToken = token;
   const expiry = Date.now() + expiresIn * 1000;
-  safeSessionStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
+  // Guardar en localStorage (persiste entre recargas y cierres de pestaña)
+  safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
   safeStorage.removeItem('aquacot_oauth_pending');
   scheduleRenewal(expiry);
   if (isFirstConnect) {
@@ -7734,7 +7855,7 @@ window.addEventListener('message', (e) => {
 
   driveToken = token;
   const expiry = Date.now() + expiresIn * 1000;
-  safeSessionStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
+  safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
   scheduleRenewal(expiry);
   // Actualizar estado visual solo si había error
   const btn = document.getElementById('drive-status-btn');
@@ -7775,7 +7896,7 @@ function driveDisconnect() {
   if (renewalTimer)   clearTimeout(renewalTimer);
   autoSyncTimer = null;
   renewalTimer  = null;
-  safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
+  safeStorage.removeItem(DRIVE_TOKEN_KEY);
   setDriveStatus('', 'Conectar Drive');
   closeSetupModal();
   toast('Drive desconectado. Los datos siguen en local.');
@@ -7792,8 +7913,8 @@ function restoreDriveSession() {
   if (safeStorage.getItem('aquacot_oauth_pending')) {
     safeStorage.removeItem('aquacot_oauth_pending');
   }
-  // 3. Restaurar token guardado
-  const saved = safeSessionStorage.getItem(DRIVE_TOKEN_KEY);
+  // 3. Restaurar token guardado (localStorage persiste entre recargas)
+  const saved = safeStorage.getItem(DRIVE_TOKEN_KEY);
   if (!saved) return;
   try {
     const { token, expiry } = JSON.parse(saved);
@@ -7815,7 +7936,7 @@ function restoreDriveSession() {
       scheduleRenewal(Date.now() + 2000); // renovar en 2s
       setDriveStatus('syncing', 'Renovando sesión…');
     }
-  } catch(e) { safeSessionStorage.removeItem(DRIVE_TOKEN_KEY); }
+  } catch(e) { safeStorage.removeItem(DRIVE_TOKEN_KEY); }
 }
 
 // ── Inicializar sincronización ──────────────
@@ -7877,7 +7998,7 @@ async function driveRequest(url, options = {}) {
   });
   if (res.status === 401) {
     driveToken = null;
-    safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
+    safeStorage.removeItem(DRIVE_TOKEN_KEY);
     if (autoSyncTimer) clearInterval(autoSyncTimer);
     setDriveStatus('error', 'Sesión expirada');
     showSyncBlock('Sesión cerrada', 'El token de Google Drive expiró o fue revocado.');
@@ -11128,7 +11249,7 @@ function showSyncBlock(title, msg) {
 function syncBlockDismiss() {
   document.getElementById('sync-block-overlay').style.display = 'none';
   driveToken = null;
-  safeSessionStorage.removeItem(DRIVE_TOKEN_KEY);
+  safeStorage.removeItem(DRIVE_TOKEN_KEY);
   if (autoSyncTimer) { clearInterval(autoSyncTimer); autoSyncTimer = null; }
   setDriveStatus('', 'CONECTAR');
   toast('Continuando en modo local — los datos están seguros');
@@ -11147,6 +11268,7 @@ updateBadge();
 updateEvBadge();
 iniciarFloatBtnInterval();
 restoreDriveSession();
+renderOrdenesEnEspera();
 
 // Mostrar versión desde constante
 const _vBadge = document.getElementById('app-version-badge');
