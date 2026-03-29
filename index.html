@@ -3176,6 +3176,7 @@
         <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
         <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
         <input type="text" id="search-cc" placeholder="Buscar por identificación…" oninput="filtrarHistorial()">
+        <input type="text" id="search-nota" placeholder="Buscar por nota…" oninput="filtrarHistorial()">
         <select id="search-especie" onchange="filtrarHistorial()" style="background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:8px 12px;min-width:140px">
           <option value="">🐟 Todas las especies</option>
         </select>
@@ -3381,7 +3382,7 @@
     <div class="card section">
       <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
         <span>🔪 Órdenes con Eviscerado</span>
-        <button class="btn btn-ghost btn-sm" id="ev-fullscreen-btn" onclick="toggleEvFullscreen()" title="Pantalla completa">⛶ Pantalla completa</button>
+        <button class="btn btn-ghost btn-sm" id="ev-fullscreen-btn" onclick="evFullscreenOpen ? solicitarPasswordSalirFullscreen() : toggleEvFullscreen()" title="Pantalla completa">⛶ Pantalla completa</button>
       </div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Ordenes que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
     </div>
@@ -3741,7 +3742,7 @@
       🔪 Eviscerado
       <span class="ev-count" id="ev-fs-badge-pendientes" style="background:rgba(0,180,216,0.15);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:2px 10px;font-size:13px">0</span>
     </div>
-    <button class="ev-fs-close" onclick="toggleEvFullscreen()">✕ Salir de pantalla completa</button>
+    <button class="ev-fs-close" onclick="solicitarPasswordSalirFullscreen()">✕ Salir de pantalla completa</button>
   </div>
 
   <!-- Zona scrollable: estimador + pendientes -->
@@ -4179,7 +4180,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '4.1.0';
+const APP_VERSION = '4.2.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4325,6 +4326,8 @@ function showTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`page-${tab}`).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  // Guardar última pestaña activa
+  safeStorage.setItem('aquacot_active_tab', tab);
   // Marca si la pestaña activa tiene botones de acción en la parte inferior
   if (tab === 'historial')     renderHistorial();
   if (tab === 'dashboard')     renderDashboard();
@@ -5336,6 +5339,7 @@ function renderHistorial(filter = '') {
   const nombre  = document.getElementById('search-nombre')?.value.toLowerCase() || '';
   const tel     = document.getElementById('search-tel')?.value.toLowerCase() || '';
   const cc      = document.getElementById('search-cc')?.value.toLowerCase() || '';
+  const nota    = document.getElementById('search-nota')?.value.toLowerCase() || '';
   const especie = document.getElementById('search-especie')?.value || '';
   const evFilt  = document.getElementById('search-ev')?.value || '';
   const tbody   = document.getElementById('historial-tbody');
@@ -5364,6 +5368,7 @@ function renderHistorial(filter = '') {
     if (nombre  && !c.nombre.toLowerCase().includes(nombre)) return false;
     if (tel     && !(c.tel||'').includes(tel)) return false;
     if (cc      && !(c.cc||'').toLowerCase().includes(cc)) return false;
+    if (nota    && !(c.nota||'').toLowerCase().includes(nota)) return false;
     if (especie && !c.items.some(it => it.especie === especie)) return false;
     if (evFilt === 'si' && !(c.totalEviscerado > 0)) return false;
     if (evFilt === 'no' && (c.totalEviscerado > 0)) return false;
@@ -6256,12 +6261,12 @@ function getTodosClientes() {
     }
   });
 
-  // Ordenar por fecha de creación ascendente (orden en que fueron añadidos)
+  // Ordenar por fecha de creación descendente (más reciente primero)
   return Array.from(map.values())
     .sort((a, b) => {
       const tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
       const tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
-      return tA - tB;
+      return tB - tA;
     });
 }
 
@@ -7475,6 +7480,7 @@ function captureUIState() {
     searchNombre:  document.getElementById('search-nombre')?.value || '',
     searchTel:     document.getElementById('search-tel')?.value    || '',
     searchCc:      document.getElementById('search-cc')?.value     || '',
+    searchNota:    document.getElementById('search-nota')?.value   || '',
   };
 }
 
@@ -7525,6 +7531,7 @@ function restoreUIState(state) {
   if (state.searchNombre) document.getElementById('search-nombre').value = state.searchNombre;
   if (state.searchTel)    document.getElementById('search-tel').value    = state.searchTel;
   if (state.searchCc)     document.getElementById('search-cc').value     = state.searchCc;
+  if (state.searchNota)   { const el = document.getElementById('search-nota'); if (el) el.value = state.searchNota; }
 
   // Restaurar scroll (ligero delay para que el DOM esté pintado)
   requestAnimationFrame(() => window.scrollTo({ top: state.scrollY, behavior: 'instant' }));
@@ -9608,6 +9615,7 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
     btn.innerHTML = '✕ Salir de pantalla completa';
+    safeStorage.setItem('aquacot_ev_fullscreen', '1');
     renderEvFullscreen();
 
     // Ticker cada segundo: actualiza chips de tiempo en las tarjetas pendientes del fullscreen
@@ -9629,6 +9637,7 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
     overlay.classList.remove('open');
     document.body.style.overflow = '';
     btn.innerHTML = '⛶ Pantalla completa';
+    safeStorage.setItem('aquacot_ev_fullscreen', '0');
     if (evFsCountdownInterval) { clearInterval(evFsCountdownInterval); evFsCountdownInterval = null; }
     if (evFsTickerSec) { clearInterval(evFsTickerSec); evFsTickerSec = null; }
     if (evFsTickerMin) { clearInterval(evFsTickerMin); evFsTickerMin = null; }
@@ -9671,7 +9680,9 @@ document.addEventListener('keydown', e => {
     cerrarPerfil(); return;
   }
   if (evFullscreenOpen) {
-    toggleEvFullscreen(); return;
+    // Escape no cierra directamente — requiere contraseña
+    solicitarPasswordSalirFullscreen();
+    return;
   }
 });
 
@@ -11238,12 +11249,62 @@ function showSyncBlock(title, msg) {
   if (!overlay || overlay.style.display !== 'none') return;
   if (title) document.getElementById('sync-block-title').textContent = title;
   if (msg)   document.getElementById('sync-block-msg').textContent   = msg;
+  // Guardar datos del formulario de cotizar antes de mostrar el bloqueo
+  _guardarFormularioEnSesion();
   overlay.style.display = 'flex';
   // Pulso de alerta en el icono
   const icon = document.getElementById('sync-block-icon');
   icon.style.animation = 'none';
   void icon.offsetWidth;
   icon.style.animation = 'sbSlideUp 0.32s cubic-bezier(.25,.8,.25,1)';
+}
+
+// Guarda los datos del formulario de nueva orden en sessionStorage
+function _guardarFormularioEnSesion() {
+  try {
+    const nombre  = document.getElementById('cliente-nombre')?.value || '';
+    const tel     = document.getElementById('cliente-tel')?.value    || '';
+    const cc      = document.getElementById('cliente-cc')?.value     || '';
+    const nota    = document.getElementById('nota-input')?.value     || '';
+    const pago    = document.getElementById('pago-input')?.value     || '';
+    const especies = {};
+    ESPECIES.forEach(e => {
+      const qty   = document.getElementById(`qty-${e.id}`)?.value   || '';
+      const ev    = document.getElementById(`ev-${e.id}`)?.checked  || false;
+      const precio = e.precio === null ? (document.getElementById(`precio-${e.id}`)?.value || '') : null;
+      if (qty) { especies[e.id] = { qty, ev, precio }; }
+    });
+    const saved = { nombre, tel, cc, nota, pago, especies };
+    safeSessionStorage.setItem('aquacot_form_backup', JSON.stringify(saved));
+  } catch(e) {}
+}
+
+// Restaura los datos del formulario de nueva orden desde sessionStorage
+function _restaurarFormularioDesdeSesion() {
+  try {
+    const raw = safeSessionStorage.getItem('aquacot_form_backup');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    safeSessionStorage.removeItem('aquacot_form_backup');
+    if (!saved) return;
+    const tieneAlgo = saved.nombre || saved.tel || Object.keys(saved.especies || {}).length > 0;
+    if (!tieneAlgo) return;
+    if (saved.nombre) { const el = document.getElementById('cliente-nombre'); if (el) el.value = saved.nombre; }
+    if (saved.tel)    { const el = document.getElementById('cliente-tel');    if (el) el.value = saved.tel; }
+    if (saved.cc)     { const el = document.getElementById('cliente-cc');     if (el) el.value = saved.cc; }
+    if (saved.nota)   { const el = document.getElementById('nota-input');     if (el) el.value = saved.nota; }
+    if (saved.pago)   { const el = document.getElementById('pago-input');     if (el) el.value = saved.pago; }
+    Object.entries(saved.especies || {}).forEach(([id, data]) => {
+      const qtyEl   = document.getElementById(`qty-${id}`);
+      const evEl    = document.getElementById(`ev-${id}`);
+      const precioEl = document.getElementById(`precio-${id}`);
+      if (qtyEl)    qtyEl.value    = data.qty;
+      if (evEl)     evEl.checked   = data.ev;
+      if (precioEl && data.precio !== null) precioEl.value = data.precio;
+    });
+    calcular();
+    toast('📋 Se recuperaron los datos del formulario anterior');
+  } catch(e) {}
 }
 
 function syncBlockDismiss() {
@@ -11270,9 +11331,48 @@ iniciarFloatBtnInterval();
 restoreDriveSession();
 renderOrdenesEnEspera();
 
+// Restaurar última pestaña activa
+(function restoreLastTab() {
+  const lastTab = safeStorage.getItem('aquacot_active_tab');
+  const wasFullscreen = safeStorage.getItem('aquacot_ev_fullscreen') === '1';
+  if (lastTab && lastTab !== 'cotizar') {
+    // Las pestañas protegidas requieren contraseña — no auto-restaurar
+    if (!_TABS_PROTEGIDAS.includes(lastTab) || _tabsDesbloqueadas) {
+      _origShowTab(lastTab);
+    }
+  }
+  // Si estaba en pantalla completa de eviscerado, restaurarla
+  if (wasFullscreen) {
+    // Asegurarse de que estamos en la pestaña de eviscerado
+    if (!_TABS_PROTEGIDAS.includes('eviscerado')) {
+      _origShowTab('eviscerado');
+    }
+    // Abrir el fullscreen directamente (sin toggle para no invertir el estado)
+    evFullscreenOpen = true;
+    const overlay = document.getElementById('ev-fullscreen-overlay');
+    const btn     = document.getElementById('ev-fullscreen-btn');
+    if (overlay) overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (btn) btn.innerHTML = '✕ Salir de pantalla completa';
+    renderEvFullscreen();
+    evFsTickerSec = setInterval(() => {
+      document.querySelectorAll('#ev-fs-cards-pendientes .ev-timer-chip[data-start]').forEach(chip => {
+        const elapsed = Math.floor((Date.now() - parseInt(chip.dataset.start)) / 60000);
+        const hrs = Math.floor(elapsed / 60), min = elapsed % 60;
+        chip.textContent = `⏱ ${hrs > 0 ? hrs + 'h ' : ''}${min}m esperando`;
+        chip.classList.toggle('urgent', elapsed > 30);
+      });
+    }, 1000);
+    evFsTickerMin = setInterval(() => renderEvFullscreen(), 30000);
+  }
+})();
+
 // Mostrar versión desde constante
 const _vBadge = document.getElementById('app-version-badge');
 if (_vBadge) _vBadge.textContent = 'v' + APP_VERSION;
+
+// Restaurar formulario si había datos guardados antes de reconectar Drive
+_restaurarFormularioDesdeSesion();
 
 // ── Modo inmersivo Android: ocultar barra de navegación ──────────────────
 // Usa la Screen Wake Lock / Fullscreen API combinada con viewport-fit=cover
@@ -11348,6 +11448,27 @@ function _formTieneDatos() {
 const _origShowTab = showTab;
 
 // ══════════════════════════════════════════════════════════
+//  CONTRASEÑA PARA SALIR DEL FULLSCREEN DE EVISCERADO
+// ══════════════════════════════════════════════════════════
+function solicitarPasswordSalirFullscreen() {
+  // Reutilizamos el modal de bloqueo de pestañas pero con texto diferente
+  _tabPendiente = '__exit_ev_fullscreen__';
+  const overlay = document.getElementById('tab-lock-overlay');
+  if (!overlay) { toggleEvFullscreen(); return; }
+  // Cambiar el mensaje del modal
+  const h3 = overlay.querySelector('h3');
+  const p  = overlay.querySelector('p');
+  if (h3) h3.textContent = 'Salir de pantalla completa';
+  if (p)  p.textContent  = 'Ingresa la contraseña de administrador para salir.';
+  const inp = document.getElementById('tab-pwd-input');
+  const err = document.getElementById('tab-pwd-error');
+  if (inp) inp.value = '';
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+  overlay.style.display = 'flex';
+  setTimeout(() => inp?.focus(), 80);
+}
+
+// ══════════════════════════════════════════════════════════
 //  CONTRASEÑA PARA PESTAÑAS PROTEGIDAS (Dashboard y Perfiles)
 //  Mismo hash SHA-256 que el panel de precios
 // ══════════════════════════════════════════════════════════
@@ -11386,10 +11507,22 @@ async function _verificarPasswordTab() {
 
   const hash = await _hashStr(val); // reutiliza _hashStr del sistema de precios
   if (hash === _PRICES_HASH) {      // misma contraseña 2xT3mE0s
-    _tabsDesbloqueadas = true;
     const dest = _tabPendiente;     // guardar destino ANTES de limpiar
     closeLockTab();
-    if (dest) _origShowTab(dest);
+    // Restaurar el texto del modal para uso futuro como bloqueo de pestaña
+    const overlay = document.getElementById('tab-lock-overlay');
+    if (overlay) {
+      const h3 = overlay.querySelector('h3');
+      const p  = overlay.querySelector('p');
+      if (h3) h3.textContent = 'Sección protegida';
+      if (p)  p.textContent  = 'Esta sección requiere contraseña de administrador.';
+    }
+    if (dest === '__exit_ev_fullscreen__') {
+      toggleEvFullscreen();
+    } else {
+      _tabsDesbloqueadas = true;
+      if (dest) _origShowTab(dest);
+    }
   } else {
     if (err) { err.textContent = '❌ Contraseña incorrecta'; err.style.display = 'block'; }
     if (inp) { inp.value = ''; inp.focus(); }
