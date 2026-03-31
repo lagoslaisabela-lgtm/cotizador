@@ -3021,7 +3021,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v4.3.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.0.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4181,7 +4181,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '4.3.0';
+const APP_VERSION = '5.0.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6210,6 +6210,7 @@ function getTodosClientes() {
   });
 
   // Agregar/enriquecer con datos del historial de órdenes
+  const deletedCliMap = getDeletedCli(); // para filtrar clientes de historial eliminados
   ordenes.forEach(o => {
     if (!o.nombre) return;
     const key     = o.nombre.trim().toLowerCase();
@@ -6240,6 +6241,8 @@ function getTodosClientes() {
       if (!entry.tel && o.tel) entry.tel = o.tel;
       if (!entry.cc  && o.cc)  entry.cc  = o.cc;
     } else {
+      // Verificar si este cliente del historial fue ocultado/eliminado
+      if (deletedCliMap[histKey]) return;
       // Nuevo del historial — no está en directorio
       if (map.has(histKey)) {
         // Acumular en entrada ya existente del historial
@@ -6311,7 +6314,19 @@ function eliminarCliente(id) {
   toast('Cliente eliminado');
 }
 
-let editingClienteId   = null;
+function eliminarClienteHistorial(histId) {
+  const histKey = String(histId); // 'hist_xxx'
+  if (!confirm('¿Ocultar este cliente del historial?\nSus órdenes no se eliminarán, solo dejará de aparecer en el listado.')) return;
+  const del = getDeletedCli();
+  del[histKey] = new Date().toISOString();
+  saveDeletedCli(del);
+  updateClientesBadge();
+  renderClientes();
+  scheduleDriveSync();
+  toast('Cliente del historial ocultado');
+}
+
+
 let editingClienteOrig = null; // 'directorio' | 'historial'
 
 // Guarda los valores originales del cliente que se está editando
@@ -6501,8 +6516,8 @@ function renderClientes() {
           data-origen="${c.origen}"
           title="Editar">✏️</button>
         ${c.origen === 'directorio'
-          ? `<button class="btn btn-danger btn-sm cli-del-btn" data-id="${c.id}" title="Eliminar">🗑</button>`
-          : ''
+          ? `<button class="btn btn-danger btn-sm cli-del-btn" data-id="${c.id}" data-origen="directorio" title="Eliminar">🗑</button>`
+          : `<button class="btn btn-danger btn-sm cli-del-btn" data-id="${c.id}" data-origen="historial" title="Ocultar del historial" style="opacity:0.7">🗑</button>`
         }
       </td>
     </tr>
@@ -6536,7 +6551,12 @@ function renderClientes() {
   tbody.querySelectorAll('.cli-del-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      eliminarCliente(isNaN(btn.dataset.id) ? btn.dataset.id : Number(btn.dataset.id));
+      const id = isNaN(btn.dataset.id) ? btn.dataset.id : Number(btn.dataset.id);
+      if (btn.dataset.origen === 'historial') {
+        eliminarClienteHistorial(id);
+      } else {
+        eliminarCliente(id);
+      }
     });
   });
 }
@@ -7765,7 +7785,24 @@ function closeSetupOutside(e) {
 
 let _gisClient       = null;   // google.accounts.oauth2.TokenClient
 let _gisInitialized  = false;
-let renewalTimer     = null;
+let renewalTimer        = null;
+let _driveTokenExpiry   = 0;   // ms epoch — para verificar expiración en visibilitychange
+let _syncFailCount      = 0;   // contador de fallos consecutivos de sync
+
+// Renovación silenciosa como Promise<boolean> — sin UI, con timeout de seguridad
+function _trySilentRenew() {
+  return new Promise((resolve) => {
+    if (!_gisInitialized) { resolve(false); return; }
+    const guard = setTimeout(() => resolve(false), 12000); // 12 s máximo
+    _gisClient.callback = (resp) => {
+      clearTimeout(guard);
+      if (resp.error) { console.warn('_trySilentRenew error:', resp.error); resolve(false); return; }
+      applyNewToken(resp.access_token, resp.expires_in ?? 3600);
+      resolve(true);
+    };
+    _gisClient.requestAccessToken({ prompt: '' });
+  });
+}
 
 // Inicializa el TokenClient de GIS (se llama una vez cuando la lib carga)
 function _initGisClient(onToken, onError) {
@@ -7815,13 +7852,20 @@ function silentRenew() {
   }
   _gisClient.callback = (resp) => {
     if (resp.error) {
-      console.warn('Renovación silenciosa fallida:', resp.error);
+      _syncFailCount++;
+      console.warn('Renovación silenciosa fallida:', resp.error, `(fallo #${_syncFailCount})`);
       setDriveStatus('error', 'Sesión expirada — reconecta');
-      showSyncBlock('Sesión cerrada', 'La sesión de Google se cerró y no pudo renovarse automáticamente.');
+      // Solo bloquear la UI después de 2 fallos consecutivos para evitar
+      // falsos positivos por conectividad momentánea o timers congelados en móvil
+      if (_syncFailCount >= 2) {
+        showSyncBlock('Sesión cerrada', 'La sesión de Google se cerró y no pudo renovarse automáticamente.');
+      }
       return;
     }
     driveToken = resp.access_token;
     const expiry = Date.now() + (resp.expires_in ?? 3600) * 1000;
+    _driveTokenExpiry = expiry;
+    _syncFailCount    = 0;
     safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token: driveToken, expiry }));
     scheduleRenewal(expiry);
     // Actualizar estado visual solo si había error previo
@@ -7837,6 +7881,7 @@ function silentRenew() {
 
 function scheduleRenewal(expiry) {
   if (renewalTimer) clearTimeout(renewalTimer);
+  _driveTokenExpiry = expiry;
   const msUntilRenew = expiry - Date.now() - 5 * 60 * 1000; // 5 min antes
   const delay = Math.max(msUntilRenew, 10000);               // mínimo 10 s
   renewalTimer = setTimeout(silentRenew, delay);
@@ -7846,11 +7891,14 @@ function scheduleRenewal(expiry) {
 function applyNewToken(token, expiresIn, isFirstConnect = false) {
   driveToken = token;
   const expiry = Date.now() + expiresIn * 1000;
+  _driveTokenExpiry = expiry;
+  _syncFailCount    = 0;
   safeStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({ token, expiry }));
   safeStorage.removeItem('aquacot_oauth_pending');
   scheduleRenewal(expiry);
   if (isFirstConnect) {
     toast('✅ Google Drive conectado. Sincronizando…');
+    closeSetupModal();
     initDriveSync();
   }
 }
@@ -7972,17 +8020,40 @@ async function initDriveSync() {
 
 // ── API Drive v3 helpers ─────────────────────
 async function driveRequest(url, options = {}) {
-  if (!driveToken) throw new Error('No hay token de Drive');
-  const res = await fetch(url, {
+  // Si no hay token, intentar renovación silenciosa antes de lanzar error
+  if (!driveToken) {
+    setDriveStatus('syncing', 'Renovando sesión…');
+    const ok = await _trySilentRenew();
+    if (!ok) { throw new Error('No hay token de Drive'); }
+  }
+
+  let res = await fetch(url, {
     ...options,
     headers: {
       'Authorization': 'Bearer ' + driveToken,
       ...(options.headers || {})
     }
   });
+
+  // Token expiró justo en la petición → intentar renovación silenciosa y reintentar
   if (res.status === 401) {
+    console.warn('driveRequest: 401 — intentando auto-renovación silenciosa…');
     driveToken = null;
     safeStorage.removeItem(DRIVE_TOKEN_KEY);
+
+    const ok = await _trySilentRenew();
+    if (ok) {
+      // Reintentar la petición original con el token fresco
+      return await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': 'Bearer ' + driveToken,
+          ...(options.headers || {})
+        }
+      });
+    }
+    // No se pudo renovar → ahora sí, bloquear
+    _syncFailCount++;
     if (autoSyncTimer) clearInterval(autoSyncTimer);
     setDriveStatus('error', 'Sesión expirada');
     showSyncBlock('Sesión cerrada', 'El token de Google Drive expiró o fue revocado.');
@@ -9140,6 +9211,7 @@ function buildEvCard(c, isDone) {
 //  ESTIMADOR DE FINALIZACIÓN — EVISCERADO
 // ─────────────────────────────────────────────
 let evCountdownInterval = null;
+let _evFinEstimadoExtendido = 0; // ms timestamp — extiende el timer flotante si expiró con pendientes aún activos
 
 // ── Actualiza el botón flotante de eviscerado SIEMPRE, sin importar la pestaña activa ──
 function actualizarFloatBtn() {
@@ -9208,9 +9280,16 @@ function actualizarFloatBtn() {
   const diffSecs    = Math.max(0, Math.round((finEstimado - Date.now()) / 1000));
 
   if (diffSecs <= 0) {
-    floatBtn.className    = 'done';
-    floatText.textContent = '¡Ya!';
+    // El tiempo estimado se cumplió pero aún hay órdenes pendientes → extender 3 min
+    if (_evFinEstimadoExtendido < Date.now()) {
+      _evFinEstimadoExtendido = Date.now() + 3 * 60 * 1000;
+    }
+    const extDiffSecs = Math.max(0, Math.round((_evFinEstimadoExtendido - Date.now()) / 1000));
+    floatBtn.className    = 'pending';
+    floatText.textContent = fmtSecsShort(extDiffSecs);
+    floatBtn.title        = `Eviscerado: tiempo extendido · ${fmtSecsShort(extDiffSecs)} extra`;
   } else {
+    _evFinEstimadoExtendido = 0; // reset extensión cuando aún hay tiempo natural
     const isUrgent = diffSecs > 30 * 60;
     floatBtn.className    = isUrgent ? 'urgent pending' : 'pending';
     floatText.textContent = fmtSecsShort(diffSecs);
@@ -9373,6 +9452,18 @@ function calcularEstimadorEv() {
     const diffSecs = Math.max(0, Math.round(diffMs / 1000));
 
     if (diffSecs <= 0) {
+      // Re-verificar pendientes en vivo antes de declarar "listo"
+      const livePend = ordenes.filter(c => c.totalEviscerado > 0 && !getEvDone().has(String(c.id)));
+      if (livePend.length > 0) {
+        // Aún hay pendientes: extender 3 min más
+        if (_evFinEstimadoExtendido < Date.now()) {
+          _evFinEstimadoExtendido = Date.now() + 3 * 60 * 1000;
+        }
+        const extDiff = Math.max(0, Math.round((_evFinEstimadoExtendido - Date.now()) / 1000));
+        elHora.textContent = '⏱ Extendiendo…';
+        elCount.innerHTML  = `<strong>+${fmtSecs(extDiff)} extra</strong> · ${livePend.length} orden${livePend.length !== 1 ? 'es' : ''} aún pendiente${livePend.length !== 1 ? 's' : ''}`;
+        return;
+      }
       elHora.textContent = '¡Ahora!';
       elCount.innerHTML  = 'El tiempo estimado ya se cumplió.';
       if (floatBtn) {
@@ -11224,6 +11315,19 @@ function closeMayPriceModal() {
 function showSyncBlock(title, msg) {
   const overlay = document.getElementById('sync-block-overlay');
   if (!overlay || overlay.style.display !== 'none') return;
+
+  // Grace period: no bloquear la UI por una falla aislada (ej. móvil que vuelve de background).
+  // Solo mostrar si llevamos >3 min con fallos continuos O si es el 2.° fallo consecutivo.
+  if (_syncFailCount < 2) {
+    if (!window._syncBlockGraceStart) window._syncBlockGraceStart = Date.now();
+    if (Date.now() - window._syncBlockGraceStart < 3 * 60 * 1000) {
+      // Todavía en periodo de gracia: mostrar advertencia suave en el botón, no bloquear
+      setDriveStatus('error', '⚠️ Reconectando…');
+      return;
+    }
+  }
+  window._syncBlockGraceStart = null;
+
   if (title) document.getElementById('sync-block-title').textContent = title;
   if (msg)   document.getElementById('sync-block-msg').textContent   = msg;
   // Guardar datos del formulario de cotizar antes de mostrar el bloqueo
@@ -11287,6 +11391,8 @@ function _restaurarFormularioDesdeSesion() {
 function syncBlockDismiss() {
   document.getElementById('sync-block-overlay').style.display = 'none';
   driveToken = null;
+  _syncFailCount = 0;
+  window._syncBlockGraceStart = null;
   safeStorage.removeItem(DRIVE_TOKEN_KEY);
   if (autoSyncTimer) { clearInterval(autoSyncTimer); autoSyncTimer = null; }
   setDriveStatus('', 'CONECTAR');
@@ -11295,6 +11401,8 @@ function syncBlockDismiss() {
 
 function syncBlockReconnect() {
   document.getElementById('sync-block-overlay').style.display = 'none';
+  _syncFailCount = 0;
+  window._syncBlockGraceStart = null;
   openSetupModal();
 }
 
@@ -11307,6 +11415,13 @@ updateEvBadge();
 iniciarFloatBtnInterval();
 restoreDriveSession();
 renderOrdenesEnEspera();
+
+// Pestañas protegidas — declaradas aquí para evitar TDZ en restoreLastTab()
+const _TABS_PROTEGIDAS   = ['dashboard', 'clientes-dash'];
+let   _tabsDesbloqueadas = false;
+let   _tabPendiente      = null;
+const _origShowTab       = showTab;  // alias antes de restoreLastTab()
+let   _evAlertedIds      = new Set(); // IDs ya alertados para no repetir
 
 // Restaurar última pestaña activa
 (function restoreLastTab() {
@@ -11422,7 +11537,6 @@ function _formTieneDatos() {
 }
 
 // Advertir al cambiar de pestaña si hay datos sin guardar
-const _origShowTab = showTab;
 
 // ══════════════════════════════════════════════════════════
 //  CONTRASEÑA PARA SALIR DEL FULLSCREEN DE EVISCERADO
@@ -11449,9 +11563,7 @@ function solicitarPasswordSalirFullscreen() {
 //  CONTRASEÑA PARA PESTAÑAS PROTEGIDAS (Dashboard y Perfiles)
 //  Mismo hash SHA-256 que el panel de precios
 // ══════════════════════════════════════════════════════════
-const _TABS_PROTEGIDAS  = ['dashboard', 'clientes-dash'];
-let   _tabsDesbloqueadas = false; // se resetea al recargar la página
-let   _tabPendiente      = null;  // pestaña que se intentó abrir
+// (declaraciones movidas arriba para evitar TDZ antes de restoreLastTab)
 
 function _mostrarLockTab(tab) {
   _tabPendiente = tab;
@@ -11562,6 +11674,29 @@ window.onerror = function(msg, src, line, col, err) {
 // Pausar/reanudar tickers según visibilidad de la pestaña (ahorra batería en móvil)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
+    // ── FIX MÓVIL: el browser congela timers en background.
+    // Al volver, verificar si el token expiró y renovar silenciosamente
+    // ANTES de que autoSync intente una petición y reciba un 401.
+    if (driveToken || safeStorage.getItem(DRIVE_TOKEN_KEY)) {
+      const saved = safeStorage.getItem(DRIVE_TOKEN_KEY);
+      let expiry = _driveTokenExpiry;
+      if (!expiry && saved) {
+        try { expiry = JSON.parse(saved).expiry || 0; } catch(e) {}
+      }
+      const msLeft = expiry - Date.now();
+      if (msLeft < 5 * 60 * 1000) {
+        // Menos de 5 min (o ya expirado): renovar ahora antes de que falle
+        console.log('visibilitychange: token próximo a expirar o expirado — renovando…');
+        if (_gisInitialized) {
+          silentRenew();
+        } else {
+          _initGisClient(() => silentRenew(), null);
+        }
+      } else {
+        // Token aún válido: reprogramar el timer por si fue cancelado en background
+        scheduleRenewal(expiry);
+      }
+    }
     // Al volver: re-render inmediato para mostrar datos frescos
     actualizarFloatBtn();
     iniciarFloatBtnInterval(); // reiniciar si fue pausado
@@ -11608,7 +11743,6 @@ if (typeof ResizeObserver !== 'undefined') {
 }
 
 // Ticker cada 60s: refresca chips de tiempo en tarjetas pendientes y redibuja chart si dashboard visible
-let _evAlertedIds = new Set(); // IDs ya alertados para no repetir
 setInterval(() => {
   // Actualizar chips de espera en tarjetas de eviscerado
   document.querySelectorAll('.ev-timer-chip[data-start]').forEach(chip => {
