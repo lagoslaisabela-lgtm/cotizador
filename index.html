@@ -567,7 +567,9 @@
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.2s;
+    cursor: pointer;
   }
+  #ev-fs-sync-mini:hover { border-color: rgba(0,180,216,0.5); color: var(--text-secondary); }
   #ev-fs-sync-mini.connected { border-color: rgba(6,214,160,0.4); color: var(--green); background: rgba(6,214,160,0.07); }
   #ev-fs-sync-mini.syncing   { border-color: rgba(0,180,216,0.4); color: var(--teal);  background: rgba(0,180,216,0.07); }
   #ev-fs-sync-mini.error     { border-color: rgba(239,71,111,0.4); color: var(--coral); background: rgba(239,71,111,0.07); }
@@ -3063,7 +3065,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.1.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.2.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3683,7 +3685,7 @@
     <div class="card section">
       <div class="card-title">📦 Especies y Precio Negociado</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-        Ingresa la cantidad en libras y el precio negociado por libra para cada especie.
+        Ingresa la cantidad en libras y el precio negociado por libra para cada especie. Activa el checkbox 🔪 para cobrar eviscerado (+$500/lb).
       </p>
       <div class="species-grid" id="may-species-grid">
         <!-- generado por JS -->
@@ -3747,6 +3749,7 @@
               <th>Celular</th>
               <th>Especies</th>
               <th>Libras</th>
+              <th>Eviscerado</th>
               <th>Total</th>
               <th></th>
             </tr>
@@ -3787,7 +3790,7 @@
     </div>
     <!-- Mini estado sync + recarga -->
     <div style="display:flex;align-items:center;gap:6px;margin-left:auto;margin-right:14px">
-      <div id="ev-fs-sync-mini" title="Estado de sincronización con Google Drive">
+      <div id="ev-fs-sync-mini" title="Conectar / ver estado de Google Drive" onclick="openSetupModal()">
         <span class="fs-sync-dot"></span>
         <span id="ev-fs-sync-text">—</span>
       </div>
@@ -4198,7 +4201,9 @@
       <div class="species-grid" id="may-edit-species-grid" style="margin-top:12px"></div>
       <!-- Total en tiempo real -->
       <div style="margin-top:14px;padding:12px 16px;background:rgba(6,214,160,0.06);border:1px solid rgba(6,214,160,0.2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-        <span style="color:var(--text-secondary);font-size:13px">Total calculado</span>
+        <span style="color:var(--text-secondary);font-size:13px">Total calculado
+          <span id="may-edit-total-detail" style="display:block;font-size:11px;color:var(--text-muted);margin-top:2px"></span>
+        </span>
         <strong style="font-family:'Roboto Mono',monospace;font-size:16px;color:var(--green)" id="may-edit-total">$0</strong>
       </div>
       <!-- Fecha -->
@@ -4231,7 +4236,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4448,36 +4453,49 @@ function buildMaySpeciesGrid() {
             oninput="calcularMayorista()">
         </div>
       </div>
-      <div class="may-subtotal">
-        <span id="may-sub-label-${e.id}">— lb</span>
-        <span id="may-sub-${e.id}">$0</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px">
+        <label class="eviscera-label" style="font-size:10px">
+          <input type="checkbox" id="may-ev-${e.id}" onchange="calcularMayorista()">
+          <div class="custom-check">✓</div>
+          🔪 Eviscerado
+        </label>
+        <div class="may-subtotal" style="border:none;padding:0;margin:0">
+          <span id="may-sub-label-${e.id}">— lb</span>
+          <span id="may-sub-${e.id}">$0</span>
+        </div>
       </div>
     </div>
   `).join('');
 }
 
 function calcularMayorista() {
-  let totalLibras = 0, total = 0;
+  let totalLibras = 0, total = 0, totalEviscerado = 0;
 
   ESPECIES.forEach(e => {
     const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
     const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
-    const sub    = qty * precio;
-    totalLibras += qty;
-    total       += sub;
+    const ev     = document.getElementById(`may-ev-${e.id}`)?.checked || false;
+    const subPescado  = qty * precio;
+    const subEv       = ev ? qty * getEvisceradoCosto() : 0;
+    const sub         = subPescado + subEv;
+    totalLibras     += qty;
+    total           += sub;
+    totalEviscerado += subEv;
 
     const card = document.getElementById(`may-sc-${e.id}`);
     if (card) card.classList.toggle('has-value', qty > 0 && precio > 0);
     const subEl = document.getElementById(`may-sub-${e.id}`);
     const lblEl = document.getElementById(`may-sub-label-${e.id}`);
     if (subEl) subEl.textContent = fmt(sub);
-    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb` : '— lb';
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb${ev ? ' 🔪' : ''}` : '— lb';
   });
 
   const totalEl   = document.getElementById('may-total-display');
   const detailEl  = document.getElementById('may-total-details');
   if (totalEl)  totalEl.textContent  = fmt(total);
-  if (detailEl) detailEl.textContent = `${totalLibras.toFixed(1)} libras`;
+  if (detailEl) detailEl.textContent = totalEviscerado > 0
+    ? `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`
+    : `${totalLibras.toFixed(1)} libras`;
 }
 
 function guardarVentaMayorista() {
@@ -4487,16 +4505,20 @@ function guardarVentaMayorista() {
   const tel = document.getElementById('may-tel').value.trim();
   const cc  = document.getElementById('may-cc').value.trim();
   const items = [];
-  let totalLibras = 0, total = 0;
+  let totalLibras = 0, total = 0, totalEviscerado = 0;
 
   ESPECIES.forEach(e => {
     const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
     const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
     if (qty <= 0) return;
-    const sub = qty * precio;
-    items.push({ especie: e.nombre, qty, precio, subTotal: sub });
-    totalLibras += qty;
-    total       += sub;
+    const ev           = document.getElementById(`may-ev-${e.id}`)?.checked || false;
+    const subPescado   = qty * precio;
+    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
+    const subTotal     = subPescado + subEviscerado;
+    items.push({ especie: e.nombre, qty, precio, ev, subPescado, subEviscerado, subTotal });
+    totalLibras     += qty;
+    total           += subTotal;
+    totalEviscerado += subEviscerado;
   });
 
   if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
@@ -4507,7 +4529,7 @@ function guardarVentaMayorista() {
     fecha:       now.toLocaleString('es-CO'),
     fechaObj:    now.toISOString(),
     lastUpdated: now.toISOString(),
-    nombre, tel, cc, items, totalLibras, total
+    nombre, tel, cc, items, totalLibras, total, totalEviscerado
   };
 
   mayorista.unshift(venta);
@@ -4528,9 +4550,11 @@ function resetMayorista(silent = false) {
   ESPECIES.forEach(e => {
     const qtyEl    = document.getElementById(`may-qty-${e.id}`);
     const precioEl = document.getElementById(`may-precio-${e.id}`);
+    const evEl     = document.getElementById(`may-ev-${e.id}`);
     if (qtyEl) qtyEl.value = '';
     // Restaurar precio estándar como placeholder/valor por defecto
     if (precioEl) precioEl.value = e.precio || '';
+    if (evEl) evEl.checked = false;
     const card = document.getElementById(`may-sc-${e.id}`);
     if (card) card.classList.remove('has-value');
     const subEl = document.getElementById(`may-sub-${e.id}`);
@@ -4663,6 +4687,7 @@ function renderMayorista() {
       <td>${escHtml(v.tel) || '—'}</td>
       <td><span class="badge badge-teal">${v.items.length} esp.</span></td>
       <td>${v.totalLibras.toFixed(1)} lb</td>
+      <td>${(v.totalEviscerado || 0) > 0 ? `<span class="badge badge-gold">${fmt(v.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
@@ -4703,6 +4728,7 @@ function abrirEdicionMayorista(id) {
     const item  = venta.items.find(i => i.especie === e.nombre);
     const qty   = item ? item.qty   : '';
     const precio = item ? item.precio : (e.precio || '');
+    const ev     = item ? (item.ev || false) : false;
     return `
       <div class="may-species-card" id="may-edit-sc-${e.id}">
         <div class="may-species-header">
@@ -4726,9 +4752,16 @@ function abrirEdicionMayorista(id) {
               oninput="calcularMayEdit()">
           </div>
         </div>
-        <div class="may-subtotal">
-          <span id="may-edit-sub-label-${e.id}">${qty ? qty + ' lb' : '— lb'}</span>
-          <span id="may-edit-sub-${e.id}">${item ? fmt(item.subTotal) : '$0'}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px">
+          <label class="eviscera-label" style="font-size:10px">
+            <input type="checkbox" id="may-edit-ev-${e.id}" ${ev ? 'checked' : ''} onchange="calcularMayEdit()">
+            <div class="custom-check">✓</div>
+            🔪 Eviscerado
+          </label>
+          <div class="may-subtotal" style="border:none;padding:0;margin:0">
+            <span id="may-edit-sub-label-${e.id}">${qty ? qty + ' lb' : '— lb'}</span>
+            <span id="may-edit-sub-${e.id}">${item ? fmt(item.subTotal) : '$0'}</span>
+          </div>
         </div>
       </div>
     `;
@@ -4740,21 +4773,27 @@ function abrirEdicionMayorista(id) {
 }
 
 function calcularMayEdit() {
-  let total = 0;
+  let total = 0, totalEviscerado = 0;
   ESPECIES.forEach(e => {
     const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
     const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
-    const sub    = qty * precio;
-    total += sub;
+    const ev     = document.getElementById(`may-edit-ev-${e.id}`)?.checked || false;
+    const subPescado   = qty * precio;
+    const subEv        = ev ? qty * getEvisceradoCosto() : 0;
+    const sub          = subPescado + subEv;
+    total           += sub;
+    totalEviscerado += subEv;
     const subEl = document.getElementById(`may-edit-sub-${e.id}`);
     const lblEl = document.getElementById(`may-edit-sub-label-${e.id}`);
     const card  = document.getElementById(`may-edit-sc-${e.id}`);
     if (subEl) subEl.textContent = fmt(sub);
-    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb` : '— lb';
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb${ev ? ' 🔪' : ''}` : '— lb';
     if (card)  card.classList.toggle('has-value', qty > 0 && precio > 0);
   });
   const totalEl = document.getElementById('may-edit-total');
   if (totalEl) totalEl.textContent = fmt(total);
+  const detailEl = document.getElementById('may-edit-total-detail');
+  if (detailEl) detailEl.textContent = totalEviscerado > 0 ? `Eviscerado: ${fmt(totalEviscerado)}` : '';
 }
 
 function closeMayModal() {
@@ -4772,15 +4811,19 @@ function guardarEdicionMayorista() {
   const fechaVal = document.getElementById('may-edit-fecha')?.value;
 
   const items = [];
-  let totalLibras = 0, total = 0;
+  let totalLibras = 0, total = 0, totalEviscerado = 0;
   ESPECIES.forEach(e => {
     const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
     const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
     if (qty <= 0) return;
-    const sub = qty * precio;
-    items.push({ especie: e.nombre, qty, precio, subTotal: sub });
-    totalLibras += qty;
-    total       += sub;
+    const ev           = document.getElementById(`may-edit-ev-${e.id}`)?.checked || false;
+    const subPescado   = qty * precio;
+    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
+    const subTotal     = subPescado + subEviscerado;
+    items.push({ especie: e.nombre, qty, precio, ev, subPescado, subEviscerado, subTotal });
+    totalLibras     += qty;
+    total           += subTotal;
+    totalEviscerado += subEviscerado;
   });
 
   if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
@@ -4790,7 +4833,7 @@ function guardarEdicionMayorista() {
 
   mayorista[idx] = {
     ...mayorista[idx],
-    nombre, tel, cc, items, totalLibras, total,
+    nombre, tel, cc, items, totalLibras, total, totalEviscerado,
     lastUpdated: new Date().toISOString(),
     ...(fechaVal ? (() => {
       const d = new Date(fechaVal);
