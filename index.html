@@ -12013,9 +12013,6 @@ setInterval(() => {
   _actualizarStaleBadge();
 }, 60000);
 </script>
-<!-- ══════ PANTALLA DE BLOQUEO ══════ -->
-<div id="sync-block-overlay" style="display:none">
-
 <!-- ══════ MODAL: CONFIRMACIÓN ACCIÓN DESTRUCTIVA ══════ -->
 <div id="danger-confirm-overlay" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(4,11,22,0.88);backdrop-filter:blur(12px);align-items:center;justify-content:center">
   <div style="background:var(--card-bg);border:1px solid rgba(239,71,111,0.45);border-radius:16px;padding:32px 28px;max-width:400px;width:92%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
@@ -12048,6 +12045,9 @@ setInterval(() => {
     </div>
   </div>
 </div>
+
+<!-- ══════ PANTALLA DE BLOQUEO ══════ -->
+<div id="sync-block-overlay" style="display:none">
   <div id="sync-block-card">
     <div id="sync-block-icon">⚠️</div>
     <div id="sync-block-title">Sesión cerrada</div>
