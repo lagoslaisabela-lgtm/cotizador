@@ -6942,21 +6942,28 @@ function _editContactCard(field) {
   input.focus();
   input.select();
 
-  function commitEdit() {
-    const newVal = input.value.trim();
-    if (field === 'tel' && !telEsValido(newVal)) {
-      toast('El celular debe tener exactamente 10 dígitos', true);
-      input.focus();
-      return;
-    }
-    // Restaurar display
+  let settled = false;
+
+  function restoreDisplay(valueToShow) {
     const newValEl = document.createElement('div');
     newValEl.id        = `prof-val-${field}`;
-    newValEl.className = 'profile-info-value' + (meta.mono ? ' mono' : '') + (newVal ? '' : ' muted');
-    newValEl.textContent = newVal || '—';
+    newValEl.className = 'profile-info-value' + (meta.mono ? ' mono' : '') + (valueToShow ? '' : ' muted');
+    newValEl.textContent = valueToShow || '—';
     input.replaceWith(newValEl);
     card.classList.remove('editing');
     card.onclick = () => _editContactCard(field);
+  }
+
+  function commitEdit() {
+    if (settled) return;
+    const newVal = input.value.trim();
+    if (field === 'tel' && !telEsValido(newVal)) {
+      toast('El celular debe tener exactamente 10 dígitos', true);
+      setTimeout(() => input.focus(), 0);
+      return;
+    }
+    settled = true;
+    restoreDisplay(newVal);
 
     // Solo guardar si hubo cambio real
     const oldVal = current;
@@ -6966,10 +6973,15 @@ function _editContactCard(field) {
     _guardarContactField(field, newVal, meta.source);
   }
 
+  function cancelEdit() {
+    settled = true;
+    restoreDisplay(current);
+  }
+
   input.addEventListener('blur', commitEdit);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { input.value = current; input.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
   });
 }
 
@@ -7117,6 +7129,11 @@ function _datosFaltantesContinuar() {
   const cb = _datosFaltantesCallback;
   _datosFaltantesCallback = null;
   if (cb) cb();
+}
+
+function _datosFaltantesCancelar() {
+  document.getElementById('datos-faltantes-overlay').style.display = 'none';
+  _datosFaltantesCallback = null;
 }
 
 function toast(msg, isError = false) {
@@ -9930,6 +9947,9 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('danger-confirm-overlay')?.style.display !== 'none') {
     closeDangerConfirm(); return;
   }
+  if (document.getElementById('datos-faltantes-overlay')?.style.display !== 'none') {
+    _datosFaltantesCancelar(); return;
+  }
   if (document.getElementById('may-price-modal-overlay')?.style.display !== 'none') {
     closeMayPriceModal(); return;
   }
@@ -12029,7 +12049,7 @@ setInterval(() => {
 </div>
   <div id="sync-block-card">
     <div id="sync-block-icon">⚠️</div>
-    <div id="sync-block-title" id="sync-block-title">Sesión cerrada</div>
+    <div id="sync-block-title">Sesión cerrada</div>
     <div id="sync-block-msg">La sesión de Google Drive se cerró o expiró.</div>
     <div id="sync-block-sub">Tus datos locales están seguros. Reconecta para continuar sincronizando con otros dispositivos.</div>
     <div id="sync-block-actions">
