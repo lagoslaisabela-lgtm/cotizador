@@ -3065,7 +3065,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.2.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.5.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3158,7 +3158,8 @@
           <label>Celular</label>
           <div id="ac-tel-anchor">
             <input type="tel" id="cliente-tel" placeholder="Ej: 3165266913"
-              oninput="acTel(this.value)"
+              maxlength="10" inputmode="numeric" pattern="[0-9]{10}"
+              oninput="soloDigitosTel(this); acTel(this.value)"
               onkeydown="acTelKeydown(event)"
               onfocus="acTel(this.value)"
               autocomplete="off">
@@ -3510,7 +3511,8 @@
         </div>
         <div class="form-group">
           <label>Celular</label>
-          <input type="tel" id="cli-tel" placeholder="Ej: 3165266913" autocomplete="off">
+          <input type="tel" id="cli-tel" placeholder="Ej: 3165266913" autocomplete="off"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
         </div>
         <div class="form-group form-group-btn">
           <button class="btn btn-success" onclick="agregarCliente()">💾 Guardar</button>
@@ -3674,7 +3676,8 @@
         <div class="form-group" style="margin:0">
           <label>Celular</label>
           <input type="tel" id="may-tel" placeholder="Ej: 3165266913" autocomplete="off"
-            oninput="acMayTel(this.value)"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}"
+            oninput="soloDigitosTel(this); acMayTel(this.value)"
             onfocus="acMayTel(this.value)"
             onkeydown="acMayTelKeydown(event)">
         </div>
@@ -3979,7 +3982,8 @@
         </div>
         <div class="form-group" style="margin:0">
           <label>Celular</label>
-          <input type="tel" id="edit-tel" placeholder="Número de celular">
+          <input type="tel" id="edit-tel" placeholder="Número de celular"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
         </div>
         <div class="form-group" style="margin:0;grid-column:1/-1">
           <label>Número de identificación (CC / NIT)</label>
@@ -4154,7 +4158,8 @@
         </div>
         <div class="form-group" style="margin:0">
           <label>Celular</label>
-          <input type="tel" id="cli-edit-tel" placeholder="Ej: 3165266913">
+          <input type="tel" id="cli-edit-tel" placeholder="Ej: 3165266913"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
         </div>
         <div class="form-group" style="margin:0">
           <label>CC / NIT</label>
@@ -4189,7 +4194,8 @@
         </div>
         <div class="form-group" style="margin:0">
           <label>Celular</label>
-          <input type="tel" id="may-edit-tel" placeholder="Ej: 3165266913">
+          <input type="tel" id="may-edit-tel" placeholder="Ej: 3165266913"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
         </div>
         <div class="form-group" style="margin:0">
           <label>CC / NIT</label>
@@ -4236,7 +4242,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '5.2.0';
+const APP_VERSION = '5.5.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4503,6 +4509,7 @@ function guardarVentaMayorista() {
   if (!nombre) { toast('Ingresa el nombre del comprador', true); return; }
 
   const tel = document.getElementById('may-tel').value.trim();
+  if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   const cc  = document.getElementById('may-cc').value.trim();
   const items = [];
   let totalLibras = 0, total = 0, totalEviscerado = 0;
@@ -4523,6 +4530,18 @@ function guardarVentaMayorista() {
 
   if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
 
+  const faltantes = [];
+  if (!tel) faltantes.push('celular');
+  if (!cc)  faltantes.push('documento de identidad');
+  if (faltantes.length > 0) {
+    const focusId = !tel ? 'may-tel' : 'may-cc';
+    mostrarSugerenciaDatos(faltantes, focusId, () => _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado));
+    return;
+  }
+  _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado);
+}
+
+function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado) {
   const now = new Date();
   const venta = {
     id: _genId(),
@@ -4807,6 +4826,7 @@ function guardarEdicionMayorista() {
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
 
   const tel      = document.getElementById('may-edit-tel').value.trim();
+  if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   const cc       = document.getElementById('may-edit-cc').value.trim();
   const fechaVal = document.getElementById('may-edit-fecha')?.value;
 
@@ -5010,8 +5030,22 @@ function getFormData() {
 function guardarOrden() {
   const data = getFormData();
   if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
+  if (!telEsValido(data.tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
 
+  const faltantes = [];
+  if (!data.tel) faltantes.push('celular');
+  if (!data.cc)  faltantes.push('documento de identidad');
+  if (faltantes.length > 0) {
+    const focusId = !data.tel ? 'cliente-tel' : 'cliente-cc';
+    mostrarSugerenciaDatos(faltantes, focusId, () => _guardarOrdenReal());
+    return;
+  }
+  _guardarOrdenReal();
+}
+
+function _guardarOrdenReal() {
+  const data = getFormData();
   const now = new Date();
   const pagoVal = _pagoRaw();
   const nota = (document.getElementById('nota-input')?.value || '').trim();
@@ -6373,6 +6407,7 @@ function agregarCliente() {
   const cc     = document.getElementById('cli-cc').value.trim();
 
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
+  if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
 
   // Evitar duplicados exactos por nombre
   const existe = clientes.find(c => c.nombre.trim().toLowerCase() === nombre.toLowerCase());
@@ -6467,6 +6502,7 @@ function guardarEdicionCliente() {
   const cc     = ccRaw  !== '' ? ccRaw  : (orig.cc  || '');
 
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
+  if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
 
   const now = new Date().toISOString();
 
@@ -6895,6 +6931,12 @@ function _editContactCard(field) {
   input.placeholder = current || meta.label.replace(/^.*\s/, '');
   input.className   = 'profile-info-input' + (meta.mono ? ' mono' : '');
   if (meta.inputmode) input.setAttribute('inputmode', meta.inputmode);
+  if (field === 'tel') {
+    input.setAttribute('maxlength', '10');
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('pattern', '[0-9]{10}');
+    input.addEventListener('input', () => soloDigitosTel(input));
+  }
 
   valEl.replaceWith(input);
   input.focus();
@@ -6902,6 +6944,11 @@ function _editContactCard(field) {
 
   function commitEdit() {
     const newVal = input.value.trim();
+    if (field === 'tel' && !telEsValido(newVal)) {
+      toast('El celular debe tener exactamente 10 dígitos', true);
+      input.focus();
+      return;
+    }
     // Restaurar display
     const newValEl = document.createElement('div');
     newValEl.id        = `prof-val-${field}`;
@@ -7031,6 +7078,45 @@ function cerrarPerfil() {
   perfilClienteId  = null;
   perfilClienteKey = null;
   perfilDirtyFlag  = false;
+}
+
+// Fix: Celular — solo dígitos, máximo 10 caracteres
+function soloDigitosTel(el) {
+  if (!el) return;
+  const filtrado = el.value.replace(/\D/g, '').slice(0, 10);
+  if (filtrado !== el.value) el.value = filtrado;
+}
+// Retorna true si el tel es válido: vacío (opcional) o exactamente 10 dígitos
+function telEsValido(tel) {
+  const limpio = (tel || '').replace(/\D/g, '');
+  return limpio === '' || limpio.length === 10;
+}
+
+// Fix: Sugerir completar celular/documento antes de continuar con la venta
+let _datosFaltantesCallback = null;
+let _datosFaltantesFocusId  = null;
+
+function mostrarSugerenciaDatos(faltantes, focusFieldId, onContinuar) {
+  const overlay = document.getElementById('datos-faltantes-overlay');
+  const msg     = document.getElementById('datos-faltantes-msg');
+  msg.textContent = `Este cliente no tiene registrado su ${faltantes.join(' ni su ')}. ¿Deseas agregarlo antes de continuar con la venta?`;
+  _datosFaltantesCallback = onContinuar;
+  _datosFaltantesFocusId  = focusFieldId;
+  overlay.style.display = 'flex';
+}
+
+function _datosFaltantesCompletar() {
+  document.getElementById('datos-faltantes-overlay').style.display = 'none';
+  _datosFaltantesCallback = null;
+  const el = document.getElementById(_datosFaltantesFocusId);
+  if (el) { el.focus(); if (el.select) el.select(); }
+}
+
+function _datosFaltantesContinuar() {
+  document.getElementById('datos-faltantes-overlay').style.display = 'none';
+  const cb = _datosFaltantesCallback;
+  _datosFaltantesCallback = null;
+  if (cb) cb();
 }
 
 function toast(msg, isError = false) {
@@ -7486,6 +7572,7 @@ function guardarEdicion() {
   const fechaVal = document.getElementById('edit-fecha')?.value;
 
   if (!nombre)           { toast('El nombre no puede estar vacío', true); return; }
+  if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   if (editItems.length === 0) { toast('Debe haber al menos una especie', true); return; }
 
   let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
@@ -11924,6 +12011,19 @@ setInterval(() => {
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" style="flex:1" onclick="closeDangerConfirm()">Cancelar</button>
       <button id="danger-confirm-ok" class="btn btn-danger" style="flex:1" disabled onclick="_dangerConfirmCallback && _dangerConfirmCallback()">🗑 Confirmar borrado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: SUGERENCIA DE DATOS FALTANTES (celular/documento) ══════ -->
+<div id="datos-faltantes-overlay" style="display:none;position:fixed;inset:0;z-index:1150;background:rgba(4,11,22,0.88);backdrop-filter:blur(10px);align-items:center;justify-content:center">
+  <div style="background:var(--card-bg);border:1px solid rgba(0,180,216,0.35);border-radius:16px;padding:32px 28px;max-width:400px;width:92%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
+    <div style="font-size:36px;text-align:center;margin-bottom:12px">💡</div>
+    <h3 style="color:var(--teal-pale);text-align:center;margin:0 0 10px;font-size:17px;font-family:'Syne',sans-serif;font-weight:700">Faltan datos del cliente</h3>
+    <p id="datos-faltantes-msg" style="color:var(--text-secondary);font-size:13px;text-align:center;margin:0 0 24px;line-height:1.5"></p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="_datosFaltantesContinuar()">Continuar sin este dato</button>
+      <button class="btn btn-success" style="flex:1" onclick="_datosFaltantesCompletar()">✍️ Completar ahora</button>
     </div>
   </div>
 </div>
