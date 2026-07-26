@@ -3529,6 +3529,12 @@
         <button class="btn btn-ghost btn-sm" onclick="exportarClientesExcel()">📥 Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="exportarClientesPDF()">📄 PDF</button>
       </div>
+      <div class="cd-seg-btns" style="margin-top:10px">
+        <button class="cd-seg active" data-canal="todos"     onclick="setCliFiltroCanal('todos')">🌐 Todos</button>
+        <button class="cd-seg"        data-canal="detal"     onclick="setCliFiltroCanal('detal')">🛒 Solo Detal</button>
+        <button class="cd-seg"        data-canal="mayorista" onclick="setCliFiltroCanal('mayorista')">📦 Solo Mayorista</button>
+        <button class="cd-seg"        data-canal="ambos"     onclick="setCliFiltroCanal('ambos')">🔀 Ambos canales</button>
+      </div>
     </div>
 
     <!-- Tabla -->
@@ -4521,6 +4527,11 @@ function guardarVentaMayorista() {
   const tel = document.getElementById('may-tel').value.trim();
   if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   const cc  = document.getElementById('may-cc').value.trim();
+
+  // Evitar registrar un cliente "nuevo" con el mismo celular o cédula de otro ya existente
+  const dup = _buscarDuplicadoClientePorTelOCC(tel, cc, nombre.trim().toLowerCase());
+  if (dup) { toast(`Ese ${dup.campo} ya está registrado a nombre de ${dup.cliente.nombre}`, true); return; }
+
   const items = [];
   let totalLibras = 0, total = 0, totalEviscerado = 0;
 
@@ -5052,6 +5063,10 @@ function guardarOrden() {
   if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
   if (!telEsValido(data.tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
+
+  // Evitar registrar un cliente "nuevo" con el mismo celular o cédula de otro ya existente
+  const dup = _buscarDuplicadoClientePorTelOCC(data.tel, data.cc, data.nombre.trim().toLowerCase());
+  if (dup) { toast(`Ese ${dup.campo} ya está registrado a nombre de ${dup.cliente.nombre}`, true); return; }
 
   const faltantes = [];
   if (!data.tel) faltantes.push('celular');
@@ -6353,28 +6368,35 @@ function getTodosClientes() {
       ...c,
       compras:       0,
       totalComprado: 0,
+      comprasDetal:  0,
+      comprasMay:    0,
       origen:        'directorio'
     });
   });
 
-  // Agregar/enriquecer con datos del historial de órdenes
+  // Agregar/enriquecer con datos del historial de órdenes (detal) y ventas mayoristas
   const deletedCliMap = getDeletedCli(); // para filtrar clientes de historial eliminados
-  ordenes.forEach(o => {
+
+  // Procesa una venta (orden al detal o venta mayorista) y la suma al cliente correspondiente
+  function _procesarVentaParaClientes(o, canal) {
     if (!o.nombre) return;
     const key     = o.nombre.trim().toLowerCase();
     const histKey = 'hist_' + key;
 
-    // ¿Este nombre del historial fue absorbido por un directorio?
-    const dirKey = histNombreADir.get(key) || (histKeysAbsorbidos.has(histKey) ? null : null);
+    const acumular = (entry) => {
+      entry.compras++;
+      entry.totalComprado += (o.total || 0);
+      if (canal === 'mayorista') entry.comprasMay   = (entry.comprasMay   || 0) + 1;
+      else                       entry.comprasDetal = (entry.comprasDetal || 0) + 1;
+    };
 
     if (histKeysAbsorbidos.has(histKey)) {
-      // Orden pertenece a un cliente promovido al directorio
+      // Venta pertenece a un cliente promovido al directorio
       // Buscar el directorio que lo absorbió para sumar las compras
       const dirNombreKey = histNombreADir.get(key);
       const target = dirNombreKey ? map.get(dirNombreKey) : null;
       if (target) {
-        target.compras++;
-        target.totalComprado += (o.total || 0);
+        acumular(target);
         if (!target.tel && o.tel) target.tel = o.tel;
         if (!target.cc  && o.cc)  target.cc  = o.cc;
       }
@@ -6384,8 +6406,7 @@ function getTodosClientes() {
     if (map.has(key)) {
       // Coincide exactamente con un directorio por nombre
       const entry = map.get(key);
-      entry.compras++;
-      entry.totalComprado += (o.total || 0);
+      acumular(entry);
       if (!entry.tel && o.tel) entry.tel = o.tel;
       if (!entry.cc  && o.cc)  entry.cc  = o.cc;
     } else {
@@ -6395,8 +6416,11 @@ function getTodosClientes() {
       if (map.has(histKey)) {
         // Acumular en entrada ya existente del historial
         const entry = map.get(histKey);
-        entry.compras++;
-        entry.totalComprado += (o.total || 0);
+        acumular(entry);
+        // Conservar la fecha de creación más antigua (primera compra real)
+        if (o.fechaObj && new Date(o.fechaObj) < new Date(entry.creadoEn)) {
+          entry.creadoEn = o.fechaObj;
+        }
       } else {
         map.set(histKey, {
           id:            histKey,
@@ -6407,14 +6431,27 @@ function getTodosClientes() {
           lastUpdated:   o.fechaObj,
           compras:       1,
           totalComprado: o.total || 0,
+          comprasDetal:  canal === 'mayorista' ? 0 : 1,
+          comprasMay:    canal === 'mayorista' ? 1 : 0,
           origen:        'historial'
         });
       }
     }
-  });
+  }
+
+  ordenes.forEach(o => _procesarVentaParaClientes(o, 'detal'));
+  mayorista.forEach(o => _procesarVentaParaClientes(o, 'mayorista'));
 
   // Ordenar por fecha de creación descendente (más reciente primero)
   return Array.from(map.values())
+    .map(c => ({
+      ...c,
+      // 'mayorista': solo ha comprado por mayorista · 'detal': solo al detal · 'ambos': por los dos canales · 'ninguno': sin compras aún
+      segmento: (c.comprasDetal > 0 && c.comprasMay > 0) ? 'ambos'
+              : c.comprasMay > 0                          ? 'mayorista'
+              : c.comprasDetal > 0                         ? 'detal'
+              : 'ninguno'
+    }))
     .sort((a, b) => {
       const tA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
       const tB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
@@ -6655,6 +6692,13 @@ function _clienteDatosIncompletos(c) {
 const CLI_PER_PAGE = 25;
 let cliCurrentPage = 1;
 let _cliListaFiltrada = []; // caché para paginación
+let _cliFiltroCanal = 'todos'; // 'todos' | 'detal' | 'mayorista' | 'ambos'
+
+function setCliFiltroCanal(canal) {
+  _cliFiltroCanal = canal;
+  document.querySelectorAll('#page-clientes .cd-seg').forEach(b => b.classList.toggle('active', b.dataset.canal === canal));
+  renderClientes();
+}
 
 function cliPagePrev() { if (cliCurrentPage > 1) { cliCurrentPage--; _renderCliPage(); } }
 function cliPageNext() {
@@ -6668,6 +6712,10 @@ function renderClientes() {
   const empty  = document.getElementById('clientes-empty');
 
   let lista = getTodosClientes();
+
+  if (_cliFiltroCanal !== 'todos') {
+    lista = lista.filter(c => c.segmento === _cliFiltroCanal);
+  }
 
   if (q) {
     lista = lista.filter(c =>
@@ -6714,6 +6762,7 @@ function _renderCliPage() {
       <td style="color:var(--text-muted);font-size:12px">${start + i + 1}</td>
       <td>
         <strong style="color:var(--text-primary)">${escHtml(c.nombre)}</strong>
+        ${c.segmento !== 'ninguno' ? `<span class="cd-seg-pill ${c.segmento}" style="margin-left:6px">${c.segmento==='ambos'?'🔀 Ambos':c.segmento==='mayorista'?'📦 Mayorista':'🛒 Detal'}</span>` : ''}
         ${c.perfil?.estado === 'vetado' ? '<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--coral);background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.25);border-radius:20px;padding:1px 7px">VETADO</span>' : ''}
         ${di.incompleto ? `<span title="${tituloDi}" style="margin-left:6px;font-size:10px;font-weight:700;color:var(--gold);background:rgba(255,209,102,0.14);border:1px solid rgba(255,209,102,0.35);border-radius:20px;padding:1px 7px;cursor:help">⚠️ Datos incompletos</span>` : ''}
       </td>
@@ -11051,6 +11100,9 @@ function _cdRenderKPIs(clts) {
                            .filter(c=>c.evOrdenes>0).length;
   const evBase       = clts.filter(c=>c.comprasDetal>0).length;
   const evPct        = evBase > 0 ? Math.round(evAdopt/evBase*100) : 0;
+  const hombres      = clts.filter(c => c.perfil?.genero === 'masculino').length;
+  const mujeres      = clts.filter(c => c.perfil?.genero === 'femenino').length;
+  const sinGenero    = clts.length - hombres - mujeres;
 
   const kpis = [
     { icon:'👥', val: clts.length,              label:'Clientes',        sub:`${recurrentes} recurrentes (≥3 compras)`, color:'#00b4d8' },
@@ -11061,6 +11113,7 @@ function _cdRenderKPIs(clts) {
     { icon:'🔪', val: evPct+'%',                  label:'Adopción Eviscerado', sub:`${evAdopt} de ${evBase} clientes`, color:'#ef476f' },
     { icon:'🏆', val: topCliente?.nombre?.split(' ')[0] || '—', label:'Top Cliente', sub: topCliente ? fmt(topCliente.total) : '—', color:'#ffd166' },
     { icon:'📦', val: clts.filter(c=>c.segmento==='mayorista'||c.segmento==='ambos').length, label:'Con Mayorista', sub:`${clts.filter(c=>c.segmento==='ambos').length} en ambos canales`, color:'#06d6a0' },
+    { icon:'🚻', val: `${hombres}👨 ${mujeres}👩`, label:'Por Género', sub:`${sinGenero} sin especificar`, color:'#f4845f' },
   ];
 
   document.getElementById('cd-kpis').innerHTML = kpis.map(k=>`
