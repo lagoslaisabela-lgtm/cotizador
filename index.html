@@ -6248,10 +6248,11 @@ function fmt(n) {
 // ── Title Case: primera letra de cada palabra en mayúscula ──
 function toTitleCase(str) {
   if (!str) return str;
-  return str.trim().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(\w+)/g, (w) => {
-    // lowercase the rest of each word
-    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-  });
+  // \p{L} (con flag 'u') reconoce cualquier letra Unicode, incluyendo ñ, á, é, í, ó, ú, ü, etc.
+  // Antes se usaba \b\w, que NO reconoce la ñ ni las tildes como letras, así que la
+  // letra siguiente a una ñ o vocal acentuada quedaba tratada como inicio de "palabra"
+  // y se capitalizaba sola sin poder corregirse (ej: "Muñoz" → "MuñOz").
+  return str.trim().toLowerCase().replace(/(^|[\s\-'’.])(\p{L})/gu, (m, sep, letra) => sep + letra.toUpperCase());
 }
 
 function fmtShort(n) {
@@ -7711,6 +7712,7 @@ function guardarEdicion() {
   };
 
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+  _floatBtnCache.serial = null; // forzar recálculo: pudo cambiar el eviscerado de una orden que no es la más reciente
 
   // Propagar el cambio de nombre/celular/documento a todos los demás registros del mismo cliente
   if (nombreOriginal) {
@@ -8283,6 +8285,7 @@ async function initDriveSync() {
         mayorista = mergedMayorista;
         setEvDone(evDone);
         setEvTimes(mergedEvTimes);
+        _floatBtnCache.serial = null;
         safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
         safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
         safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -8510,6 +8513,7 @@ async function autoSync() {
       mayorista = mergedMayorista;
       setEvDone(evDone);
       setEvTimes(mergedEvTimes);
+      _floatBtnCache.serial = null;
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -8543,6 +8547,7 @@ async function syncNow() {
       mayorista = mergedMayorista;
       setEvDone(evDone);
       if (typeof mergedEvTimes !== 'undefined') setEvTimes(mergedEvTimes);
+      _floatBtnCache.serial = null;
       safeStorage.setItem(STORAGE_KEY,   JSON.stringify(ordenes));
       safeStorage.setItem(CLIENTES_KEY,  JSON.stringify(clientes));
       safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
@@ -9223,24 +9228,35 @@ window.addEventListener('scroll', () => {
 const EV_DONE_KEY  = 'aquacot_ev_done'; // Set de IDs marcados como completados
 const EV_TIMES_KEY = 'aquacot_ev_times'; // Map id→{start, end} para medir tiempos
 
+// Caché en memoria: evita releer y parsear localStorage en cada llamada
+// (getEvDone/getEvTimes se invocan varias veces por segundo desde los timers de eviscerado)
+let _evDoneCache  = null;
+let _evTimesCache = null;
+
 function getEvDone() {
+  if (_evDoneCache) return _evDoneCache;
   try {
     const arr = JSON.parse(safeStorage.getItem(EV_DONE_KEY) || '[]');
     // Normalizar todos los IDs a string para comparación consistente
-    return new Set(arr.map(String));
+    _evDoneCache = new Set(arr.map(String));
   }
-  catch(e) { return new Set(); }
+  catch(e) { _evDoneCache = new Set(); }
+  return _evDoneCache;
 }
 
 function setEvDone(set) {
+  _evDoneCache = set;
   safeStorage.setItem(EV_DONE_KEY, JSON.stringify([...set]));
 }
 
 function getEvTimes() {
-  try { return JSON.parse(safeStorage.getItem(EV_TIMES_KEY) || '{}'); }
-  catch(e) { return {}; }
+  if (_evTimesCache) return _evTimesCache;
+  try { _evTimesCache = JSON.parse(safeStorage.getItem(EV_TIMES_KEY) || '{}'); }
+  catch(e) { _evTimesCache = {}; }
+  return _evTimesCache;
 }
 function setEvTimes(map) {
+  _evTimesCache = map;
   safeStorage.setItem(EV_TIMES_KEY, JSON.stringify(map));
 }
 
@@ -9506,14 +9522,68 @@ let evCountdownInterval = null;
 let _evFinEstimadoExtendido = 0; // ms timestamp — extiende el timer flotante si expiró con pendientes aún activos
 
 // ── Actualiza el botón flotante de eviscerado SIEMPRE, sin importar la pestaña activa ──
+// Caché de los datos "pesados" del botón flotante de eviscerado.
+// Antes, actualizarFloatBtn() recorría TODAS las órdenes (con filtrados anidados)
+// cada segundo, incluso en pestañas donde eso no se veía — esto causaba jalones
+// perceptibles en toda la app. Ahora solo se recalcula cuando algo relevante
+// realmente cambió (nueva/editada/eliminada orden, o se marcó/desmarcó eviscerado).
+let _floatBtnCache = { serial: null, pendientes: [], hayEv: false, segPorLb: 20, totalLibrasPend: 0, startRef: Infinity };
+
+function _floatBtnSerial() {
+  const done  = getEvDone();
+  const times = getEvTimes();
+  return ordenes.length + '|' + done.size + '|' + Object.keys(times).length + '|' + (ordenes[0]?.lastUpdated || '');
+}
+
+function _recalcFloatBtnData() {
+  const done = getEvDone();
+  const times = getEvTimes();
+  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
+  const hayEv = pendientes.length > 0 || ordenes.some(c => c.totalEviscerado > 0);
+
+  let segPorLb = 20, totalLibrasPend = 0, startRef = Infinity;
+
+  if (pendientes.length > 0) {
+    // Calcular segPorLb igual que calcularEstimadorEv
+    const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
+    const completadasHoy = ordenes.filter(c =>
+      c.totalEviscerado > 0 && done.has(String(c.id)) &&
+      times[String(c.id)]?.end && times[String(c.id)]?.start &&
+      new Date(times[String(c.id)].start) >= hoy0
+    );
+    if (completadasHoy.length > 0) {
+      let totalSeg = 0, totalLb = 0;
+      completadasHoy.forEach(c => {
+        const dur = (times[String(c.id)].end - times[String(c.id)].start) / 1000;
+        const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+        if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
+      });
+      if (totalLb > 0) segPorLb = totalSeg / totalLb;
+    }
+
+    pendientes.forEach(c => {
+      totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
+    });
+
+    startRef = pendientes.reduce((min, c) => {
+      const ts = c.evStartedAt || new Date(c.fechaObj).getTime();
+      return ts < min ? ts : min;
+    }, Infinity);
+  }
+
+  return { pendientes, hayEv, segPorLb, totalLibrasPend, startRef };
+}
+
 function actualizarFloatBtn() {
   const floatBtn  = document.getElementById('ev-float-btn');
   const floatText = document.getElementById('ev-float-text');
   if (!floatBtn || !floatText) return;
 
-  const done      = getEvDone();
-  const times     = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
+  const serial = _floatBtnSerial();
+  if (_floatBtnCache.serial !== serial) {
+    _floatBtnCache = { serial, ..._recalcFloatBtnData() };
+  }
+  const { pendientes, hayEv, segPorLb, totalLibrasPend, startRef } = _floatBtnCache;
 
   function fmtSecsShort(totalSecs) {
     if (totalSecs <= 0) return '0s';
@@ -9529,44 +9599,17 @@ function actualizarFloatBtn() {
   floatBtn.style.pointerEvents = 'all';
 
   if (pendientes.length === 0) {
-    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
     floatBtn.className    = hayEv ? 'done' : 'pending';
     floatText.textContent = hayEv ? '¡Listo!' : '—';
     return;
   }
 
-  // Calcular segPorLb igual que calcularEstimadorEv
-  const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
-  const completadasHoy = ordenes.filter(c =>
-    c.totalEviscerado > 0 && done.has(String(c.id)) &&
-    times[String(c.id)]?.end && times[String(c.id)]?.start &&
-    new Date(times[String(c.id)].start) >= hoy0
-  );
-  let segPorLb = 20;
-  if (completadasHoy.length > 0) {
-    let totalSeg = 0, totalLb = 0;
-    completadasHoy.forEach(c => {
-      const dur = (times[String(c.id)].end - times[String(c.id)].start) / 1000;
-      const lb  = c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
-      if (lb > 0 && dur > 0) { totalSeg += dur; totalLb += lb; }
-    });
-    if (totalLb > 0) segPorLb = totalSeg / totalLb;
-  }
-
-  let totalLibrasPend = 0;
-  pendientes.forEach(c => {
-    totalLibrasPend += c.items.filter(i => i.ev).reduce((s, i) => s + i.qty, 0);
-  });
   if (totalLibrasPend === 0) {
     floatBtn.className    = 'pending';
     floatText.textContent = '—';
     return;
   }
 
-  const startRef = pendientes.reduce((min, c) => {
-    const ts = c.evStartedAt || new Date(c.fechaObj).getTime();
-    return ts < min ? ts : min;
-  }, Infinity);
   const segsTotal   = Math.round(totalLibrasPend * segPorLb);
   const finEstimado = new Date(startRef + segsTotal * 1000);
   const diffSecs    = Math.max(0, Math.round((finEstimado - Date.now()) / 1000));
