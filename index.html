@@ -4852,6 +4852,8 @@ function guardarEdicionMayorista() {
   const idx = mayorista.findIndex(v => String(v.id) === String(editingMayoristaId));
   if (idx === -1) return;
 
+  const nombreOriginal = mayorista[idx].nombre || '';
+
   mayorista[idx] = {
     ...mayorista[idx],
     nombre, tel, cc, items, totalLibras, total, totalEviscerado,
@@ -4863,6 +4865,14 @@ function guardarEdicionMayorista() {
   };
 
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+
+  // Propagar el cambio de nombre/celular/documento a todos los demás registros del mismo cliente
+  if (nombreOriginal) {
+    _propagarDatosAOrdenes(nombreOriginal,    { nombre, tel, cc });
+    _propagarDatosAMayorista(nombreOriginal,  { nombre, tel, cc });
+    _propagarDatosADirectorio(nombreOriginal, { nombre, tel, cc });
+  }
+
   closeMayModal();
   updateBadge();
   renderDashboard();
@@ -6531,11 +6541,11 @@ function guardarEdicionCliente() {
       };
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
 
-      // Propagar tel/cc a órdenes (por nombre anterior y nuevo)
+      // Propagar nombre/tel/cc a órdenes (por nombre anterior y nombres históricos)
       const nombresAfectados = [nombreAnterior, ...histNombres].filter(Boolean);
       nombresAfectados.forEach(n => {
-        _propagarDatosAOrdenes(n,    { tel, cc });
-        _propagarDatosAMayorista(n,  { tel, cc });
+        _propagarDatosAOrdenes(n,    { nombre, tel, cc });
+        _propagarDatosAMayorista(n,  { nombre, tel, cc });
       });
     }
   } else {
@@ -6556,9 +6566,9 @@ function guardarEdicionCliente() {
       if (idx !== -1) {
         clientes[idx] = { ...clientes[idx], nombre, tel, cc, lastUpdated: now };
         safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
-        // Propagar tel/cc a órdenes por nombre original
-        _propagarDatosAOrdenes(orig.nombre || nombre,   { tel, cc });
-        _propagarDatosAMayorista(orig.nombre || nombre, { tel, cc });
+        // Propagar nombre/tel/cc a órdenes por nombre original
+        _propagarDatosAOrdenes(orig.nombre || nombre,   { nombre, tel, cc });
+        _propagarDatosAMayorista(orig.nombre || nombre, { nombre, tel, cc });
       }
     } else {
       // Aún no está en directorio — promover por primera vez
@@ -6581,6 +6591,11 @@ function guardarEdicionCliente() {
       };
       clientes.unshift(nuevo);
       safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+      // Propagar nombre/tel/cc a otras órdenes/ventas del mismo cliente que aún no estén en el directorio
+      if (orig.nombre) {
+        _propagarDatosAOrdenes(orig.nombre,   { nombre, tel, cc });
+        _propagarDatosAMayorista(orig.nombre, { nombre, tel, cc });
+      }
     }
   }
 
@@ -6589,6 +6604,14 @@ function guardarEdicionCliente() {
   renderClientes();
   scheduleDriveSync();
   toast('✅ Cliente actualizado');
+}
+
+// Detecta si a un cliente le falta cédula, celular, o si el celular no tiene exactamente 10 dígitos
+function _clienteDatosIncompletos(c) {
+  const telLimpio = (c.tel || '').replace(/\D/g, '');
+  const faltaTel  = telLimpio.length !== 10;
+  const faltaCC   = !(c.cc || '').trim();
+  return { incompleto: faltaTel || faltaCC, faltaTel, faltaCC };
 }
 
 function renderClientes() {
@@ -6613,15 +6636,23 @@ function renderClientes() {
   }
   empty.style.display = 'none';
 
-  tbody.innerHTML = lista.map((c, i) => `
+  tbody.innerHTML = lista.map((c, i) => {
+    const di = _clienteDatosIncompletos(c);
+    let tituloDi = '';
+    if (di.faltaTel && di.faltaCC) tituloDi = 'Falta celular y cédula';
+    else if (di.faltaTel) tituloDi = (c.tel || '').trim() ? 'El celular no tiene 10 dígitos' : 'Falta el celular';
+    else if (di.faltaCC) tituloDi = 'Falta la cédula';
+
+    return `
     <tr data-cid="${c.id}" data-ckey="${encodeURIComponent(c.nombre.trim().toLowerCase())}">
       <td style="color:var(--text-muted);font-size:12px">${i + 1}</td>
       <td>
         <strong style="color:var(--text-primary)">${escHtml(c.nombre)}</strong>
         ${c.perfil?.estado === 'vetado' ? '<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--coral);background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.25);border-radius:20px;padding:1px 7px">VETADO</span>' : ''}
+        ${di.incompleto ? `<span title="${tituloDi}" style="margin-left:6px;font-size:10px;font-weight:700;color:var(--gold);background:rgba(255,209,102,0.14);border:1px solid rgba(255,209,102,0.35);border-radius:20px;padding:1px 7px;cursor:help">⚠️ Datos incompletos</span>` : ''}
       </td>
-      <td style="font-size:13px">${escHtml(c.tel) || '—'}</td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary)">${escHtml(c.cc) || '—'}</td>
+      <td style="font-size:13px${di.faltaTel ? ';color:var(--gold);font-weight:600' : ''}">${escHtml(c.tel) || '—'}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px${di.faltaCC ? ';color:var(--gold);font-weight:600' : ';color:var(--text-secondary)'}">${escHtml(c.cc) || '—'}</td>
       <td>
         <span class="cli-compras-badge ${c.compras === 0 ? 'cero' : ''}">
           ${c.compras === 0 ? 'Sin compras' : `${c.compras} compra${c.compras !== 1 ? 's' : ''}`}
@@ -6651,7 +6682,8 @@ function renderClientes() {
         }
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   // Clic en fila → abrir perfil (excepto si se hace clic en la celda de acciones)
   tbody.querySelectorAll('tr').forEach(row => {
@@ -7027,26 +7059,69 @@ function _guardarContactField(field, newVal, source) {
 
 // Propaga tel/cc a todas las órdenes detal del cliente
 function _propagarDatosAOrdenes(nombreCliente, datos) {
-  const key = nombreCliente.trim().toLowerCase();
+  const key = (nombreCliente || '').trim().toLowerCase();
+  if (!key) return false;
   let cambio = false;
   ordenes.forEach(o => {
     if ((o.nombre || '').trim().toLowerCase() !== key) return;
-    if (datos.tel !== undefined && datos.tel !== o.tel) { o.tel = datos.tel; cambio = true; }
-    if (datos.cc  !== undefined && datos.cc  !== o.cc)  { o.cc  = datos.cc;  cambio = true; }
+    if (datos.nombre !== undefined && datos.nombre !== o.nombre) { o.nombre = datos.nombre; cambio = true; }
+    if (datos.tel    !== undefined && datos.tel    !== o.tel)    { o.tel    = datos.tel;    cambio = true; }
+    if (datos.cc     !== undefined && datos.cc     !== o.cc)     { o.cc     = datos.cc;     cambio = true; }
   });
   if (cambio) safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+  return cambio;
 }
 
-// Propaga tel/cc a todas las ventas mayorista del cliente
+// Propaga nombre/tel/cc a todas las ventas mayorista del cliente
 function _propagarDatosAMayorista(nombreCliente, datos) {
-  const key = nombreCliente.trim().toLowerCase();
+  const key = (nombreCliente || '').trim().toLowerCase();
+  if (!key) return false;
   let cambio = false;
   mayorista.forEach(v => {
     if ((v.nombre || '').trim().toLowerCase() !== key) return;
-    if (datos.tel !== undefined && datos.tel !== v.tel) { v.tel = datos.tel; cambio = true; }
-    if (datos.cc  !== undefined && datos.cc  !== v.cc)  { v.cc  = datos.cc;  cambio = true; }
+    if (datos.nombre !== undefined && datos.nombre !== v.nombre) { v.nombre = datos.nombre; cambio = true; }
+    if (datos.tel    !== undefined && datos.tel    !== v.tel)    { v.tel    = datos.tel;    cambio = true; }
+    if (datos.cc     !== undefined && datos.cc     !== v.cc)     { v.cc     = datos.cc;     cambio = true; }
   });
   if (cambio) safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+  return cambio;
+}
+
+// Propaga nombre/tel/cc al directorio de clientes (busca por nombre actual o por nombres históricos)
+function _propagarDatosADirectorio(nombreCliente, datos) {
+  const key = (nombreCliente || '').trim().toLowerCase();
+  if (!key) return false;
+  const idx = clientes.findIndex(c =>
+    (c.nombre || '').trim().toLowerCase() === key ||
+    (c._histNombres || []).includes(key) ||
+    (c._histNombre && c._histNombre.trim().toLowerCase() === key)
+  );
+  if (idx === -1) return false;
+
+  const existente = clientes[idx];
+  let histNombres = existente._histNombres
+    ? [...existente._histNombres]
+    : (existente._histNombre ? [existente._histNombre] : []);
+  const nuevo = { ...existente };
+  let cambio = false;
+
+  if (datos.nombre !== undefined && datos.nombre !== existente.nombre) {
+    const nombreAnteriorNorm = (existente.nombre || '').trim().toLowerCase();
+    if (nombreAnteriorNorm && !histNombres.includes(nombreAnteriorNorm)) histNombres.push(nombreAnteriorNorm);
+    nuevo.nombre = datos.nombre;
+    cambio = true;
+  }
+  if (datos.tel !== undefined && datos.tel !== existente.tel) { nuevo.tel = datos.tel; cambio = true; }
+  if (datos.cc  !== undefined && datos.cc  !== existente.cc)  { nuevo.cc  = datos.cc;  cambio = true; }
+
+  if (!cambio) return false;
+
+  nuevo.lastUpdated  = new Date().toISOString();
+  nuevo._histNombres = histNombres.length > 0 ? histNombres : undefined;
+  nuevo._histNombre  = histNombres[0] || existente._histNombre;
+  clientes[idx] = nuevo;
+  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+  return true;
 }
 
 function guardarPerfilCliente() {
@@ -7603,6 +7678,8 @@ function guardarEdicion() {
   const idx = ordenes.findIndex(c => String(c.id) === String(editingId));
   if (idx === -1) { toast('Orden no encontrada', true); return; }
 
+  const nombreOriginal = ordenes[idx].nombre || '';
+
   const hadEv = ordenes[idx].totalEviscerado > 0;
   const hasEv = totalEviscerado > 0;
   // Preservar evStartedAt si ya tenía ev; asignar nuevo si acaba de agregarse; quitar si se removió
@@ -7634,6 +7711,14 @@ function guardarEdicion() {
   };
 
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+
+  // Propagar el cambio de nombre/celular/documento a todos los demás registros del mismo cliente
+  if (nombreOriginal) {
+    _propagarDatosAOrdenes(nombreOriginal,   { nombre, tel, cc });
+    _propagarDatosAMayorista(nombreOriginal, { nombre, tel, cc });
+    _propagarDatosADirectorio(nombreOriginal, { nombre, tel, cc });
+  }
+
   closeModal();
   renderHistorial();
   renderDashboard();
