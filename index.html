@@ -3555,6 +3555,15 @@
           <p>No hay clientes registrados.<br>Agrega el primero arriba.</p>
         </div>
       </div>
+      <!-- Paginación -->
+      <div id="cli-pagination" style="display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 0 4px">
+        <span id="cli-page-info" style="font-size:12px;color:var(--text-muted)"></span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-ghost btn-sm" id="cli-prev-btn" onclick="cliPagePrev()">← Anterior</button>
+          <span id="cli-page-nums" style="display:flex;gap:4px"></span>
+          <button class="btn btn-ghost btn-sm" id="cli-next-btn" onclick="cliPageNext()">Siguiente →</button>
+        </div>
+      </div>
     </div>
 
   </div><!-- /clientes -->
@@ -6413,6 +6422,23 @@ function getTodosClientes() {
     });
 }
 
+// Busca si ya existe otro cliente (directorio o historial) con el mismo celular o la misma cédula.
+// excludeKey: nombre.toLowerCase() del cliente que se está editando, para no chocar consigo mismo.
+function _buscarDuplicadoClientePorTelOCC(tel, cc, excludeKey) {
+  const telLimpio = (tel || '').replace(/\D/g, '');
+  const ccLimpio  = (cc  || '').trim().toLowerCase();
+  if (!telLimpio && !ccLimpio) return null;
+  const todos = getTodosClientes();
+  for (const c of todos) {
+    if (excludeKey && c.nombre.trim().toLowerCase() === excludeKey) continue;
+    const cTel = (c.tel || '').replace(/\D/g, '');
+    const cCC  = (c.cc  || '').trim().toLowerCase();
+    if (telLimpio && cTel && cTel === telLimpio) return { cliente: c, campo: 'celular' };
+    if (ccLimpio  && cCC  && cCC  === ccLimpio)  return { cliente: c, campo: 'documento de identidad' };
+  }
+  return null;
+}
+
 function agregarCliente() {
   const nombre = toTitleCase(document.getElementById('cli-nombre').value.trim());
   const tel    = document.getElementById('cli-tel').value.trim();
@@ -6424,6 +6450,10 @@ function agregarCliente() {
   // Evitar duplicados exactos por nombre
   const existe = clientes.find(c => c.nombre.trim().toLowerCase() === nombre.toLowerCase());
   if (existe) { toast('Ya existe un cliente con ese nombre', true); return; }
+
+  // Evitar duplicados por celular o cédula (con otro cliente ya existente)
+  const dup = _buscarDuplicadoClientePorTelOCC(tel, cc, null);
+  if (dup) { toast(`Ya existe un cliente (${dup.cliente.nombre}) con ese ${dup.campo}`, true); return; }
 
   const now = new Date().toISOString();
   const nuevo = { id: _genId(), nombre, tel, cc, creadoEn: now, lastUpdated: now };
@@ -6516,6 +6546,11 @@ function guardarEdicionCliente() {
 
   if (!nombre) { toast('El nombre es obligatorio', true); return; }
   if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
+
+  // Evitar duplicados por celular o cédula con OTRO cliente (excluyendo al que se está editando)
+  const excludeKey = (orig.nombre || nombre).trim().toLowerCase();
+  const dup = _buscarDuplicadoClientePorTelOCC(tel, cc, excludeKey);
+  if (dup) { toast(`Ya existe un cliente (${dup.cliente.nombre}) con ese ${dup.campo}`, true); return; }
 
   const now = new Date().toISOString();
 
@@ -6616,9 +6651,20 @@ function _clienteDatosIncompletos(c) {
   return { incompleto: faltaTel || faltaCC, faltaTel, faltaCC };
 }
 
+// ── Paginación clientes ───────────────────────
+const CLI_PER_PAGE = 25;
+let cliCurrentPage = 1;
+let _cliListaFiltrada = []; // caché para paginación
+
+function cliPagePrev() { if (cliCurrentPage > 1) { cliCurrentPage--; _renderCliPage(); } }
+function cliPageNext() {
+  const total = Math.ceil(_cliListaFiltrada.length / CLI_PER_PAGE);
+  if (cliCurrentPage < total) { cliCurrentPage++; _renderCliPage(); }
+}
+function cliGoPage(p) { cliCurrentPage = p; _renderCliPage(); }
+
 function renderClientes() {
   const q      = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
-  const tbody  = document.getElementById('clientes-tbody');
   const empty  = document.getElementById('clientes-empty');
 
   let lista = getTodosClientes();
@@ -6632,13 +6678,31 @@ function renderClientes() {
   }
 
   if (lista.length === 0) {
-    tbody.innerHTML = '';
+    document.getElementById('clientes-tbody').innerHTML = '';
     empty.style.display = 'block';
+    document.getElementById('cli-pagination').style.display = 'none';
     return;
   }
   empty.style.display = 'none';
+  _cliListaFiltrada = lista;
+  cliCurrentPage = 1;
+  _renderCliPage();
+}
 
-  tbody.innerHTML = lista.map((c, i) => {
+function _renderCliPage() {
+  const lista  = _cliListaFiltrada;
+  const total  = lista.length;
+  const pages  = Math.ceil(total / CLI_PER_PAGE);
+  const start  = (cliCurrentPage - 1) * CLI_PER_PAGE;
+  const slice  = lista.slice(start, start + CLI_PER_PAGE);
+  const tbody  = document.getElementById('clientes-tbody');
+  const pgDiv  = document.getElementById('cli-pagination');
+  const infoEl = document.getElementById('cli-page-info');
+  const numsEl = document.getElementById('cli-page-nums');
+  const prevBtn= document.getElementById('cli-prev-btn');
+  const nextBtn= document.getElementById('cli-next-btn');
+
+  tbody.innerHTML = slice.map((c, i) => {
     const di = _clienteDatosIncompletos(c);
     let tituloDi = '';
     if (di.faltaTel && di.faltaCC) tituloDi = 'Falta celular y cédula';
@@ -6647,7 +6711,7 @@ function renderClientes() {
 
     return `
     <tr data-cid="${c.id}" data-ckey="${encodeURIComponent(c.nombre.trim().toLowerCase())}">
-      <td style="color:var(--text-muted);font-size:12px">${i + 1}</td>
+      <td style="color:var(--text-muted);font-size:12px">${start + i + 1}</td>
       <td>
         <strong style="color:var(--text-primary)">${escHtml(c.nombre)}</strong>
         ${c.perfil?.estado === 'vetado' ? '<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--coral);background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.25);border-radius:20px;padding:1px 7px">VETADO</span>' : ''}
@@ -6725,6 +6789,27 @@ function renderClientes() {
       }
     });
   });
+
+  // Paginación UI
+  if (pages <= 1) {
+    pgDiv.style.display = 'none';
+  } else {
+    pgDiv.style.display = 'flex';
+    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+CLI_PER_PAGE,total)} de ${total} clientes`;
+    prevBtn.disabled = cliCurrentPage === 1;
+    nextBtn.disabled = cliCurrentPage === pages;
+    // Números de página (máx 7 botones)
+    const range = [];
+    for (let p = 1; p <= pages; p++) {
+      if (p === 1 || p === pages || Math.abs(p - cliCurrentPage) <= 2) range.push(p);
+    }
+    let last = 0;
+    numsEl.innerHTML = range.map(p => {
+      const ellipsis = last && p - last > 1 ? `<span style="color:var(--text-muted);padding:0 4px">…</span>` : '';
+      last = p;
+      return `${ellipsis}<button onclick="cliGoPage(${p})" class="btn btn-sm ${p===cliCurrentPage?'btn-primary':'btn-ghost'}" style="min-width:32px;padding:4px 8px">${p}</button>`;
+    }).join('');
+  }
 }
 
 // ─────────────────────────────────────────────
