@@ -3066,7 +3066,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.5.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.6.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4243,7 +4243,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.6.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6472,11 +6472,12 @@ let editingClienteOrig = null; // 'directorio' | 'historial'
 // Guarda los valores originales del cliente que se está editando
 let _editingClienteOrigData = null;
 
-function abrirEdicionCliente(id, nombre, tel, cc, origen) {
+function abrirEdicionCliente(id, nombre, tel, cc, origen, creadoEn) {
   editingClienteId   = id;
   editingClienteOrig = origen;
   // Guardar valores originales para preservar campos no modificados
-  _editingClienteOrigData = { nombre, tel, cc };
+  // (creadoEn se conserva SIEMPRE — editar un cliente nunca debe cambiar su fecha real de creación)
+  _editingClienteOrigData = { nombre, tel, cc, creadoEn: creadoEn || null };
 
   document.getElementById('cli-edit-nombre').value = nombre;
   document.getElementById('cli-edit-tel').value    = tel;
@@ -6587,7 +6588,7 @@ function guardarEdicionCliente() {
         nombre,
         tel,
         cc,
-        creadoEn:    now,
+        creadoEn:    orig.creadoEn || now, // preservar la fecha real (primera compra), no la de esta edición
         lastUpdated: now
       };
       clientes.unshift(nuevo);
@@ -6676,6 +6677,7 @@ function renderClientes() {
           data-tel="${encodeURIComponent(c.tel||'')}"
           data-cc="${encodeURIComponent(c.cc||'')}"
           data-origen="${c.origen}"
+          data-creado="${encodeURIComponent(c.creadoEn||'')}"
           title="Editar">✏️</button>
         ${c.origen === 'directorio'
           ? `<button class="btn btn-danger btn-sm cli-del-btn" data-id="${c.id}" data-origen="directorio" title="Eliminar">🗑</button>`
@@ -6705,7 +6707,8 @@ function renderClientes() {
         decodeURIComponent(btn.dataset.nombre),
         decodeURIComponent(btn.dataset.tel),
         decodeURIComponent(btn.dataset.cc),
-        btn.dataset.origen
+        btn.dataset.origen,
+        decodeURIComponent(btn.dataset.creado || '')
       );
     });
   });
@@ -7030,7 +7033,7 @@ function _guardarContactField(field, newVal, source) {
     const c = todos.find(x => x.nombre.trim().toLowerCase() === perfilClienteKey);
     if (!c) return;
     dirEntry = { id: _genId(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '',
-                 creadoEn: now, lastUpdated: now, perfil: {} };
+                 creadoEn: c.creadoEn || now, lastUpdated: now, perfil: {} };
     clientes.unshift(dirEntry);
     perfilClienteId = dirEntry.id;
   }
@@ -7135,7 +7138,7 @@ function guardarPerfilCliente() {
     const c = todos.find(x => x.nombre.trim().toLowerCase() === perfilClienteKey);
     if (!c) return;
     const now = new Date().toISOString();
-    dirEntry = { id: _genId(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', creadoEn: now, lastUpdated: now, perfil: {} };
+    dirEntry = { id: _genId(), nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', creadoEn: c.creadoEn || now, lastUpdated: now, perfil: {} };
     clientes.unshift(dirEntry);
     perfilClienteId = dirEntry.id;
   }
