@@ -2052,6 +2052,23 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
 
+  /* ──────────────── Género en Nueva Orden ──────────────── */
+  .genero-btn {
+    padding: 7px 16px; border-radius: 20px; border: 1px solid var(--card-border);
+    background: var(--input-bg); color: var(--text-secondary); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .genero-btn:hover { border-color: var(--teal); color: var(--text-primary); }
+  .genero-btn.masculino.active { background: rgba(0,180,216,0.15); border-color: var(--teal); color: var(--teal); }
+  .genero-btn.femenino.active  { background: rgba(239,71,111,0.15); border-color: var(--coral); color: var(--coral); }
+  .genero-badge {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .genero-badge.masculino { background: rgba(0,180,216,0.15); color: var(--teal); }
+  .genero-badge.femenino  { background: rgba(239,71,111,0.15); color: var(--coral); }
+  .genero-badge.otro      { background: rgba(168,218,220,0.15); color: var(--text-secondary); }
+
   /* Fila clickeable */
   #clientes-tbody tr {
     cursor: pointer;
@@ -3149,7 +3166,7 @@
           <label>Nombre completo</label>
           <div class="autocomplete-wrap" id="ac-anchor">
             <input type="text" id="cliente-nombre" placeholder="Ej: Pepe Gomez"
-              oninput="acNombre(this.value)"
+              oninput="acNombre(this.value); _evaluarGeneroCliente()"
               onkeydown="acKeydown(event)"
               onfocus="acNombre(this.value)"
               autocomplete="off">
@@ -3166,6 +3183,10 @@
               autocomplete="off">
           </div>
         </div>
+      </div>
+      <div id="cliente-genero-row" style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="margin:0;font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Género</label>
+        <div id="cliente-genero-widget" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>
       </div>
     </div>
 
@@ -4886,12 +4907,9 @@ function guardarEdicionMayorista() {
 
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
 
-  // Propagar el cambio de nombre/celular/documento a todos los demás registros del mismo cliente
-  if (nombreOriginal) {
-    _propagarDatosAOrdenes(nombreOriginal,    { nombre, tel, cc });
-    _propagarDatosAMayorista(nombreOriginal,  { nombre, tel, cc });
-    _propagarDatosADirectorio(nombreOriginal, { nombre, tel, cc });
-  }
+  // Propagar el cambio de nombre/celular/documento SOLO si es una corrección del mismo cliente
+  // (si se reasignó la venta a otro cliente ya existente, no se toca el historial del cliente original)
+  _propagarSiEsCorreccion(nombreOriginal, nombre, tel, cc);
 
   closeMayModal();
   updateBadge();
@@ -5058,6 +5076,70 @@ function getFormData() {
   return { nombre, tel, cc, items, totalPescado, totalEviscerado, totalLibras, total: totalPescado + totalEviscerado };
 }
 
+// ── Género del cliente en Nueva Orden ────────────────────
+// Si el cliente es nuevo, o existe pero aún no tiene género definido, se pueden
+// elegir 2 botoncitos (Hombre/Mujer). Si ya tenía género definido, solo se muestra.
+let _ordenGeneroSeleccionado = null; // 'masculino' | 'femenino' | null
+
+function _evaluarGeneroCliente() {
+  const widget = document.getElementById('cliente-genero-widget');
+  if (!widget) return;
+  const nombreRaw = (document.getElementById('cliente-nombre')?.value || '').trim();
+
+  if (!nombreRaw) {
+    widget.innerHTML = '<span style="font-size:12px;color:var(--text-muted)">Escribe el nombre del cliente primero</span>';
+    _ordenGeneroSeleccionado = null;
+    return;
+  }
+
+  const key = nombreRaw.toLowerCase();
+  const existente = getTodosClientes().find(c => c.nombre.trim().toLowerCase() === key);
+  const generoExistente = existente?.perfil?.genero || null;
+
+  if (generoExistente) {
+    // Ya estaba definido → solo se muestra, no editable desde aquí
+    const label = generoExistente === 'masculino' ? '👨 Hombre' : generoExistente === 'femenino' ? '👩 Mujer' : '🧑 Otro';
+    widget.innerHTML = `<span class="genero-badge ${generoExistente}">${label}</span>`;
+    _ordenGeneroSeleccionado = null; // ya está guardado, no hay nada que asignar
+    return;
+  }
+
+  // Cliente nuevo, o existente sin género aún → permitir asignarlo
+  widget.innerHTML = `
+    <button type="button" class="genero-btn masculino ${_ordenGeneroSeleccionado === 'masculino' ? 'active' : ''}" onclick="_seleccionarGeneroOrden('masculino')">👨 Hombre</button>
+    <button type="button" class="genero-btn femenino ${_ordenGeneroSeleccionado === 'femenino' ? 'active' : ''}" onclick="_seleccionarGeneroOrden('femenino')">👩 Mujer</button>
+  `;
+}
+
+function _seleccionarGeneroOrden(genero) {
+  // Clic de nuevo sobre el mismo botón lo deselecciona
+  _ordenGeneroSeleccionado = (_ordenGeneroSeleccionado === genero) ? null : genero;
+  _evaluarGeneroCliente();
+}
+
+// Guarda el género elegido en el perfil del cliente (creando su ficha en el Directorio si aún no existe)
+function _guardarGeneroCliente(nombre, genero) {
+  if (!nombre || !genero) return;
+  const key = nombre.trim().toLowerCase();
+  let dirEntry = clientes.find(c => c.nombre.trim().toLowerCase() === key);
+  const now = new Date().toISOString();
+
+  if (!dirEntry) {
+    const c = getTodosClientes().find(x => x.nombre.trim().toLowerCase() === key);
+    dirEntry = {
+      id: _genId(), nombre: c?.nombre || nombre, tel: c?.tel || '', cc: c?.cc || '',
+      creadoEn: c?.creadoEn || now, lastUpdated: now, perfil: {}
+    };
+    clientes.unshift(dirEntry);
+  }
+  if (!dirEntry.perfil) dirEntry.perfil = {};
+  if (dirEntry.perfil.genero) return; // ya tenía género — nunca sobreescribir uno existente
+
+  dirEntry.perfil = { ...dirEntry.perfil, genero };
+  dirEntry.lastUpdated = now;
+  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+}
+
 function guardarOrden() {
   const data = getFormData();
   if (!data.nombre) { toast('Ingresa el nombre del cliente', true); return; }
@@ -5099,6 +5181,7 @@ function _guardarOrdenReal() {
 
   ordenes.unshift(cot);
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+  if (_ordenGeneroSeleccionado) _guardarGeneroCliente(data.nombre, _ordenGeneroSeleccionado);
   updateBadge();
   actualizarFloatBtn(); // ← actualizar botón flotante de inmediato
   toast('✅ Cobrado y Guardado');
@@ -5151,6 +5234,7 @@ function recuperarOrdenEspera(id) {
   document.getElementById('cliente-nombre').value = orden.nombre || '';
   document.getElementById('cliente-tel').value    = orden.tel    || '';
   document.getElementById('cliente-cc').value     = orden.cc     || '';
+  _evaluarGeneroCliente();
   const notaEl = document.getElementById('nota-input');
   if (notaEl) notaEl.value = orden.nota || '';
   document.getElementById('pago-input').value = orden.pago || '';
@@ -6290,6 +6374,8 @@ function resetForm(silent = false) {
   document.getElementById('cliente-nombre').value = '';
   document.getElementById('cliente-tel').value = '';
   document.getElementById('cliente-cc').value = '';
+  _ordenGeneroSeleccionado = null;
+  _evaluarGeneroCliente();
   ESPECIES.forEach(e => {
     document.getElementById(`qty-${e.id}`).value = '';
     document.getElementById(`ev-${e.id}`).checked = false;
@@ -7262,6 +7348,28 @@ function _propagarDatosADirectorio(nombreCliente, datos) {
   return true;
 }
 
+// Distingue dos casos al editar el nombre de una orden/venta puntual:
+// 1) Corrección de nombre (typo, nombre mal escrito) → SÍ debe propagarse a todo el historial del cliente
+// 2) Reasignar esta compra puntual a un cliente DISTINTO que ya existe → NO debe tocar el historial del cliente original
+function _esReasignacionAOtroCliente(nombreOriginal, nombreNuevo) {
+  if (!nombreOriginal || !nombreNuevo) return false;
+  const origKey  = nombreOriginal.trim().toLowerCase();
+  const nuevoKey = nombreNuevo.trim().toLowerCase();
+  if (origKey === nuevoKey) return false;
+  const todos = getTodosClientes();
+  return todos.some(c => c.nombre.trim().toLowerCase() === nuevoKey);
+}
+
+// Propaga nombre/tel/cc SOLO si el cambio es una corrección del mismo cliente,
+// nunca cuando se está reasignando la compra a otro cliente ya existente.
+function _propagarSiEsCorreccion(nombreOriginal, nombre, tel, cc) {
+  if (!nombreOriginal) return;
+  if (_esReasignacionAOtroCliente(nombreOriginal, nombre)) return;
+  _propagarDatosAOrdenes(nombreOriginal,    { nombre, tel, cc });
+  _propagarDatosAMayorista(nombreOriginal,  { nombre, tel, cc });
+  _propagarDatosADirectorio(nombreOriginal, { nombre, tel, cc });
+}
+
 function guardarPerfilCliente() {
   // Solo directorio tiene perfil guardable
   let dirEntry = clientes.find(x => String(x.id) === String(perfilClienteId));
@@ -7851,12 +7959,9 @@ function guardarEdicion() {
   safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
   _floatBtnCache.serial = null; // forzar recálculo: pudo cambiar el eviscerado de una orden que no es la más reciente
 
-  // Propagar el cambio de nombre/celular/documento a todos los demás registros del mismo cliente
-  if (nombreOriginal) {
-    _propagarDatosAOrdenes(nombreOriginal,   { nombre, tel, cc });
-    _propagarDatosAMayorista(nombreOriginal, { nombre, tel, cc });
-    _propagarDatosADirectorio(nombreOriginal, { nombre, tel, cc });
-  }
+  // Propagar el cambio de nombre/celular/documento SOLO si es una corrección del mismo cliente
+  // (si se reasignó la compra a otro cliente ya existente, no se toca el historial del cliente original)
+  _propagarSiEsCorreccion(nombreOriginal, nombre, tel, cc);
 
   closeModal();
   renderHistorial();
@@ -8861,6 +8966,7 @@ function acSelect(nombre, tel, cc) {
   if (cc)  document.getElementById('cliente-cc').value  = cc;
   document.getElementById('ac-list').style.display = 'none';
   acIndex = -1;
+  _evaluarGeneroCliente();
 }
 
 function acKeydown(e) {
@@ -8986,6 +9092,7 @@ function acTelSelect(nombre, tel, cc) {
   if (cc) document.getElementById('cliente-cc').value = cc;
   document.getElementById('ac-tel-list').style.display = 'none';
   acTelIndex = -1;
+  _evaluarGeneroCliente();
 }
 
 function acTelKeydown(e) {
@@ -9103,6 +9210,7 @@ function acCCSelect(nombre, tel, cc) {
   document.getElementById('cliente-tel').value    = tel;
   document.getElementById('ac-cc-list').style.display = 'none';
   acCCIndex = -1;
+  _evaluarGeneroCliente();
 }
 
 function acCCKeydown(e) {
@@ -11905,6 +12013,7 @@ updateEvBadge();
 iniciarFloatBtnInterval();
 restoreDriveSession();
 renderOrdenesEnEspera();
+_evaluarGeneroCliente();
 
 // Pestañas protegidas — declaradas aquí para evitar TDZ en restoreLastTab()
 const _TABS_PROTEGIDAS   = ['dashboard', 'clientes-dash'];
