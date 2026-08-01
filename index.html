@@ -3086,7 +3086,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.8.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.9.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4194,7 +4194,13 @@
       <div class="grid-2" style="gap:14px">
         <div class="form-group" style="margin:0;grid-column:1/-1">
           <label>Nombre completo</label>
-          <input type="text" id="cli-edit-nombre" placeholder="Nombre del cliente">
+          <div class="autocomplete-wrap" id="ac-cli-edit-anchor">
+            <input type="text" id="cli-edit-nombre" placeholder="Nombre del cliente"
+              oninput="acCliEdit(this.value)"
+              onkeydown="acCliEditKeydown(event)"
+              onfocus="acCliEdit(this.value)"
+              autocomplete="off">
+          </div>
         </div>
         <div class="form-group" style="margin:0">
           <label>Celular</label>
@@ -4270,6 +4276,9 @@
 <div class="autocomplete-list" id="ac-tel-list"></div>
 <div class="autocomplete-list" id="ac-cc-list"></div>
 
+<!-- AUTOCOMPLETE FLOTANTE MODAL EDITAR CLIENTE -->
+<div class="autocomplete-list" id="ac-cli-edit-list"></div>
+
 <!-- AUTOCOMPLETE FLOTANTE MAYORISTA -->
 <div class="autocomplete-list" id="ac-may-nombre-list"></div>
 <div class="autocomplete-list" id="ac-may-tel-list"></div>
@@ -4282,7 +4291,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '5.8.0';
+const APP_VERSION = '5.9.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -9018,6 +9027,106 @@ function acHighlight(items) {
   if (acIndex >= 0) items[acIndex].scrollIntoView({ block: 'nearest' });
 }
 
+// ─────────────────────────────────────────────
+//  AUTOCOMPLETE — MODAL EDITAR CLIENTE
+//  Reutiliza getClientesSugeridos() (directorio + historial, ya filtrado
+//  contra clientes eliminados) para sugerir clientes existentes mientras
+//  se escribe el nombre en el modal, y autocompletar celular/CC.
+// ─────────────────────────────────────────────
+let acCliEditIndex = -1;
+
+function acCliEdit(val) {
+  acCliEditIndex = -1;
+  const list = document.getElementById('ac-cli-edit-list');
+  if (!list) return;
+
+  // No sugerir al propio cliente que se está editando (mismo nombre original)
+  const origNombre = (_editingClienteOrigData?.nombre || '').trim().toLowerCase();
+  const sugs = getClientesSugeridos(val).filter(c => c.nombre.trim().toLowerCase() !== origNombre);
+
+  if (sugs.length === 0) { list.style.display = 'none'; return; }
+
+  list.innerHTML = sugs.map((c, i) => `
+    <div class="autocomplete-item" data-idx="${i}"
+      data-nombre="${encodeURIComponent(c.nombre)}"
+      data-tel="${encodeURIComponent(c.tel)}"
+      data-cc="${encodeURIComponent(c.cc)}">
+      <span class="ac-name">${highlightMatch(c.nombre, val)}</span>
+      ${c.tel ? `<span class="ac-tel">${escHtml(c.tel)}</span>` : ''}
+      <span class="ac-count">${c.count} cot.</span>
+    </div>
+  `).join('');
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', () => acCliEditSelect(
+      decodeURIComponent(el.dataset.nombre),
+      decodeURIComponent(el.dataset.tel),
+      decodeURIComponent(el.dataset.cc)
+    ));
+  });
+
+  const anchor = document.getElementById('cli-edit-nombre');
+  const rect   = anchor.getBoundingClientRect();
+  list.style.top    = (rect.bottom + 4) + 'px';
+  list.style.left   = rect.left + 'px';
+  list.style.width  = rect.width + 'px';
+  list.style.display = 'block';
+}
+
+function acCliEditSelect(nombre, tel, cc) {
+  document.getElementById('cli-edit-nombre').value = nombre;
+  if (tel) document.getElementById('cli-edit-tel').value = tel;
+  if (cc)  document.getElementById('cli-edit-cc').value  = cc;
+  document.getElementById('ac-cli-edit-list').style.display = 'none';
+  acCliEditIndex = -1;
+}
+
+function acCliEditKeydown(e) {
+  const list  = document.getElementById('ac-cli-edit-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (list.style.display === 'none' || items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acCliEditIndex = Math.min(acCliEditIndex + 1, items.length - 1);
+    acCliEditHighlight(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acCliEditIndex = Math.max(acCliEditIndex - 1, -1);
+    acCliEditHighlight(items);
+  } else if (e.key === 'Enter' && acCliEditIndex >= 0) {
+    e.preventDefault();
+    items[acCliEditIndex].dispatchEvent(new MouseEvent('mousedown'));
+  } else if (e.key === 'Escape') {
+    list.style.display = 'none';
+    acCliEditIndex = -1;
+  }
+}
+
+function acCliEditHighlight(items) {
+  items.forEach((el, i) => el.classList.toggle('selected', i === acCliEditIndex));
+  if (acCliEditIndex >= 0) items[acCliEditIndex].scrollIntoView({ block: 'nearest' });
+}
+
+// Cerrar al hacer clic fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('#ac-cli-edit-anchor') && !e.target.closest('#ac-cli-edit-list')) {
+    const list = document.getElementById('ac-cli-edit-list');
+    if (list) list.style.display = 'none';
+    acCliEditIndex = -1;
+  }
+});
+
+// Reposicionar al hacer scroll
+window.addEventListener('scroll', () => {
+  const list = document.getElementById('ac-cli-edit-list');
+  if (!list || list.style.display === 'none') return;
+  const anchor = document.getElementById('cli-edit-nombre');
+  if (!anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  list.style.top  = (rect.bottom + 4) + 'px';
+  list.style.left = rect.left + 'px';
+}, true);
+
 // Cerrar autocomplete al hacer clic fuera
 document.addEventListener('click', e => {
   if (!e.target.closest('#ac-anchor') && !e.target.closest('#ac-list')) {
@@ -9042,6 +9151,8 @@ window.addEventListener('resize', () => {
   document.getElementById('ac-may-nombre-list').style.display = 'none';
   document.getElementById('ac-may-tel-list').style.display = 'none';
   document.getElementById('ac-may-cc-list').style.display = 'none';
+  const cliEditList = document.getElementById('ac-cli-edit-list');
+  if (cliEditList) cliEditList.style.display = 'none';
 });
 
 // ─────────────────────────────────────────────
