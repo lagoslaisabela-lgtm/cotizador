@@ -3086,7 +3086,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.7.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v5.8.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4282,7 +4282,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '5.7.0';
+const APP_VERSION = '5.8.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -6598,11 +6598,26 @@ function agregarCliente() {
 
 function eliminarCliente(id) {
   if (!confirm('¿Eliminar este cliente del directorio?')) return;
+  const cli = clientes.find(c => c.id === id);
   clientes = clientes.filter(c => c.id !== id);
   safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
   // Registrar eliminación para sync bilateral
   const del = getDeletedCli();
   del[id] = new Date().toISOString();
+  // También marcar como eliminadas todas las claves de historial (hist_nombre)
+  // asociadas a este cliente, para que sus órdenes pasadas no lo resuciten
+  // en el autocompletar de Nueva Orden ni en el directorio de clientes.
+  if (cli) {
+    const nowIso = new Date().toISOString();
+    const marcarHist = (nombre) => {
+      if (!nombre) return;
+      del['hist_' + nombre.trim().toLowerCase()] = nowIso;
+    };
+    marcarHist(cli.nombre);
+    if (cli._histKey)    del[cli._histKey] = nowIso;
+    if (cli._histNombre) marcarHist(cli._histNombre);
+    if (Array.isArray(cli._histNombres)) cli._histNombres.forEach(marcarHist);
+  }
   saveDeletedCli(del);
   updateClientesBadge();
   renderClientes();
@@ -8872,11 +8887,13 @@ function getClientesSugeridos(query) {
   const q = query.toLowerCase().trim();
 
   const mapa = {};
+  const deletedCliMap = getDeletedCli(); // clientes eliminados del directorio (no deben sugerirse)
 
   // Fuente 1: historial de órdenes detal
   ordenes.forEach(c => {
     if (!c.nombre) return;
     const key = c.nombre.toLowerCase();
+    if (deletedCliMap['hist_' + key]) return; // cliente eliminado, no sugerir
     if (!mapa[key]) mapa[key] = { nombre: c.nombre, tel: c.tel || '', cc: c.cc || '', count: 0 };
     mapa[key].count++;
     if (!mapa[key].tel && c.tel) mapa[key].tel = c.tel;
@@ -8887,13 +8904,15 @@ function getClientesSugeridos(query) {
   mayorista.forEach(v => {
     if (!v.nombre) return;
     const key = v.nombre.toLowerCase();
+    if (deletedCliMap['hist_' + key]) return; // cliente eliminado, no sugerir
     if (!mapa[key]) mapa[key] = { nombre: v.nombre, tel: v.tel || '', cc: v.cc || '', count: 0 };
     mapa[key].count++;
     if (!mapa[key].tel && v.tel) mapa[key].tel = v.tel;
     if (!mapa[key].cc  && v.cc)  mapa[key].cc  = v.cc;
   });
 
-  // Fuente 3: directorio de clientes
+  // Fuente 3: directorio de clientes (siempre vigente, ya que si el cliente
+  // fue eliminado del directorio, ya no está en el array `clientes`)
   clientes.forEach(c => {
     if (!c.nombre) return;
     const key = c.nombre.toLowerCase();
