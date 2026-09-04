@@ -894,6 +894,29 @@
     margin-top: 4px;
   }
 
+  /* ── Eviscerado gratis por especie (chip junto al checkbox 🔪) ── */
+  .ev-gratis-chip {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 2px solid rgba(0,180,216,0.3);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    opacity: 0.45;
+  }
+  .ev-gratis-chip:hover { opacity: 0.8; border-color: var(--gold); }
+  .ev-gratis-chip.active {
+    background: rgba(255,209,102,0.18);
+    border-color: var(--gold);
+    color: var(--gold);
+    opacity: 1;
+    box-shadow: 0 0 0 3px rgba(255,209,102,0.12);
+  }
+
   /* ── Pago y devuelta ── */
   .metodo-pago-selector {
     display: flex;
@@ -2031,6 +2054,15 @@
     color: var(--green);
     font-weight: 600;
   }
+  .dash-pill-coral {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(239,71,111,0.12);
+    border: 1px solid rgba(239,71,111,0.25);
+    color: var(--coral);
+    font-weight: 600;
+  }
   .clientes-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -2978,7 +3010,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.0.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.1.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3091,7 +3123,7 @@
     <!-- Especies -->
     <div class="card section">
       <div class="card-title">🐟 Especies y Cantidades</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Ingresa la cantidad en libras por especie. Activa el checkbox 🔪 para cobrar eviscerado (+$500/lb).</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Ingresa la cantidad en libras por especie. Activa el checkbox 🔪 para cobrar eviscerado (+$500/lb). Si aparece el botón 🎁, actívalo para dejar la pelada de esa especie sin cobrar.</p>
 
       <div class="species-grid" id="species-grid">
         <!-- generado por JS -->
@@ -3295,6 +3327,7 @@
         <div class="stat-value" id="stat-eviscerado">$0</div>
         <div class="stat-label">Eviscerado</div>
         <div class="stat-sublabel" id="stat-period-label-4">—</div>
+        <div class="dash-desglose"><span class="dash-pill-coral" id="stat-eviscerado-lb">0.0 lb peladas</span></div>
         <div class="stat-delta" id="delta-eviscerado"></div>
       </div>
     </div>
@@ -3334,6 +3367,7 @@
             <div class="fs-row"><span>Libras detal</span><span id="fs-libras">0 lb</span></div>
             <div class="fs-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
             <div class="fs-row fs-gold"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
+            <div class="fs-row"><span>🔪 Libras peladas</span><span id="fs-libras-peladas">0 lb</span></div>
             <div class="fs-row fs-subtotal"><span>Total detal</span><span id="fs-total">$0</span></div>
           </div>
           <!-- Grupo métodos de pago (detal) -->
@@ -3348,6 +3382,13 @@
             <div class="fs-group-title fs-title-green">🚚 Mayorista <span id="fs-may-count" class="fs-count-badge">0</span></div>
             <div class="fs-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
             <div class="fs-row fs-subtotal"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
+          </div>
+          <!-- Grupo métodos de pago (mayorista, se oculta si no hay datos) -->
+          <div class="fs-group" id="fs-metodos-pago-may" style="display:none">
+            <div class="fs-group-title fs-title-green">💳 Métodos de pago <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">· Mayorista</span></div>
+            <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo-may">$0</span></div>
+            <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi-may">$0</span></div>
+            <div class="fs-row" id="fs-pago-sinespecificar-may-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar-may">$0</span></div>
           </div>
           <!-- Total general combinado -->
           <div class="fs-total-box" id="fs-total-combinado" style="display:none">
@@ -3800,6 +3841,36 @@
           <div class="text-primary" style="font-size:11px;letter-spacing:1px;font-weight:700;color:var(--text-muted)">TOTAL MAYORISTA</div>
           <div class="total-amount" id="may-total-display">$0</div>
           <div class="total-details" id="may-total-details">— libras</div>
+          <!-- Método de pago -->
+          <div class="metodo-pago-selector" id="may-metodo-pago-selector">
+            <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPagoMay('efectivo')">💵 Efectivo</button>
+            <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPagoMay('nequi')">📱 Nequi</button>
+            <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPagoMay('mixto')">🔀 Mixto</button>
+          </div>
+          <!-- Pago y devuelta -->
+          <div class="pago-row">
+            <div class="pago-input-wrap" id="may-pago-single-wrap">
+              <label id="may-pago-single-label">💵 Pago con</label>
+              <input type="text" id="may-pago-input" inputmode="numeric" placeholder="$0" autocomplete="off"
+                oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+            </div>
+            <div class="pago-mixto-wrap" id="may-pago-mixto-wrap" style="display:none">
+              <div class="pago-input-wrap">
+                <label>💵 Efectivo</label>
+                <input type="text" id="may-pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off"
+                  oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+              </div>
+              <div class="pago-input-wrap">
+                <label>📱 Nequi</label>
+                <input type="text" id="may-pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off"
+                  oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+              </div>
+            </div>
+            <div class="devuelta-box">
+              <span class="devuelta-label">Devuelta</span>
+              <span class="devuelta-amount pending" id="may-devuelta-display">—</span>
+            </div>
+          </div>
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetMayorista()">✨ Limpiar</button>
@@ -3852,6 +3923,7 @@
               <th>Libras</th>
               <th>Eviscerado</th>
               <th>Total</th>
+              <th>Pago</th>
               <th></th>
             </tr>
           </thead>
@@ -4151,6 +4223,37 @@
         <div class="evalue" id="edit-total-display">$0</div>
       </div>
 
+      <!-- Método de pago -->
+      <div class="edit-section-title" style="margin-top:20px">💳 Método de Pago</div>
+      <div class="metodo-pago-selector" id="edit-metodo-pago-selector">
+        <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPagoEdit('efectivo')">💵 Efectivo</button>
+        <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPagoEdit('nequi')">📱 Nequi</button>
+        <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPagoEdit('mixto')">🔀 Mixto</button>
+      </div>
+      <div class="pago-row">
+        <div class="pago-input-wrap" id="edit-pago-single-wrap">
+          <label id="edit-pago-single-label">💵 Pago con</label>
+          <input type="text" id="edit-pago-input" inputmode="numeric" placeholder="$0" autocomplete="off"
+            oninput="pagoEditInput(this)" onfocus="pagoEditFocus(this)" onblur="pagoEditBlur(this)">
+        </div>
+        <div class="pago-mixto-wrap" id="edit-pago-mixto-wrap" style="display:none">
+          <div class="pago-input-wrap">
+            <label>💵 Efectivo</label>
+            <input type="text" id="edit-pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off"
+              oninput="pagoEditInput(this)" onfocus="pagoEditFocus(this)" onblur="pagoEditBlur(this)">
+          </div>
+          <div class="pago-input-wrap">
+            <label>📱 Nequi</label>
+            <input type="text" id="edit-pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off"
+              oninput="pagoEditInput(this)" onfocus="pagoEditFocus(this)" onblur="pagoEditBlur(this)">
+          </div>
+        </div>
+        <div class="devuelta-box">
+          <span class="devuelta-label">Devuelta</span>
+          <span class="devuelta-amount pending" id="edit-devuelta-display">—</span>
+        </div>
+      </div>
+
       <!-- Nota -->
       <div class="form-group" style="margin-top:16px;margin-bottom:0">
         <label>📝 Nota interna</label>
@@ -4322,6 +4425,37 @@
         </span>
         <strong style="font-family:'Roboto Mono',monospace;font-size:16px;color:var(--green)" id="may-edit-total">$0</strong>
       </div>
+      <!-- Método de pago -->
+      <div class="edit-section-title" style="margin-top:20px">💳 Método de Pago</div>
+      <div class="metodo-pago-selector" id="may-edit-metodo-pago-selector">
+        <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPagoMayEdit('efectivo')">💵 Efectivo</button>
+        <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPagoMayEdit('nequi')">📱 Nequi</button>
+        <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPagoMayEdit('mixto')">🔀 Mixto</button>
+      </div>
+      <div class="pago-row">
+        <div class="pago-input-wrap" id="may-edit-pago-single-wrap">
+          <label id="may-edit-pago-single-label">💵 Pago con</label>
+          <input type="text" id="may-edit-pago-input" inputmode="numeric" placeholder="$0" autocomplete="off"
+            oninput="pagoMayEditInput(this)" onfocus="pagoMayEditFocus(this)" onblur="pagoMayEditBlur(this)">
+        </div>
+        <div class="pago-mixto-wrap" id="may-edit-pago-mixto-wrap" style="display:none">
+          <div class="pago-input-wrap">
+            <label>💵 Efectivo</label>
+            <input type="text" id="may-edit-pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off"
+              oninput="pagoMayEditInput(this)" onfocus="pagoMayEditFocus(this)" onblur="pagoMayEditBlur(this)">
+          </div>
+          <div class="pago-input-wrap">
+            <label>📱 Nequi</label>
+            <input type="text" id="may-edit-pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off"
+              oninput="pagoMayEditInput(this)" onfocus="pagoMayEditFocus(this)" onblur="pagoMayEditBlur(this)">
+          </div>
+        </div>
+        <div class="devuelta-box">
+          <span class="devuelta-label">Devuelta</span>
+          <span class="devuelta-amount pending" id="may-edit-devuelta-display">—</span>
+        </div>
+      </div>
+
       <!-- Fecha -->
       <div class="form-group" style="margin-top:14px;margin-bottom:0">
         <label>📅 Fecha de la venta</label>
@@ -4355,7 +4489,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.0.0';
+const APP_VERSION = '6.1.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4556,10 +4690,11 @@ function buildSpeciesGrid() {
         ${e.precio === null ? `<input type="number" min="0" step="0.1" placeholder="Precio/lb" id="precio-${e.id}" oninput="calcular()" style="max-width:100px">` : ''}
         <input type="text" inputmode="decimal" placeholder="0.0 lb" id="qty-${e.id}" oninput="calcular()" autocomplete="off">
         <label class="eviscera-label">
-          <input type="checkbox" id="ev-${e.id}" onchange="calcular()">
+          <input type="checkbox" id="ev-${e.id}" onchange="onEvCheckboxChange('${e.id}')">
           <div class="custom-check">✓</div>
           🔪
         </label>
+        <button type="button" class="ev-gratis-chip" id="ev-gratis-chip-${e.id}" onclick="toggleEvGratisItem('${e.id}')" style="display:none" title="Marcar la pelada de esta especie como gratis">🎁</button>
       </div>
       <div class="species-subtotal">
         <div style="display:flex;flex-direction:column;gap:2px">
@@ -4635,6 +4770,7 @@ function calcularMayorista() {
   if (detailEl) detailEl.textContent = totalEviscerado > 0
     ? `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`
     : `${totalLibras.toFixed(1)} libras`;
+  calcDevueltaMay();
 }
 
 function guardarVentaMayorista() {
@@ -4685,12 +4821,35 @@ function guardarVentaMayorista() {
 
 function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado) {
   const now = new Date();
+
+  // Recalcular método/monto de pago desde los campos del formulario mayorista
+  let pagoEfectivo = 0, pagoNequi = 0;
+  if (_metodoPagoMay === 'mixto') {
+    pagoEfectivo = _pagoRaw(document.getElementById('may-pago-input-efectivo'));
+    pagoNequi    = _pagoRaw(document.getElementById('may-pago-input-nequi'));
+  } else {
+    const monto = _pagoRaw(document.getElementById('may-pago-input'));
+    if (_metodoPagoMay === 'nequi') pagoNequi = monto; else pagoEfectivo = monto;
+  }
+  let pagoVal = pagoEfectivo + pagoNequi;
+  // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
+  // se asume que el pago fue exacto (pagó el total), igual que en órdenes al detal.
+  if (pagoVal === 0 && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi') && total > 0) {
+    if (_metodoPagoMay === 'nequi') pagoNequi = total; else pagoEfectivo = total;
+    pagoVal = total;
+  }
+
   const venta = {
     id: _genId(),
     fecha:       now.toLocaleString('es-CO'),
     fechaObj:    now.toISOString(),
     lastUpdated: now.toISOString(),
-    nombre, tel, cc, items, totalLibras, total, totalEviscerado
+    nombre, tel, cc, items, totalLibras, total, totalEviscerado,
+    metodoPago: pagoVal > 0 ? _metodoPagoMay : null,
+    pagoEfectivo: pagoEfectivo || null,
+    pagoNequi: pagoNequi || null,
+    pagoCon: pagoVal || null,
+    devuelta: pagoVal > 0 ? pagoVal - total : null
   };
 
   mayorista.unshift(venta);
@@ -4727,6 +4886,12 @@ function resetMayorista(silent = false) {
   const detailEl = document.getElementById('may-total-details');
   if (totalEl)  totalEl.textContent  = '$0';
   if (detailEl) detailEl.textContent = '— libras';
+  // Reiniciar método de pago
+  ['may-pago-input','may-pago-input-efectivo','may-pago-input-nequi'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  setMetodoPagoMay('efectivo');
   if (!silent) toast('Formulario limpiado');
 }
 
@@ -4850,6 +5015,7 @@ function renderMayorista() {
       <td>${v.totalLibras.toFixed(1)} lb</td>
       <td>${(v.totalEviscerado || 0) > 0 ? `<span class="badge badge-gold">${fmt(v.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${v.pagoCon ? (v.metodoPago === 'nequi' ? '📱 ' : v.metodoPago === 'mixto' ? '🔀 ' : v.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(v.pagoCon) : '—'}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
@@ -4930,6 +5096,22 @@ function abrirEdicionMayorista(id) {
   }).join('');
 
   calcularMayEdit();
+
+  // Precargar método de pago actual de la venta
+  const metodoActualMay = venta.metodoPago || 'efectivo';
+  setMetodoPagoMayEdit(metodoActualMay);
+  const fmtInputValMay = n => n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  if (metodoActualMay === 'mixto') {
+    document.getElementById('may-edit-pago-input-efectivo').value = fmtInputValMay(venta.pagoEfectivo || 0);
+    document.getElementById('may-edit-pago-input-nequi').value    = fmtInputValMay(venta.pagoNequi || 0);
+    document.getElementById('may-edit-pago-input').value = '';
+  } else {
+    document.getElementById('may-edit-pago-input').value = fmtInputValMay(venta.pagoCon || 0);
+    document.getElementById('may-edit-pago-input-efectivo').value = '';
+    document.getElementById('may-edit-pago-input-nequi').value    = '';
+  }
+  calcDevueltaMayEdit();
+
   document.getElementById('may-modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -4956,6 +5138,7 @@ function calcularMayEdit() {
   if (totalEl) totalEl.textContent = fmt(total);
   const detailEl = document.getElementById('may-edit-total-detail');
   if (detailEl) detailEl.textContent = totalEviscerado > 0 ? `Eviscerado: ${fmt(totalEviscerado)}` : '';
+  calcDevueltaMayEdit();
 }
 
 function closeMayModal() {
@@ -5000,9 +5183,31 @@ function guardarEdicionMayorista() {
 
   const nombreOriginal = mayorista[idx].nombre || '';
 
+  // Recalcular método/monto de pago desde los campos del modal de edición
+  let pagoEfectivo = 0, pagoNequi = 0;
+  if (_metodoPagoMayEdit === 'mixto') {
+    pagoEfectivo = _pagoRaw(document.getElementById('may-edit-pago-input-efectivo'));
+    pagoNequi    = _pagoRaw(document.getElementById('may-edit-pago-input-nequi'));
+  } else {
+    const monto = _pagoRaw(document.getElementById('may-edit-pago-input'));
+    if (_metodoPagoMayEdit === 'nequi') pagoNequi = monto; else pagoEfectivo = monto;
+  }
+  let pagoVal = pagoEfectivo + pagoNequi;
+  // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
+  // se asume que el pago fue exacto (pagó el total).
+  if (pagoVal === 0 && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi') && total > 0) {
+    if (_metodoPagoMayEdit === 'nequi') pagoNequi = total; else pagoEfectivo = total;
+    pagoVal = total;
+  }
+
   mayorista[idx] = {
     ...mayorista[idx],
     nombre, tel, cc, items, totalLibras, total, totalEviscerado,
+    metodoPago: pagoVal > 0 ? _metodoPagoMayEdit : null,
+    pagoEfectivo: pagoEfectivo || null,
+    pagoNequi: pagoNequi || null,
+    pagoCon: pagoVal || null,
+    devuelta: pagoVal > 0 ? pagoVal - total : null,
     lastUpdated: new Date().toISOString(),
     ...(fechaVal ? (() => {
       const d = new Date(fechaVal);
@@ -5059,15 +5264,21 @@ function evaluarLbs(str) {
 }
 
 function calcular() {
-  let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
+  let totalPescado = 0, totalEviscerado = 0, totalLibras = 0, hayEvItems = false, hayEvGratisItems = false;
 
   ESPECIES.forEach(e => {
     const qtyEl   = document.getElementById(`qty-${e.id}`);
     const evEl    = document.getElementById(`ev-${e.id}`);
+    const chipEl  = document.getElementById(`ev-gratis-chip-${e.id}`);
     const card    = document.getElementById(`sc-${e.id}`);
     const exprEl  = document.getElementById(`sub-expr-${e.id}`);
     const { valor: qty, esExpr } = evaluarLbs(qtyEl.value);
     const ev      = evEl.checked;
+    if (chipEl) chipEl.style.display = ev ? 'flex' : 'none';
+    if (!ev && _evGratisItems.has(e.id)) _evGratisItems.delete(e.id);
+    const esGratis = ev && _evGratisItems.has(e.id);
+    if (ev) hayEvItems = true;
+    if (esGratis) hayEvGratisItems = true;
     let precio    = e.precio;
 
     if (e.precio === null) {
@@ -5076,7 +5287,7 @@ function calcular() {
     }
 
     const subPescado    = qty * precio;
-    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
+    const subEviscerado = ev ? qty * (esGratis ? 0 : getEvisceradoCosto()) : 0;
     const subTotal      = subPescado + subEviscerado;
 
     totalPescado    += subPescado;
@@ -5085,7 +5296,7 @@ function calcular() {
 
     document.getElementById(`sub-${e.id}`).textContent = fmt(subTotal);
     document.getElementById(`sub-label-${e.id}`).textContent =
-      qty > 0 ? `${qty.toFixed(2).replace(/\.?0+$/, '')} lb${ev ? ' · con eviscerado' : ''}` : '— lb';
+      qty > 0 ? `${qty.toFixed(2).replace(/\.?0+$/, '')} lb${ev ? (esGratis ? ' · eviscerado 🎁 gratis' : ' · con eviscerado') : ''}` : '— lb';
 
     // Mostrar resultado de la expresión debajo si hay operación
     if (exprEl) {
@@ -5103,7 +5314,9 @@ function calcular() {
   const total = totalPescado + totalEviscerado;
   document.getElementById('total-display').textContent = fmt(total);
   document.getElementById('total-details').textContent =
-    `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`;
+    hayEvItems
+      ? `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}${hayEvGratisItems ? ' 🎁' : ''}`
+      : `${totalLibras.toFixed(1)} libras · Eviscerado: ${fmt(totalEviscerado)}`;
 
   calcDevuelta();
 }
@@ -5111,9 +5324,35 @@ function calcular() {
 // ─── Pago con: separador de miles en tiempo real ───
 let _metodoPago = 'efectivo'; // 'efectivo' | 'nequi' | 'mixto'
 
+// ─── Eviscerado gratis: caso puntual donde SOLO CIERTAS ESPECIES del pedido
+// se procesan sin cobrar la pelada (ej: promoción de una especie puntual).
+// Las libras de esas especies SÍ se siguen contando en la cola de trabajo y
+// en las estadísticas, pero el dinero de eviscerado de esa especie queda en $0.
+let _evGratisItems = new Set(); // ids de especies marcadas como gratis en el pedido actual
+
+function onEvCheckboxChange(id) {
+  const evEl = document.getElementById(`ev-${id}`);
+  const chip = document.getElementById(`ev-gratis-chip-${id}`);
+  if (evEl.checked) {
+    if (chip) chip.style.display = 'flex';
+  } else {
+    if (chip) { chip.style.display = 'none'; chip.classList.remove('active'); }
+    _evGratisItems.delete(id);
+  }
+  calcular();
+}
+
+function toggleEvGratisItem(id) {
+  if (_evGratisItems.has(id)) _evGratisItems.delete(id);
+  else _evGratisItems.add(id);
+  const chip = document.getElementById(`ev-gratis-chip-${id}`);
+  if (chip) chip.classList.toggle('active', _evGratisItems.has(id));
+  calcular();
+}
+
 function setMetodoPago(metodo) {
   _metodoPago = metodo;
-  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
+  document.querySelectorAll('#metodo-pago-selector .metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
   const singleWrap  = document.getElementById('pago-single-wrap');
   const mixtoWrap   = document.getElementById('pago-mixto-wrap');
   const singleLabel = document.getElementById('pago-single-label');
@@ -5128,8 +5367,188 @@ function setMetodoPago(metodo) {
   calcDevuelta();
 }
 
+// ─── Método de pago: edición de una orden ya existente (desde Movimientos) ───
+let _metodoPagoEdit = 'efectivo'; // 'efectivo' | 'nequi' | 'mixto'
+
+function setMetodoPagoEdit(metodo) {
+  _metodoPagoEdit = metodo;
+  document.querySelectorAll('#edit-metodo-pago-selector .metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
+  const singleWrap  = document.getElementById('edit-pago-single-wrap');
+  const mixtoWrap   = document.getElementById('edit-pago-mixto-wrap');
+  const singleLabel = document.getElementById('edit-pago-single-label');
+  if (metodo === 'mixto') {
+    singleWrap.style.display = 'none';
+    mixtoWrap.style.display  = 'flex';
+  } else {
+    singleWrap.style.display = 'flex';
+    mixtoWrap.style.display  = 'none';
+    singleLabel.textContent  = metodo === 'nequi' ? '📱 Pago con' : '💵 Pago con';
+  }
+  calcDevueltaEdit();
+}
+
+function pagoEditFocus(el) { el.select(); }
+function pagoEditInput(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  const len = el.value.length;
+  try { el.setSelectionRange(len, len); } catch(e) {}
+  calcDevueltaEdit();
+}
+function pagoEditBlur(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+}
+
+function calcDevueltaEdit() {
+  const totalEl = document.getElementById('edit-total-display');
+  if (!totalEl) return;
+  const total = parseInt(totalEl.textContent.replace(/[$.,\u202f\s]/g, '')) || 0;
+  const pago  = _metodoPagoEdit === 'mixto'
+    ? _pagoRaw(document.getElementById('edit-pago-input-efectivo')) + _pagoRaw(document.getElementById('edit-pago-input-nequi'))
+    : _pagoRaw(document.getElementById('edit-pago-input'));
+  const devEl = document.getElementById('edit-devuelta-display');
+  if (!devEl) return;
+
+  if (pago === 0 || total === 0) {
+    if (total > 0 && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi')) {
+      devEl.textContent = 'Exacto (asumido)';
+      devEl.className   = 'devuelta-amount exact';
+    } else {
+      devEl.textContent = '—';
+      devEl.className   = 'devuelta-amount pending';
+    }
+    return;
+  }
+
+  const diff = pago - total;
+  if (diff > 0)       { devEl.textContent = fmt(diff);              devEl.className = 'devuelta-amount ok'; }
+  else if (diff === 0) { devEl.textContent = 'Exacto';               devEl.className = 'devuelta-amount exact'; }
+  else                 { devEl.textContent = `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
+}
+
 function _pagoRaw(el) {
   return parseInt((el || document.getElementById('pago-input')).value.replace(/[^\d]/g, '')) || 0;
+}
+
+// ─── Método de pago: venta mayorista (formulario de creación) ───
+let _metodoPagoMay = 'efectivo'; // 'efectivo' | 'nequi' | 'mixto'
+
+function setMetodoPagoMay(metodo) {
+  _metodoPagoMay = metodo;
+  document.querySelectorAll('#may-metodo-pago-selector .metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
+  const singleWrap  = document.getElementById('may-pago-single-wrap');
+  const mixtoWrap   = document.getElementById('may-pago-mixto-wrap');
+  const singleLabel = document.getElementById('may-pago-single-label');
+  if (metodo === 'mixto') {
+    singleWrap.style.display = 'none';
+    mixtoWrap.style.display  = 'flex';
+  } else {
+    singleWrap.style.display = 'flex';
+    mixtoWrap.style.display  = 'none';
+    singleLabel.textContent  = metodo === 'nequi' ? '📱 Pago con' : '💵 Pago con';
+  }
+  calcDevueltaMay();
+}
+
+function pagoMayFocus(el) { el.select(); }
+function pagoMayInput(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  const len = el.value.length;
+  try { el.setSelectionRange(len, len); } catch(e) {}
+  calcDevueltaMay();
+}
+function pagoMayBlur(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+}
+
+function calcDevueltaMay() {
+  const totalEl = document.getElementById('may-total-display');
+  if (!totalEl) return;
+  const total = parseInt(totalEl.textContent.replace(/[$.,\u202f\s]/g, '')) || 0;
+  const pago  = _metodoPagoMay === 'mixto'
+    ? _pagoRaw(document.getElementById('may-pago-input-efectivo')) + _pagoRaw(document.getElementById('may-pago-input-nequi'))
+    : _pagoRaw(document.getElementById('may-pago-input'));
+  const devEl = document.getElementById('may-devuelta-display');
+  if (!devEl) return;
+
+  if (pago === 0 || total === 0) {
+    if (total > 0 && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi')) {
+      devEl.textContent = '¡Exacto! (asumido)';
+      devEl.className   = 'devuelta-amount exact';
+    } else {
+      devEl.textContent = '—';
+      devEl.className   = 'devuelta-amount pending';
+    }
+    return;
+  }
+
+  const diff = pago - total;
+  if (diff > 0)        { devEl.textContent = fmt(diff);                     devEl.className = 'devuelta-amount ok'; }
+  else if (diff === 0) { devEl.textContent = '¡Exacto!';                    devEl.className = 'devuelta-amount exact'; }
+  else                  { devEl.textContent = `Falta ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
+}
+
+// ─── Método de pago: edición de venta mayorista (desde el historial) ───
+let _metodoPagoMayEdit = 'efectivo';
+
+function setMetodoPagoMayEdit(metodo) {
+  _metodoPagoMayEdit = metodo;
+  document.querySelectorAll('#may-edit-metodo-pago-selector .metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
+  const singleWrap  = document.getElementById('may-edit-pago-single-wrap');
+  const mixtoWrap   = document.getElementById('may-edit-pago-mixto-wrap');
+  const singleLabel = document.getElementById('may-edit-pago-single-label');
+  if (metodo === 'mixto') {
+    singleWrap.style.display = 'none';
+    mixtoWrap.style.display  = 'flex';
+  } else {
+    singleWrap.style.display = 'flex';
+    mixtoWrap.style.display  = 'none';
+    singleLabel.textContent  = metodo === 'nequi' ? '📱 Pago con' : '💵 Pago con';
+  }
+  calcDevueltaMayEdit();
+}
+
+function pagoMayEditFocus(el) { el.select(); }
+function pagoMayEditInput(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  const len = el.value.length;
+  try { el.setSelectionRange(len, len); } catch(e) {}
+  calcDevueltaMayEdit();
+}
+function pagoMayEditBlur(el) {
+  const n = _pagoRaw(el);
+  el.value = n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+}
+
+function calcDevueltaMayEdit() {
+  const totalEl = document.getElementById('may-edit-total');
+  if (!totalEl) return;
+  const total = parseInt(totalEl.textContent.replace(/[$.,\u202f\s]/g, '')) || 0;
+  const pago  = _metodoPagoMayEdit === 'mixto'
+    ? _pagoRaw(document.getElementById('may-edit-pago-input-efectivo')) + _pagoRaw(document.getElementById('may-edit-pago-input-nequi'))
+    : _pagoRaw(document.getElementById('may-edit-pago-input'));
+  const devEl = document.getElementById('may-edit-devuelta-display');
+  if (!devEl) return;
+
+  if (pago === 0 || total === 0) {
+    if (total > 0 && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi')) {
+      devEl.textContent = 'Exacto (asumido)';
+      devEl.className   = 'devuelta-amount exact';
+    } else {
+      devEl.textContent = '—';
+      devEl.className   = 'devuelta-amount pending';
+    }
+    return;
+  }
+
+  const diff = pago - total;
+  if (diff > 0)        { devEl.textContent = fmt(diff);                     devEl.className = 'devuelta-amount ok'; }
+  else if (diff === 0) { devEl.textContent = 'Exacto';                      devEl.className = 'devuelta-amount exact'; }
+  else                  { devEl.textContent = `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
 }
 function pagoInput(el) {
   const n = _pagoRaw(el);
@@ -5154,8 +5573,13 @@ function calcDevuelta() {
   const devEl   = document.getElementById('devuelta-display');
 
   if (pago === 0 || total === 0) {
-    devEl.textContent = '—';
-    devEl.className   = 'devuelta-amount pending';
+    if (total > 0 && (_metodoPago === 'efectivo' || _metodoPago === 'nequi')) {
+      devEl.textContent = '¡Exacto! (asumido)';
+      devEl.className   = 'devuelta-amount exact';
+    } else {
+      devEl.textContent = '—';
+      devEl.className   = 'devuelta-amount pending';
+    }
     return;
   }
 
@@ -5187,19 +5611,20 @@ function getFormData() {
     const { valor: qty } = evaluarLbs(document.getElementById(`qty-${e.id}`).value);
     if (qty <= 0) return;
     const ev = document.getElementById(`ev-${e.id}`).checked;
+    const evGratis = ev && _evGratisItems.has(e.id);
     let precio = e.precio;
     if (e.precio === null) {
       precio = parseFloat(document.getElementById(`precio-${e.id}`).value) || 0;
     }
     const subPescado    = qty * precio;
-    const subEviscerado = ev ? qty * getEvisceradoCosto() : 0;
+    const subEviscerado = ev ? qty * (evGratis ? 0 : getEvisceradoCosto()) : 0;
     totalPescado    += subPescado;
     totalEviscerado += subEviscerado;
     totalLibras     += qty;
     const especie = e.id === 'otro'
       ? (document.getElementById('especie-otro')?.value || e.nombre)
       : e.nombre;
-    items.push({ especie, qty, precio, ev, subPescado, subEviscerado });
+    items.push({ especie, qty, precio, ev, evGratis, subPescado, subEviscerado });
   });
 
   return { nombre, tel, cc, items, totalPescado, totalEviscerado, totalLibras, total: totalPescado + totalEviscerado };
@@ -5303,6 +5728,7 @@ function guardarOrden() {
 function _guardarOrdenReal() {
   const data = getFormData();
   const now = new Date();
+  const totalOrden = data.totalPescado + data.totalEviscerado;
   let pagoEfectivo = 0, pagoNequi = 0;
   if (_metodoPago === 'mixto') {
     pagoEfectivo = _pagoRaw(document.getElementById('pago-input-efectivo'));
@@ -5311,7 +5737,14 @@ function _guardarOrdenReal() {
     const monto = _pagoRaw(document.getElementById('pago-input'));
     if (_metodoPago === 'nequi') pagoNequi = monto; else pagoEfectivo = monto;
   }
-  const pagoVal = pagoEfectivo + pagoNequi;
+  let pagoVal = pagoEfectivo + pagoNequi;
+  // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
+  // se asume que el pago fue exacto (pagó el total) para que quede reflejado
+  // correctamente en el Resumen Financiero del dashboard.
+  if (pagoVal === 0 && (_metodoPago === 'efectivo' || _metodoPago === 'nequi') && totalOrden > 0) {
+    if (_metodoPago === 'nequi') pagoNequi = totalOrden; else pagoEfectivo = totalOrden;
+    pagoVal = totalOrden;
+  }
   const nota = (document.getElementById('nota-input')?.value || '').trim();
   const cot = {
     id: _genId(),
@@ -5319,13 +5752,13 @@ function _guardarOrdenReal() {
     fechaObj: now.toISOString(),
     lastUpdated: now.toISOString(),
     // evStartedAt: timestamp absoluto fijo de creación para estimado consistente entre dispositivos
-    evStartedAt: data.totalEviscerado > 0 ? now.getTime() : undefined,
+    evStartedAt: _tieneEviscerado(data) ? now.getTime() : undefined,
     nota: nota || undefined,
     metodoPago: pagoVal > 0 ? _metodoPago : null,
     pagoEfectivo: pagoEfectivo || null,
     pagoNequi: pagoNequi || null,
     pagoCon: pagoVal || null,
-    devuelta: pagoVal > 0 ? pagoVal - (data.totalPescado + data.totalEviscerado) : null,
+    devuelta: pagoVal > 0 ? pagoVal - totalOrden : null,
     ...data
   };
 
@@ -5398,9 +5831,10 @@ function _capturarEstadoFormulario() {
   ESPECIES.forEach(e => {
     const qty = document.getElementById(`qty-${e.id}`)?.value || '';
     const ev  = document.getElementById(`ev-${e.id}`)?.checked || false;
+    const evGratis = ev && _evGratisItems.has(e.id);
     const precioLibre = e.precio === null ? (document.getElementById(`precio-${e.id}`)?.value || '') : null;
     const especieOtro = e.id === 'otro' ? (document.getElementById('especie-otro')?.value || '') : null;
-    if (qty || ev) especiesData[e.id] = { qty, ev, precioLibre, especieOtro };
+    if (qty || ev) especiesData[e.id] = { qty, ev, evGratis, precioLibre, especieOtro };
   });
   return { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especiesData };
 }
@@ -5433,13 +5867,20 @@ function recuperarOrdenEspera(id) {
   document.getElementById('pago-input-efectivo').value = orden.pagoEfectivo || '';
   document.getElementById('pago-input-nequi').value    = orden.pagoNequi || '';
   setMetodoPago(orden.metodoPago || 'efectivo');
+  _evGratisItems.clear();
 
   ESPECIES.forEach(e => {
     const d = orden.especiesData?.[e.id];
-    const qtyEl = document.getElementById(`qty-${e.id}`);
-    const evEl  = document.getElementById(`ev-${e.id}`);
+    const qtyEl  = document.getElementById(`qty-${e.id}`);
+    const evEl   = document.getElementById(`ev-${e.id}`);
+    const chipEl = document.getElementById(`ev-gratis-chip-${e.id}`);
     if (qtyEl) qtyEl.value   = d?.qty || '';
     if (evEl)  evEl.checked  = d?.ev  || false;
+    if (chipEl) {
+      chipEl.style.display = d?.ev ? 'flex' : 'none';
+      chipEl.classList.toggle('active', !!d?.evGratis);
+    }
+    if (d?.ev && d?.evGratis) _evGratisItems.add(e.id);
     if (e.precio === null) {
       const pEl = document.getElementById(`precio-${e.id}`);
       if (pEl && d?.precioLibre != null) pEl.value = d.precioLibre;
@@ -5737,7 +6178,13 @@ function _renderHistPage() {
       <td>${escHtml(c.tel) || '—'}</td>
       <td style="font-size:12px">${c.items.map(it => `<span class="badge badge-teal" style="margin:1px">${escHtml(it.especie.replace('Tilapia ','T.'))}</span>`).join(' ')}</td>
       <td>${c.totalLibras.toFixed(1)} lb</td>
-      <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
+      <td>${
+        _tieneEviscerado(c)
+          ? (c.totalEviscerado > 0
+              ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>`
+              : `<span class="badge badge-green">🎁 Gratis</span>`)
+          : '—'
+      }</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.pagoCon ? (c.metodoPago === 'nequi' ? '📱 ' : c.metodoPago === 'mixto' ? '🔀 ' : c.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(c.pagoCon) : '—'}</td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:600">${
@@ -5817,8 +6264,8 @@ function renderHistorial(filter = '') {
     if (cc      && !(c.cc||'').toLowerCase().includes(cc)) return false;
     if (nota    && !(c.nota||'').toLowerCase().includes(nota)) return false;
     if (especie && !c.items.some(it => it.especie === especie)) return false;
-    if (evFilt === 'si' && !(c.totalEviscerado > 0)) return false;
-    if (evFilt === 'no' && (c.totalEviscerado > 0)) return false;
+    if (evFilt === 'si' && !_tieneEviscerado(c)) return false;
+    if (evFilt === 'no' && _tieneEviscerado(c)) return false;
     return true;
   });
 
@@ -6420,6 +6867,7 @@ function renderDashboard() {
   const totalLibrasDetal     = lista.reduce((s, c) => s + c.totalLibras, 0);
   const totalEviscerado      = lista.reduce((s, c) => s + c.totalEviscerado, 0);
   const totalPescadoDetal    = lista.reduce((s, c) => s + c.totalPescado, 0);
+  const totalLibrasPeladas   = lista.reduce((s, c) => s + _librasEviscerado(c), 0);
 
   // Acumulados del período — mayorista
   const totalVentasMay  = listaMay.reduce((s, v) => s + v.total, 0);
@@ -6435,6 +6883,8 @@ function renderDashboard() {
   document.getElementById('stat-ventas-dia').textContent = fmtShort(totalVentas);
   document.getElementById('stat-libras-dia').textContent = totalLibras.toFixed(1) + ' lb';
   document.getElementById('stat-eviscerado').textContent = fmtShort(totalEviscerado);
+  const evLbEl = document.getElementById('stat-eviscerado-lb');
+  if (evLbEl) evLbEl.textContent = `${totalLibrasPeladas.toFixed(1)} lb peladas`;
 
   // Desglose detal/mayorista — solo mostrar si canal es 'ambos'
   const desgloseEl = document.getElementById('stat-desglose-ventas');
@@ -6467,15 +6917,19 @@ function renderDashboard() {
   document.getElementById('fs-libras').textContent     = totalLibrasDetal.toFixed(1) + ' lb';
   document.getElementById('fs-pescado').textContent    = fmt(totalPescadoDetal);
   document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
+  const fsLibrasPeladasEl = document.getElementById('fs-libras-peladas');
+  if (fsLibrasPeladasEl) fsLibrasPeladasEl.textContent = totalLibrasPeladas.toFixed(1) + ' lb';
   document.getElementById('fs-total').textContent      = fmt(totalVentasDetal);
 
   // Desglose por método de pago (detal) del período
+  // Se usa el monto NETO (descontando la devuelta entregada) para que
+  // el efectivo/Nequi reflejen lo que realmente entra al negocio.
   let totalPagoEfectivo = 0, totalPagoNequi = 0, totalPagoSinEspecificar = 0;
   lista.forEach(c => {
-    if (c.metodoPago === 'nequi')      totalPagoNequi    += c.pagoCon || 0;
-    else if (c.metodoPago === 'mixto') { totalPagoEfectivo += c.pagoEfectivo || 0; totalPagoNequi += c.pagoNequi || 0; }
-    else if (c.metodoPago === 'efectivo') totalPagoEfectivo += c.pagoCon || 0;
-    else if (c.pagoCon) totalPagoSinEspecificar += c.pagoCon; // órdenes antiguas sin método registrado
+    const neto = _pagoNetoPorMetodo(c);
+    totalPagoEfectivo       += neto.efectivo;
+    totalPagoNequi          += neto.nequi;
+    totalPagoSinEspecificar += neto.sinEspecificar;
   });
   const fsMetodosEl = document.getElementById('fs-metodos-pago');
   if (fsMetodosEl) {
@@ -6497,6 +6951,27 @@ function renderDashboard() {
     document.getElementById('fs-may-libras').textContent = totalLibrasMay.toFixed(1) + ' lb';
     document.getElementById('fs-may-total').textContent  = fmt(totalVentasMay);
   }
+
+  // Desglose por método de pago (mayorista) del período
+  let totalPagoEfectivoMay = 0, totalPagoNequiMay = 0, totalPagoSinEspecificarMay = 0;
+  listaMay.forEach(v => {
+    const neto = _pagoNetoPorMetodo(v);
+    totalPagoEfectivoMay       += neto.efectivo;
+    totalPagoNequiMay          += neto.nequi;
+    totalPagoSinEspecificarMay += neto.sinEspecificar;
+  });
+  const fsMetodosMayEl = document.getElementById('fs-metodos-pago-may');
+  if (fsMetodosMayEl) {
+    fsMetodosMayEl.style.display = listaMay.length > 0 ? '' : 'none';
+    document.getElementById('fs-pago-efectivo-may').textContent = fmt(totalPagoEfectivoMay);
+    document.getElementById('fs-pago-nequi-may').textContent    = fmt(totalPagoNequiMay);
+    const sinEspRowMay = document.getElementById('fs-pago-sinespecificar-may-row');
+    if (sinEspRowMay) {
+      sinEspRowMay.style.display = totalPagoSinEspecificarMay > 0 ? '' : 'none';
+      document.getElementById('fs-pago-sinespecificar-may').textContent = fmt(totalPagoSinEspecificarMay);
+    }
+  }
+
   const fsTotalCombEl = document.getElementById('fs-total-combinado');
   if (fsTotalCombEl) {
     fsTotalCombEl.style.display = listaMay.length > 0 ? '' : 'none';
@@ -6573,6 +7048,49 @@ function fmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CO');
 }
 
+// ¿Esta orden tiene trabajo de eviscerado? (independiente de si se cobró o no —
+// una orden puede tener eviscerado GRATIS: totalEviscerado=0 pero items con ev=true).
+// Usar SIEMPRE esta función (nunca `c.totalEviscerado > 0`) para decidir si una
+// orden entra a la cola/estadísticas de trabajo de eviscerado.
+function _tieneEviscerado(c) {
+  return Array.isArray(c?.items) && c.items.some(i => i.ev);
+}
+
+// Libras totales marcadas para eviscerar en una orden (independiente del cobro).
+function _librasEviscerado(c) {
+  if (!Array.isArray(c?.items)) return 0;
+  return c.items.filter(i => i.ev).reduce((s, i) => s + (i.qty || 0), 0);
+}
+
+// Monto NETO que realmente ingresa a la caja por cada método de pago,
+// es decir, descontando la devuelta que se le entrega al cliente.
+// (La devuelta se asume entregada siempre en efectivo, ya que un pago
+// por Nequi no permite "devolver cambio" digitalmente).
+// Se usa para las métricas del Dashboard — el registro original de la
+// orden (pagoCon, pagoEfectivo, pagoNequi) NO se modifica, solo se ajusta
+// aquí, al momento de sumar los totales del negocio.
+function _pagoNetoPorMetodo(o) {
+  let efectivo = 0, nequi = 0, sinEspecificar = 0;
+  if (o.metodoPago === 'nequi') {
+    nequi = o.pagoCon || 0;
+  } else if (o.metodoPago === 'mixto') {
+    efectivo = o.pagoEfectivo || 0;
+    nequi    = o.pagoNequi || 0;
+  } else if (o.metodoPago === 'efectivo') {
+    efectivo = o.pagoCon || 0;
+  } else if (o.pagoCon) {
+    sinEspecificar = o.pagoCon; // órdenes/ventas antiguas sin método registrado
+  }
+  const devuelta = o.devuelta > 0 ? o.devuelta : 0;
+  if (devuelta > 0) {
+    const restaEfectivo = Math.min(efectivo, devuelta);
+    efectivo -= restaEfectivo;
+    const restante = devuelta - restaEfectivo;
+    if (restante > 0) nequi = Math.max(0, nequi - restante);
+  }
+  return { efectivo, nequi, sinEspecificar };
+}
+
 // Formatea cuántos días han pasado desde la última compra de un cliente,
 // con color según qué tan reciente fue (para el Directorio de Clientes).
 function _fmtUltimaCompra(fechaISO) {
@@ -6610,6 +7128,7 @@ function resetForm(silent = false) {
   document.getElementById('cliente-cc').value = '';
   _ordenGeneroSeleccionado = null;
   _evaluarGeneroCliente();
+  _evGratisItems.clear();
   ESPECIES.forEach(e => {
     document.getElementById(`qty-${e.id}`).value = '';
     document.getElementById(`ev-${e.id}`).checked = false;
@@ -6620,6 +7139,8 @@ function resetForm(silent = false) {
     document.getElementById(`sub-label-${e.id}`).textContent = '— lb';
     const exprEl2 = document.getElementById(`sub-expr-${e.id}`);
     if (exprEl2) { exprEl2.textContent = ''; exprEl2.style.display = 'none'; }
+    const chipEl = document.getElementById(`ev-gratis-chip-${e.id}`);
+    if (chipEl) { chipEl.style.display = 'none'; chipEl.classList.remove('active'); }
   });
   document.getElementById('total-display').textContent = '$0';
   document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
@@ -7323,7 +7844,7 @@ function abrirPerfilCliente(cid, ckey) {
   // ── Indicador eviscerado ──
   const usaEv = ordenes.some(o =>
     o.nombre?.trim().toLowerCase() === ckey &&
-    (o.totalEviscerado || 0) > 0
+    _tieneEviscerado(o)
   );
   document.getElementById('prof-ev-indicator').innerHTML = `
     <div class="ev-indicator ${usaEv ? 'yes' : 'no'}">
@@ -8043,6 +8564,22 @@ function abrirEdicion(id) {
   };
 
   renderEditItems();
+
+  // Precargar método de pago actual de la orden
+  const metodoActual = cot.metodoPago || 'efectivo';
+  setMetodoPagoEdit(metodoActual);
+  const fmtInputVal = n => n > 0 ? '$\u202f' + n.toLocaleString('es-CO') : '';
+  if (metodoActual === 'mixto') {
+    document.getElementById('edit-pago-input-efectivo').value = fmtInputVal(cot.pagoEfectivo || 0);
+    document.getElementById('edit-pago-input-nequi').value    = fmtInputVal(cot.pagoNequi || 0);
+    document.getElementById('edit-pago-input').value = '';
+  } else {
+    document.getElementById('edit-pago-input').value = fmtInputVal(cot.pagoCon || 0);
+    document.getElementById('edit-pago-input-efectivo').value = '';
+    document.getElementById('edit-pago-input-nequi').value    = '';
+  }
+  calcDevueltaEdit();
+
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -8062,7 +8599,7 @@ function renderEditItems() {
   const tbody = document.getElementById('edit-items-tbody');
 
   tbody.innerHTML = editItems.map((item, idx) => {
-    const subTotal = (item.qty * item.precio) + (item.ev ? item.qty * getEvisceradoCosto() : 0);
+    const subTotal = (item.qty * item.precio) + (item.ev ? item.qty * (item.evGratis ? 0 : getEvisceradoCosto()) : 0);
     return `
     <tr>
       <td style="font-weight:600;min-width:120px">${item.especie}</td>
@@ -8080,6 +8617,10 @@ function renderEditItems() {
           <option value="0" ${!item.ev ? 'selected' : ''}>No</option>
           <option value="1" ${item.ev  ? 'selected' : ''}>Sí ✓</option>
         </select>
+        ${item.ev ? `<label style="display:flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--text-muted);cursor:pointer;white-space:nowrap">
+          <input type="checkbox" ${item.evGratis ? 'checked' : ''} onchange="updateEditItem(${idx},'evGratis',this.checked)" style="width:auto;accent-color:var(--gold)">
+          🎁 Gratis
+        </label>` : ''}
       </td>
       <td style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--gold);white-space:nowrap" id="edit-sub-${idx}">
         ${fmt(subTotal)}
@@ -8096,12 +8637,17 @@ function renderEditItems() {
 function updateEditItem(idx, field, value) {
   if (field === 'ev') {
     editItems[idx].ev = value === '1';
+    if (!editItems[idx].ev) editItems[idx].evGratis = false;
+  } else if (field === 'evGratis') {
+    editItems[idx].evGratis = !!value;
   } else {
     editItems[idx][field] = parseFloat(value) || 0;
   }
+  // Si cambió "ev" hay que redibujar la fila completa (aparece/desaparece el checkbox Gratis)
+  if (field === 'ev') { renderEditItems(); return; }
   // Actualizar subtotal de esa fila
   const item = editItems[idx];
-  const sub = (item.qty * item.precio) + (item.ev ? item.qty * getEvisceradoCosto() : 0);
+  const sub = (item.qty * item.precio) + (item.ev ? item.qty * (item.evGratis ? 0 : getEvisceradoCosto()) : 0);
   const cell = document.getElementById(`edit-sub-${idx}`);
   if (cell) cell.textContent = fmt(sub);
   recalcEditTotal();
@@ -8145,6 +8691,7 @@ function addEditItem() {
     qty: qtyVal,
     precio,
     ev: evVal,
+    evGratis: false,
     subPescado,
     subEviscerado
   });
@@ -8165,10 +8712,11 @@ function addEditItem() {
 }
 
 function recalcEditTotal() {
-  let totalPescado = 0, totalEviscerado = 0, totalLibras = 0;
+  let totalPescado = 0, totalEviscerado = 0, totalLibras = 0, hayEvGratis = false;
   editItems.forEach(item => {
     const sub = item.qty * item.precio;
-    const ev  = item.ev ? item.qty * getEvisceradoCosto() : 0;
+    const ev  = item.ev ? item.qty * (item.evGratis ? 0 : getEvisceradoCosto()) : 0;
+    if (item.ev && item.evGratis) hayEvGratis = true;
     // Recalcular subPescado / subEviscerado en el objeto también
     item.subPescado    = sub;
     item.subEviscerado = ev;
@@ -8179,7 +8727,8 @@ function recalcEditTotal() {
   const total = totalPescado + totalEviscerado;
   document.getElementById('edit-total-display').textContent = fmt(total);
   document.getElementById('edit-total-detail').textContent =
-    `${totalLibras.toFixed(1)} lb · Eviscerado: ${fmt(totalEviscerado)}`;
+    `${totalLibras.toFixed(1)} lb · Eviscerado: ${fmt(totalEviscerado)}${hayEvGratis ? ' 🎁' : ''}`;
+  calcDevueltaEdit();
 }
 
 function guardarEdicion() {
@@ -8205,12 +8754,32 @@ function guardarEdicion() {
 
   const nombreOriginal = ordenes[idx].nombre || '';
 
-  const hadEv = ordenes[idx].totalEviscerado > 0;
-  const hasEv = totalEviscerado > 0;
+  const hadEv = _tieneEviscerado(ordenes[idx]);
+  const hasEv = editItems.some(i => i.ev);
   // Preservar evStartedAt si ya tenía ev; asignar nuevo si acaba de agregarse; quitar si se removió
   let evStartedAt = ordenes[idx].evStartedAt;
   if (!hadEv && hasEv) evStartedAt = Date.now();
   if (!hasEv) evStartedAt = undefined;
+
+  const totalOrden = totalPescado + totalEviscerado;
+
+  // Recalcular método/monto de pago desde los campos del modal de edición
+  let pagoEfectivo = 0, pagoNequi = 0;
+  if (_metodoPagoEdit === 'mixto') {
+    pagoEfectivo = _pagoRaw(document.getElementById('edit-pago-input-efectivo'));
+    pagoNequi    = _pagoRaw(document.getElementById('edit-pago-input-nequi'));
+  } else {
+    const monto = _pagoRaw(document.getElementById('edit-pago-input'));
+    if (_metodoPagoEdit === 'nequi') pagoNequi = monto; else pagoEfectivo = monto;
+  }
+  const pagoVal = pagoEfectivo + pagoNequi;
+  let pagoValFinal = pagoVal, pagoEfectivoFinal = pagoEfectivo, pagoNequiFinal = pagoNequi;
+  // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
+  // se asume que el pago fue exacto (pagó el total), igual que al crear la orden.
+  if (pagoVal === 0 && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi') && totalOrden > 0) {
+    if (_metodoPagoEdit === 'nequi') pagoNequiFinal = totalOrden; else pagoEfectivoFinal = totalOrden;
+    pagoValFinal = totalOrden;
+  }
 
   ordenes[idx] = {
     ...ordenes[idx],
@@ -8221,9 +8790,14 @@ function guardarEdicion() {
     totalPescado,
     totalEviscerado,
     totalLibras,
-    total: totalPescado + totalEviscerado,
+    total: totalOrden,
     nota: nota || undefined,
     evStartedAt,
+    metodoPago: pagoValFinal > 0 ? _metodoPagoEdit : null,
+    pagoEfectivo: pagoEfectivoFinal || null,
+    pagoNequi: pagoNequiFinal || null,
+    pagoCon: pagoValFinal || null,
+    devuelta: pagoValFinal > 0 ? pagoValFinal - totalOrden : null,
     editadoEn: new Date().toLocaleString('es-CO'),
     lastUpdated: new Date().toISOString(),
     ...(fechaVal ? (() => {
@@ -9139,7 +9713,7 @@ function enviarWhatsApp(cotId) {
   // Construir mensaje
   const lineas = data.items.map(item => {
     const subTotal = item.subPescado + item.subEviscerado;
-    return `  • ${item.especie}: ${item.qty} lb${item.ev ? ' (eviscerado)' : ''} → ${fmt(subTotal)}`;
+    return `  • ${item.especie}: ${item.qty} lb${item.ev ? (item.evGratis ? ' (eviscerado 🎁 gratis)' : ' (eviscerado)') : ''} → ${fmt(subTotal)}`;
   }).join('\n');
 
   const msg = [
@@ -9151,7 +9725,9 @@ function enviarWhatsApp(cotId) {
     `*Detalle del pedido:*`,
     lineas,
     ``,
-    data.totalEviscerado > 0 ? `🔪 Eviscerado: ${fmt(data.totalEviscerado)}` : null,
+    _tieneEviscerado(data)
+      ? (data.totalEviscerado > 0 ? `🔪 Eviscerado: ${fmt(data.totalEviscerado)}` : `🎁 Eviscerado: GRATIS`)
+      : null,
     ``,
     `💰 *TOTAL A PAGAR: ${fmt(data.total)}*`,
     ``,
@@ -9946,7 +10522,7 @@ function toggleEvDone(cotId) {
 
 function updateEvBadge() {
   const done    = getEvDone();
-  const total   = ordenes.filter(c => c.totalEviscerado > 0);
+  const total   = ordenes.filter(c => _tieneEviscerado(c));
   const pending = total.filter(c => !done.has(String(c.id))).length;
   document.getElementById('badge-ev').textContent = pending;
 }
@@ -9982,7 +10558,7 @@ function getEvFiltered() {
   const hoy0 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const hoy23= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-  let lista = ordenes.filter(c => c.totalEviscerado > 0);
+  let lista = ordenes.filter(c => _tieneEviscerado(c));
 
   switch (activeEvPeriod) {
     case 'today':
@@ -10188,8 +10764,8 @@ function _floatBtnSerial() {
 function _recalcFloatBtnData() {
   const done = getEvDone();
   const times = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
-  const hayEv = pendientes.length > 0 || ordenes.some(c => c.totalEviscerado > 0);
+  const pendientes = ordenes.filter(c => _tieneEviscerado(c) && !done.has(String(c.id)));
+  const hayEv = pendientes.length > 0 || ordenes.some(c => _tieneEviscerado(c));
 
   let segPorLb = 20, totalLibrasPend = 0, startRef = Infinity;
 
@@ -10197,7 +10773,7 @@ function _recalcFloatBtnData() {
     // Calcular segPorLb igual que calcularEstimadorEv
     const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
     const completadasHoy = ordenes.filter(c =>
-      c.totalEviscerado > 0 && done.has(String(c.id)) &&
+      _tieneEviscerado(c) && done.has(String(c.id)) &&
       times[String(c.id)]?.end && times[String(c.id)]?.start &&
       new Date(times[String(c.id)].start) >= hoy0
     );
@@ -10307,7 +10883,7 @@ function iniciarFloatBtnInterval() {
 function calcularEstimadorEv() {
   const done      = getEvDone();
   const times     = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
+  const pendientes = ordenes.filter(c => _tieneEviscerado(c) && !done.has(String(c.id)));
   const el        = document.getElementById('ev-estimador');
   const elHora    = document.getElementById('ev-est-hora');
   const elCount   = document.getElementById('ev-est-countdown');
@@ -10346,7 +10922,7 @@ function calcularEstimadorEv() {
   const fmtHora = d => d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
 
   if (pendientes.length === 0) {
-    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
+    const hayEv = ordenes.some(c => _tieneEviscerado(c));
     el.className = hayEv ? 'ev-estimador listo' : 'ev-estimador sin-datos';
     elIcon.textContent  = hayEv ? '✅' : '⏱️';
     elHora.textContent  = hayEv ? '¡Todo listo!' : '—';
@@ -10364,7 +10940,7 @@ function calcularEstimadorEv() {
   // Calcular velocidad promedio: seg/lb de órdenes COMPLETADAS del mismo día
   const hoy0  = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
-    c.totalEviscerado > 0 &&
+    _tieneEviscerado(c) &&
     done.has(String(c.id)) &&
     times[String(c.id)]?.end && times[String(c.id)]?.start &&
     new Date(times[String(c.id)].start) >= hoy0
@@ -10438,7 +11014,7 @@ function calcularEstimadorEv() {
 
     if (diffSecs <= 0) {
       // Re-verificar pendientes en vivo antes de declarar "listo"
-      const livePend = ordenes.filter(c => c.totalEviscerado > 0 && !getEvDone().has(String(c.id)));
+      const livePend = ordenes.filter(c => _tieneEviscerado(c) && !getEvDone().has(String(c.id)));
       if (livePend.length > 0) {
         // Aún hay pendientes: extender 3 min más
         if (_evFinEstimadoExtendido < Date.now()) {
@@ -10796,7 +11372,7 @@ function renderEvFullscreen() {
 function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval, setInterval_cb) {
   const done       = getEvDone();
   const times      = getEvTimes();
-  const pendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
+  const pendientes = ordenes.filter(c => _tieneEviscerado(c) && !done.has(String(c.id)));
   const el         = document.getElementById(elId);
   const elHora     = document.getElementById(horaId);
   const elCount    = document.getElementById(countId);
@@ -10807,7 +11383,7 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
   if (_interval) { clearInterval(_interval); setInterval_cb(null); }
 
   if (pendientes.length === 0) {
-    const hayEv = ordenes.some(c => c.totalEviscerado > 0);
+    const hayEv = ordenes.some(c => _tieneEviscerado(c));
     el.className = hayEv ? 'ev-estimador listo' : 'ev-estimador sin-datos';
     elIcon.textContent  = hayEv ? '✅' : '⏱️';
     elHora.textContent  = hayEv ? '¡Todo listo!' : '—';
@@ -10818,7 +11394,7 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 
   const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
   const completadasHoy = ordenes.filter(c =>
-    c.totalEviscerado > 0 && done.has(String(c.id)) &&
+    _tieneEviscerado(c) && done.has(String(c.id)) &&
     times[String(c.id)]?.end && times[String(c.id)]?.start &&
     new Date(times[String(c.id)].start) >= hoy0
   );
@@ -11017,7 +11593,7 @@ function _cdBuildClientes() {
       e.totalDetal    += o.total || 0;
       e.comprasDetal++;
       e.librasDetal   += o.totalLibras || 0;
-      if ((o.totalEviscerado || 0) > 0) e.evOrdenes++;
+      if (_tieneEviscerado(o)) e.evOrdenes++;
       (o.items || []).forEach(it => { e.especies[it.especie] = (e.especies[it.especie]||0) + it.qty; });
     } else {
       e.totalMay      += o.total || 0;
@@ -12190,9 +12766,10 @@ function _guardarFormularioEnSesion() {
     ESPECIES.forEach(e => {
       const qty   = document.getElementById(`qty-${e.id}`)?.value   || '';
       const ev    = document.getElementById(`ev-${e.id}`)?.checked  || false;
+      const evGratis = ev && _evGratisItems.has(e.id);
       const precio = e.precio === null ? (document.getElementById(`precio-${e.id}`)?.value || '') : null;
       const especieOtro = e.id === 'otro' ? (document.getElementById('especie-otro')?.value || '') : null;
-      if (qty) { especies[e.id] = { qty, ev, precio, especieOtro }; }
+      if (qty) { especies[e.id] = { qty, ev, evGratis, precio, especieOtro }; }
     });
     const saved = { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especies };
     safeSessionStorage.setItem('aquacot_form_backup', JSON.stringify(saved));
@@ -12221,9 +12798,15 @@ function _restaurarFormularioDesdeSesion() {
       const qtyEl   = document.getElementById(`qty-${id}`);
       const evEl    = document.getElementById(`ev-${id}`);
       const precioEl = document.getElementById(`precio-${id}`);
+      const chipEl  = document.getElementById(`ev-gratis-chip-${id}`);
       if (qtyEl)    qtyEl.value    = data.qty;
       if (evEl)     evEl.checked   = data.ev;
       if (precioEl && data.precio !== null) precioEl.value = data.precio;
+      if (chipEl) {
+        chipEl.style.display = data.ev ? 'flex' : 'none';
+        chipEl.classList.toggle('active', !!data.evGratis);
+      }
+      if (data.ev && data.evGratis) _evGratisItems.add(id);
       if (id === 'otro' && data.especieOtro) {
         const selEl = document.getElementById('especie-otro');
         if (selEl) selEl.value = data.especieOtro;
@@ -12603,7 +13186,7 @@ setInterval(() => {
 
   // Alerta sonora+vibración si hay órdenes pendientes >45 min sin completar
   const done = getEvDone();
-  const evPendientes = ordenes.filter(c => c.totalEviscerado > 0 && !done.has(String(c.id)));
+  const evPendientes = ordenes.filter(c => _tieneEviscerado(c) && !done.has(String(c.id)));
   evPendientes.forEach(c => {
     const elapsed = Math.floor((Date.now() - new Date(c.fechaObj).getTime()) / 60000);
     if (elapsed >= 45 && !_evAlertedIds.has(c.id)) {
