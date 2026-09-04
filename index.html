@@ -237,6 +237,7 @@
     --gold:          #ffd166;
     --coral:         #ef476f;
     --green:         #06d6a0;
+    --nequi:         #ff2f92;
 
     /* Semánticas oscuras */
     --surface:       #0d1f3c;
@@ -709,9 +710,12 @@
   /* ──────────────── SPECIES GRID ──────────────── */
   .species-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     margin-bottom: 20px;
+  }
+  @media (max-width: 900px) {
+    .species-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   .species-card {
@@ -891,15 +895,50 @@
   }
 
   /* ── Pago y devuelta ── */
-  .pago-row {
+  .metodo-pago-selector {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
     flex-wrap: wrap;
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid rgba(0,180,216,0.15);
   }
+  .metodo-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,180,216,0.2);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .metodo-btn:hover { border-color: rgba(0,180,216,0.5); color: var(--teal-pale); }
+  .metodo-btn.active[data-metodo="efectivo"] { background: rgba(6,214,160,0.15); border-color: var(--green); color: var(--green); font-weight: 600; }
+  .metodo-btn.active[data-metodo="nequi"]    { background: rgba(255,47,146,0.15); border-color: var(--nequi); color: var(--nequi); font-weight: 600; }
+  .metodo-btn.active[data-metodo="mixto"]    { background: rgba(0,180,216,0.15); border-color: var(--teal);  color: var(--teal);  font-weight: 600; }
+  .pago-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .pago-mixto-wrap {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 220px;
+  }
+  .pago-mixto-wrap .pago-input-wrap { min-width: 140px; }
+  .pago-mixto-wrap #pago-input-nequi:focus { border-color: var(--nequi); box-shadow: 0 0 0 3px rgba(255,47,146,0.2); }
   .pago-input-wrap {
     display: flex;
     align-items: center;
@@ -915,7 +954,7 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  #pago-input {
+  #pago-input, #pago-input-efectivo, #pago-input-nequi {
     flex: 1;
     padding: 9px 13px;
     background: rgba(255,255,255,0.05);
@@ -929,7 +968,7 @@
     transition: all 0.2s;
     max-width: 180px;
   }
-  #pago-input:focus {
+  #pago-input:focus, #pago-input-efectivo:focus {
     border-color: var(--teal);
     box-shadow: 0 0 0 3px rgba(0,180,216,0.2);
     background: rgba(0,180,216,0.06);
@@ -1130,6 +1169,8 @@
 
   .badge-teal { background: rgba(0,180,216,0.15); color: var(--teal); }
   .badge-gold { background: rgba(255,209,102,0.15); color: var(--gold); }
+  .badge-green { background: rgba(6,214,160,0.15); color: var(--green); }
+  .badge-coral { background: rgba(239,71,111,0.15); color: var(--coral); }
 
   /* ──────────────── SEARCH ──────────────── */
   .search-row {
@@ -1202,8 +1243,10 @@
   .empty-state p { font-size: 14px; }
 
   /* ──────────────── MOBILE FIXES ──────────────── */
-  @media (max-width: 480px) {
+  @media (max-width: 380px) {
     .species-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
     .total-amount { font-size: 26px; }
     .stat-value { font-size: 22px; }
     .tab-btn { padding: 8px 12px; font-size: 12px; }
@@ -1235,6 +1278,86 @@
   .highlight-row.total-row { border-top: 1px solid rgba(0,180,216,0.2); margin-top: 4px; padding-top: 9px; }
   .highlight-row.total-row span:last-child { color: var(--teal-bright) !important; font-size: 15px; font-weight: 700; font-family: 'Roboto Mono', monospace; }
   .quote-item-row span:last-child { font-family: 'Roboto Mono', monospace; }
+
+  /* ──────────────── RESUMEN FINANCIERO ──────────────── */
+  .fs-group {
+    background: var(--input-bg);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .fs-group-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--teal);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fs-title-green { color: var(--green); }
+  .fs-count-badge {
+    background: rgba(6,214,160,0.15);
+    color: var(--green);
+    border-radius: 20px;
+    font-size: 11px;
+    padding: 1px 9px;
+    font-weight: 800;
+    margin-left: auto;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .fs-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .fs-row:last-child { border-bottom: none; }
+  .fs-row span:first-child { color: var(--text-secondary); }
+  .fs-row span:last-child { color: var(--text-primary); font-weight: 600; font-family: 'Roboto Mono', monospace; }
+  .fs-gold span:last-child { color: var(--gold) !important; }
+  .fs-subtotal {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,180,216,0.2);
+    border-bottom: none;
+  }
+  .fs-subtotal span:last-child { color: var(--teal-bright) !important; font-size: 15px; font-weight: 700; }
+  .fs-total-box {
+    background: linear-gradient(135deg, rgba(0,180,216,0.12), rgba(6,214,160,0.08));
+    border: 1px solid rgba(0,180,216,0.35);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+    margin-bottom: 16px;
+  }
+  .fs-total-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .fs-total-value {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--teal-bright);
+  }
+  body.light .fs-group { background: rgba(235,248,255,0.8); }
+  body.light .fs-row { border-color: rgba(0,140,200,0.1); }
 
   /* ──────────────── MODAL EDICIÓN ──────────────── */
   .modal-overlay {
@@ -2722,6 +2845,52 @@
     font-size: 12px; font-family: inherit; cursor: pointer;
   }
 
+  /* ══════════════════════════════════════════
+     PÁGINA: ASISTENCIA DE CLIENTES
+  ══════════════════════════════════════════ */
+  .asis-subnav {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .asis-subtab {
+    padding: 9px 18px; border-radius: 20px; border: 1px solid rgba(0,180,216,0.25);
+    background: transparent; color: var(--text-secondary); font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.18s; font-family: inherit;
+  }
+  .asis-subtab:hover { background: rgba(0,180,216,0.1); color: var(--text-primary); }
+  .asis-subtab.active {
+    background: linear-gradient(135deg,#00b4d8,#06d6a0);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 3px 14px rgba(0,180,216,0.35);
+  }
+  .asis-view { display: none; }
+  .asis-view.active { display: block; }
+
+  .asis-compare-col {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .asis-compare-col .period-btns { margin-bottom: 4px; }
+  .asis-compare-label {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    color: var(--teal-pale); display: flex; align-items: center; gap: 8px;
+  }
+
+  .asis-result-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .asis-result-tab {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0,180,216,0.2);
+    background: transparent; color: var(--text-secondary); font-size: 12px;
+    font-weight: 600; cursor: pointer; transition: all 0.18s; font-family: inherit;
+  }
+  .asis-result-tab.active { background: rgba(0,180,216,0.15); border-color: var(--teal); color: var(--teal); }
+
+  .asis-name-list { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
+  .asis-name-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 12px; background: var(--input-bg); border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  .asis-name-row .nombre { font-weight: 600; color: var(--text-primary); }
+  .asis-name-row .meta { font-size: 11px; color: var(--text-muted); }
+
   /* ── FISH CONFETTI (on cobrar) ── */
   .fish-particle {
     position: fixed;
@@ -2854,6 +3023,9 @@
     <button class="tab-btn" onclick="showTab('clientes-dash')" data-tab="clientes-dash">
       🧬 Perfiles
     </button>
+    <button class="tab-btn" onclick="showTab('asistencia')" data-tab="asistencia">
+      📅 Asistencia
+    </button>
   </div>
 </nav>
 </div>
@@ -2933,11 +3105,27 @@
           <div class="text-primary">TOTAL</div>
           <div class="total-amount" id="total-display">$0</div>
           <div class="total-details" id="total-details">— libras · Eviscerado: $0</div>
+          <!-- Método de pago -->
+          <div class="metodo-pago-selector" id="metodo-pago-selector">
+            <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPago('efectivo')">💵 Efectivo</button>
+            <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPago('nequi')">📱 Nequi</button>
+            <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPago('mixto')">🔀 Mixto</button>
+          </div>
           <!-- Pago y devuelta -->
           <div class="pago-row">
-            <div class="pago-input-wrap">
-              <label>💵 Pago con</label>
+            <div class="pago-input-wrap" id="pago-single-wrap">
+              <label id="pago-single-label">💵 Pago con</label>
               <input type="text" id="pago-input" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+            </div>
+            <div class="pago-mixto-wrap" id="pago-mixto-wrap" style="display:none">
+              <div class="pago-input-wrap">
+                <label>💵 Efectivo</label>
+                <input type="text" id="pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+              </div>
+              <div class="pago-input-wrap">
+                <label>📱 Nequi</label>
+                <input type="text" id="pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+              </div>
             </div>
             <div class="devuelta-box">
               <span class="devuelta-label">Devuelta</span>
@@ -3140,31 +3328,34 @@
       <div class="card">
         <div class="card-title">💰 Resumen Financiero <span id="finance-period-tag" style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:6px"></span></div>
         <div id="financial-summary">
-          <div class="quote-items-preview">
-            <div class="quote-item-row"><span>Total ordenes detal</span><span id="fs-total-cot">0</span></div>
-            <div class="quote-item-row"><span>Libras detal</span><span id="fs-libras">0 lb</span></div>
-            <div class="quote-item-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
-            <div class="quote-item-row highlight-row"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
-            <div class="quote-item-row highlight-row total-row"><span>Total detal</span><span id="fs-total">$0</span></div>
-            <!-- Filas mayorista (se ocultan si no hay datos) -->
-            <div id="fs-mayorista" style="display:none">
-              <div class="quote-item-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(6,214,160,0.2)">
-                <span style="color:var(--green);font-weight:600">Ventas mayoristas</span>
-                <span id="fs-may-count" style="color:var(--green);font-weight:600">0</span>
-              </div>
-              <div class="quote-item-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
-              <div class="quote-item-row highlight-row"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
-            </div>
-            <div id="fs-total-combinado" style="display:none">
-              <div class="quote-item-row highlight-row total-row" style="border-top:2px solid rgba(0,180,216,0.3);margin-top:4px">
-                <span style="font-size:14px">TOTAL GENERAL</span>
-                <span id="fs-gran-total" style="font-size:15px">$0</span>
-              </div>
-            </div>
-            <!-- Cuando no hay mayorista, mostrar el total único -->
+          <div class="fs-group">
+            <div class="fs-group-title">🐟 Detal</div>
+            <div class="fs-row"><span>Total ordenes detal</span><span id="fs-total-cot">0</span></div>
+            <div class="fs-row"><span>Libras detal</span><span id="fs-libras">0 lb</span></div>
+            <div class="fs-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
+            <div class="fs-row fs-gold"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
+            <div class="fs-row fs-subtotal"><span>Total detal</span><span id="fs-total">$0</span></div>
+          </div>
+          <!-- Grupo métodos de pago (detal) -->
+          <div class="fs-group" id="fs-metodos-pago">
+            <div class="fs-group-title">💳 Métodos de pago <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">· Detal</span></div>
+            <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo">$0</span></div>
+            <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi">$0</span></div>
+            <div class="fs-row" id="fs-pago-sinespecificar-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar">$0</span></div>
+          </div>
+          <!-- Grupo mayorista (se oculta si no hay datos) -->
+          <div class="fs-group" id="fs-mayorista" style="display:none">
+            <div class="fs-group-title fs-title-green">🚚 Mayorista <span id="fs-may-count" class="fs-count-badge">0</span></div>
+            <div class="fs-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
+            <div class="fs-row fs-subtotal"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
+          </div>
+          <!-- Total general combinado -->
+          <div class="fs-total-box" id="fs-total-combinado" style="display:none">
+            <span class="fs-total-label">Total general</span>
+            <span class="fs-total-value" id="fs-gran-total">$0</span>
           </div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="margin-top:8px">🗑 Borrar todo el historial</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="margin-top:4px">🗑 Borrar todo el historial</button>
       </div>
     </div>
 
@@ -3297,7 +3488,7 @@
               <th>CC / NIT</th>
               <th>Compras</th>
               <th>Total comprado</th>
-              <th>Registrado</th>
+              <th>Última compra</th>
               <th></th>
             </tr>
           </thead>
@@ -3414,6 +3605,150 @@
     </div>
 
   </div><!-- /clientes-dash -->
+
+  <!-- ══════════════ PÁGINA: ASISTENCIA DE CLIENTES ══════════════ -->
+  <div class="page" id="page-asistencia">
+
+    <div class="asis-subnav">
+      <button class="asis-subtab active" data-asisview="periodo"   onclick="setAsisView('periodo')">📋 Por periodo</button>
+      <button class="asis-subtab"        data-asisview="comparar"  onclick="setAsisView('comparar')">🔀 Comparar periodos</button>
+      <button class="asis-subtab"        data-asisview="inactivos" onclick="setAsisView('inactivos')">⏰ Inactivos</button>
+    </div>
+
+    <!-- ══ VISTA: POR PERIODO ══ -->
+    <div class="asis-view active" id="asis-view-periodo">
+      <div class="cd-topbar">
+        <div class="cd-seg-btns" id="asis-canal-btns">
+          <button class="cd-seg active" data-canal="ambos"     onclick="setAsisCanal('ambos')">🌐 Todos</button>
+          <button class="cd-seg"        data-canal="detal"     onclick="setAsisCanal('detal')">🛒 Detal</button>
+          <button class="cd-seg"        data-canal="mayorista" onclick="setAsisCanal('mayorista')">📦 Mayorista</button>
+        </div>
+        <div class="period-btns" id="asis-period-btns">
+          <button class="period-btn active" data-period="today" onclick="setAsisPeriod('today')">Hoy</button>
+          <button class="period-btn"        data-period="week"  onclick="setAsisPeriod('week')">Esta semana</button>
+          <button class="period-btn"        data-period="month" onclick="setAsisPeriod('month')">Este mes</button>
+          <button class="period-btn"        data-period="all"   onclick="setAsisPeriod('all')">Todo</button>
+          <button class="period-btn"        data-period="custom" onclick="setAsisPeriod('custom')">Rango…</button>
+        </div>
+      </div>
+      <div class="date-range-inputs" id="asis-custom-range" style="display:none;margin-bottom:16px">
+        <input type="date" id="asis-date-desde" onchange="applyAsisCustomRange()">
+        <span class="sep">→</span>
+        <input type="date" id="asis-date-hasta" onchange="applyAsisCustomRange()">
+      </div>
+
+      <div class="cd-kpis" id="asis-kpis"></div>
+
+      <div class="card cd-card">
+        <div class="cd-card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>👥 Clientes del periodo</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;color:var(--text-muted)">Ordenar por:</span>
+            <select id="asis-sort" onchange="renderAsisPeriodo()" class="cd-select">
+              <option value="visitas">N° visitas</option>
+              <option value="total">Total comprado</option>
+              <option value="nombre">Nombre (A-Z)</option>
+              <option value="reciente">Más reciente</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper" style="margin-top:12px">
+          <table class="cd-table">
+            <thead>
+              <tr><th>Cliente</th><th>Celular</th><th>Canal</th><th>Visitas</th><th>Total comprado</th><th>Última visita</th></tr>
+            </thead>
+            <tbody id="asis-periodo-tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="asis-periodo-empty" style="display:none">
+          <div class="icon">🐟</div>
+          <p>Ningún cliente compró en este periodo.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VISTA: COMPARAR PERIODOS ══ -->
+    <div class="asis-view" id="asis-view-comparar">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Compara dos periodos para ver quién repitió compra y quién no volvió en el segundo periodo.</p>
+      <div class="cd-grid-2">
+        <div class="card cd-card asis-compare-col">
+          <div class="asis-compare-label">🅰️ Periodo A</div>
+          <div class="period-btns" id="asis-cmp-a-btns">
+            <button class="period-btn active" data-period="week"      onclick="setAsisCmpPeriod('A','week')">Esta semana</button>
+            <button class="period-btn"        data-period="lastweek"  onclick="setAsisCmpPeriod('A','lastweek')">Semana pasada</button>
+            <button class="period-btn"        data-period="month"     onclick="setAsisCmpPeriod('A','month')">Este mes</button>
+            <button class="period-btn"        data-period="lastmonth" onclick="setAsisCmpPeriod('A','lastmonth')">Mes pasado</button>
+            <button class="period-btn"        data-period="custom"    onclick="setAsisCmpPeriod('A','custom')">Rango…</button>
+          </div>
+          <div class="date-range-inputs" id="asis-cmp-a-range" style="display:none">
+            <input type="date" id="asis-cmp-a-desde" onchange="applyAsisCmpCustom('A')">
+            <span class="sep">→</span>
+            <input type="date" id="asis-cmp-a-hasta" onchange="applyAsisCmpCustom('A')">
+          </div>
+        </div>
+        <div class="card cd-card asis-compare-col">
+          <div class="asis-compare-label">🅱️ Periodo B</div>
+          <div class="period-btns" id="asis-cmp-b-btns">
+            <button class="period-btn"        data-period="week"      onclick="setAsisCmpPeriod('B','week')">Esta semana</button>
+            <button class="period-btn"        data-period="lastweek"  onclick="setAsisCmpPeriod('B','lastweek')">Semana pasada</button>
+            <button class="period-btn active" data-period="month"     onclick="setAsisCmpPeriod('B','month')">Este mes</button>
+            <button class="period-btn"        data-period="lastmonth" onclick="setAsisCmpPeriod('B','lastmonth')">Mes pasado</button>
+            <button class="period-btn"        data-period="custom"    onclick="setAsisCmpPeriod('B','custom')">Rango…</button>
+          </div>
+          <div class="date-range-inputs" id="asis-cmp-b-range" style="display:none">
+            <input type="date" id="asis-cmp-b-desde" onchange="applyAsisCmpCustom('B')">
+            <span class="sep">→</span>
+            <input type="date" id="asis-cmp-b-hasta" onchange="applyAsisCmpCustom('B')">
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin:4px 0 20px">
+        <button class="btn btn-success" onclick="renderAsisComparar()">🔍 Comparar periodos</button>
+      </div>
+
+      <div class="cd-kpis" id="asis-cmp-kpis"></div>
+
+      <div class="card cd-card" id="asis-cmp-detalle-card" style="display:none">
+        <div class="cd-card-title">📋 Detalle</div>
+        <div class="asis-result-tabs" id="asis-cmp-tabs">
+          <button class="asis-result-tab active" data-cat="faltaron"  onclick="setAsisCmpTab('faltaron')">🔴 Faltaron</button>
+          <button class="asis-result-tab"         data-cat="repitieron" onclick="setAsisCmpTab('repitieron')">🟢 Repitieron</button>
+          <button class="asis-result-tab"         data-cat="nuevos"     onclick="setAsisCmpTab('nuevos')">🆕 Nuevos en B</button>
+        </div>
+        <div class="asis-name-list" id="asis-cmp-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ VISTA: INACTIVOS ══ -->
+    <div class="asis-view" id="asis-view-inactivos">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Clientes recurrentes (2 o más compras) que ya llevan más tiempo sin comprar del que acostumbran, ordenados por lo más atrasados primero.</p>
+      <div class="cd-topbar">
+        <div class="cd-seg-btns" id="asis-inact-canal-btns">
+          <button class="cd-seg active" data-canal="ambos"     onclick="setAsisInactCanal('ambos')">🌐 Todos</button>
+          <button class="cd-seg"        data-canal="detal"     onclick="setAsisInactCanal('detal')">🛒 Detal</button>
+          <button class="cd-seg"        data-canal="mayorista" onclick="setAsisInactCanal('mayorista')">📦 Mayorista</button>
+        </div>
+      </div>
+      <div class="cd-kpis" id="asis-inact-kpis"></div>
+      <div class="card cd-card">
+        <div class="cd-card-title">⏰ Clientes atrasados</div>
+        <div class="table-wrapper" style="margin-top:12px">
+          <table class="cd-table">
+            <thead>
+              <tr><th>Cliente</th><th>Celular</th><th>Compras</th><th>Frecuencia prom.</th><th>Última compra</th><th>Días sin comprar</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="asis-inact-tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="asis-inact-empty" style="display:none">
+          <div class="icon">✅</div>
+          <p>No hay suficientes datos de clientes recurrentes todavía.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /asistencia -->
 
   <!-- ══════════════ PÁGINA: MAYORISTA ══════════════ -->
   <div class="page" id="page-mayorista">
@@ -4201,6 +4536,7 @@ function showTab(tab) {
   if (tab === 'clientes')      renderClientes();
   if (tab === 'mayorista')     renderMayorista();
   if (tab === 'clientes-dash') renderClientesDash();
+  if (tab === 'asistencia')    renderAsistencia();
 }
 
 // ─────────────────────────────────────────────
@@ -4773,6 +5109,25 @@ function calcular() {
 }
 
 // ─── Pago con: separador de miles en tiempo real ───
+let _metodoPago = 'efectivo'; // 'efectivo' | 'nequi' | 'mixto'
+
+function setMetodoPago(metodo) {
+  _metodoPago = metodo;
+  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.toggle('active', b.dataset.metodo === metodo));
+  const singleWrap  = document.getElementById('pago-single-wrap');
+  const mixtoWrap   = document.getElementById('pago-mixto-wrap');
+  const singleLabel = document.getElementById('pago-single-label');
+  if (metodo === 'mixto') {
+    singleWrap.style.display = 'none';
+    mixtoWrap.style.display  = 'flex';
+  } else {
+    singleWrap.style.display = 'flex';
+    mixtoWrap.style.display  = 'none';
+    singleLabel.textContent  = metodo === 'nequi' ? '📱 Pago con' : '💵 Pago con';
+  }
+  calcDevuelta();
+}
+
 function _pagoRaw(el) {
   return parseInt((el || document.getElementById('pago-input')).value.replace(/[^\d]/g, '')) || 0;
 }
@@ -4793,7 +5148,9 @@ function pagoBlur(el)  {
 function calcDevuelta() {
   const totalEl = document.getElementById('total-display').textContent;
   const total   = parseInt(totalEl.replace(/[$.,\u202f\s]/g, '')) || 0;
-  const pago    = _pagoRaw();
+  const pago    = _metodoPago === 'mixto'
+    ? _pagoRaw(document.getElementById('pago-input-efectivo')) + _pagoRaw(document.getElementById('pago-input-nequi'))
+    : _pagoRaw(document.getElementById('pago-input'));
   const devEl   = document.getElementById('devuelta-display');
 
   if (pago === 0 || total === 0) {
@@ -4946,7 +5303,15 @@ function guardarOrden() {
 function _guardarOrdenReal() {
   const data = getFormData();
   const now = new Date();
-  const pagoVal = _pagoRaw();
+  let pagoEfectivo = 0, pagoNequi = 0;
+  if (_metodoPago === 'mixto') {
+    pagoEfectivo = _pagoRaw(document.getElementById('pago-input-efectivo'));
+    pagoNequi    = _pagoRaw(document.getElementById('pago-input-nequi'));
+  } else {
+    const monto = _pagoRaw(document.getElementById('pago-input'));
+    if (_metodoPago === 'nequi') pagoNequi = monto; else pagoEfectivo = monto;
+  }
+  const pagoVal = pagoEfectivo + pagoNequi;
   const nota = (document.getElementById('nota-input')?.value || '').trim();
   const cot = {
     id: _genId(),
@@ -4956,6 +5321,9 @@ function _guardarOrdenReal() {
     // evStartedAt: timestamp absoluto fijo de creación para estimado consistente entre dispositivos
     evStartedAt: data.totalEviscerado > 0 ? now.getTime() : undefined,
     nota: nota || undefined,
+    metodoPago: pagoVal > 0 ? _metodoPago : null,
+    pagoEfectivo: pagoEfectivo || null,
+    pagoNequi: pagoNequi || null,
     pagoCon: pagoVal || null,
     devuelta: pagoVal > 0 ? pagoVal - (data.totalPescado + data.totalEviscerado) : null,
     ...data
@@ -5023,6 +5391,9 @@ function _capturarEstadoFormulario() {
   const cc     = document.getElementById('cliente-cc').value;
   const nota   = document.getElementById('nota-input')?.value || '';
   const pago   = document.getElementById('pago-input').value;
+  const pagoEfectivo = document.getElementById('pago-input-efectivo').value;
+  const pagoNequi    = document.getElementById('pago-input-nequi').value;
+  const metodoPago   = _metodoPago;
   const especiesData = {};
   ESPECIES.forEach(e => {
     const qty = document.getElementById(`qty-${e.id}`)?.value || '';
@@ -5031,7 +5402,7 @@ function _capturarEstadoFormulario() {
     const especieOtro = e.id === 'otro' ? (document.getElementById('especie-otro')?.value || '') : null;
     if (qty || ev) especiesData[e.id] = { qty, ev, precioLibre, especieOtro };
   });
-  return { nombre, tel, cc, nota, pago, especiesData };
+  return { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especiesData };
 }
 
 function ponerEnEspera() {
@@ -5059,6 +5430,9 @@ function recuperarOrdenEspera(id) {
   const notaEl = document.getElementById('nota-input');
   if (notaEl) notaEl.value = orden.nota || '';
   document.getElementById('pago-input').value = orden.pago || '';
+  document.getElementById('pago-input-efectivo').value = orden.pagoEfectivo || '';
+  document.getElementById('pago-input-nequi').value    = orden.pagoNequi || '';
+  setMetodoPago(orden.metodoPago || 'efectivo');
 
   ESPECIES.forEach(e => {
     const d = orden.especiesData?.[e.id];
@@ -5365,7 +5739,7 @@ function _renderHistPage() {
       <td>${c.totalLibras.toFixed(1)} lb</td>
       <td>${c.totalEviscerado > 0 ? `<span class="badge badge-gold">${fmt(c.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.pagoCon ? fmt(c.pagoCon) : '—'}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.pagoCon ? (c.metodoPago === 'nequi' ? '📱 ' : c.metodoPago === 'mixto' ? '🔀 ' : c.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(c.pagoCon) : '—'}</td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:600">${
         c.devuelta == null ? '—'
         : c.devuelta > 0  ? `<span style="color:var(--green)">${fmt(c.devuelta)}</span>`
@@ -6095,6 +6469,26 @@ function renderDashboard() {
   document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
   document.getElementById('fs-total').textContent      = fmt(totalVentasDetal);
 
+  // Desglose por método de pago (detal) del período
+  let totalPagoEfectivo = 0, totalPagoNequi = 0, totalPagoSinEspecificar = 0;
+  lista.forEach(c => {
+    if (c.metodoPago === 'nequi')      totalPagoNequi    += c.pagoCon || 0;
+    else if (c.metodoPago === 'mixto') { totalPagoEfectivo += c.pagoEfectivo || 0; totalPagoNequi += c.pagoNequi || 0; }
+    else if (c.metodoPago === 'efectivo') totalPagoEfectivo += c.pagoCon || 0;
+    else if (c.pagoCon) totalPagoSinEspecificar += c.pagoCon; // órdenes antiguas sin método registrado
+  });
+  const fsMetodosEl = document.getElementById('fs-metodos-pago');
+  if (fsMetodosEl) {
+    fsMetodosEl.style.display = lista.length > 0 ? '' : 'none';
+    document.getElementById('fs-pago-efectivo').textContent = fmt(totalPagoEfectivo);
+    document.getElementById('fs-pago-nequi').textContent    = fmt(totalPagoNequi);
+    const sinEspRow = document.getElementById('fs-pago-sinespecificar-row');
+    if (sinEspRow) {
+      sinEspRow.style.display = totalPagoSinEspecificar > 0 ? '' : 'none';
+      document.getElementById('fs-pago-sinespecificar').textContent = fmt(totalPagoSinEspecificar);
+    }
+  }
+
   // Filas mayorista en resumen financiero
   const fsMayEl = document.getElementById('fs-mayorista');
   if (fsMayEl) {
@@ -6179,6 +6573,20 @@ function fmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CO');
 }
 
+// Formatea cuántos días han pasado desde la última compra de un cliente,
+// con color según qué tan reciente fue (para el Directorio de Clientes).
+function _fmtUltimaCompra(fechaISO) {
+  if (!fechaISO) return '<span style="color:var(--text-muted);font-size:12px">Sin compras</span>';
+  const dias = Math.floor((Date.now() - new Date(fechaISO).getTime()) / 864e5);
+  const fechaLegible = new Date(fechaISO).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' });
+  let texto;
+  if (dias <= 0) texto = 'Hoy';
+  else if (dias === 1) texto = 'Ayer';
+  else texto = `Hace ${dias} días`;
+  const color = dias <= 7 ? 'var(--green)' : dias <= 30 ? 'var(--gold)' : 'var(--coral)';
+  return `<span title="${fechaLegible}" style="color:${color};font-weight:600;font-size:12px">${texto}</span>`;
+}
+
 // ── Title Case: primera letra de cada palabra en mayúscula ──
 function toTitleCase(str) {
   if (!str) return str;
@@ -6216,6 +6624,9 @@ function resetForm(silent = false) {
   document.getElementById('total-display').textContent = '$0';
   document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
   document.getElementById('pago-input').value = '';
+  document.getElementById('pago-input-efectivo').value = '';
+  document.getElementById('pago-input-nequi').value = '';
+  setMetodoPago('efectivo');
   const notaEl = document.getElementById('nota-input');
   if (notaEl) notaEl.value = '';
   const dev = document.getElementById('devuelta-display');
@@ -6283,6 +6694,7 @@ function getTodosClientes() {
       totalComprado: 0,
       comprasDetal:  0,
       comprasMay:    0,
+      ultimaCompra:  null,
       origen:        'directorio'
     });
   });
@@ -6301,6 +6713,9 @@ function getTodosClientes() {
       entry.totalComprado += (o.total || 0);
       if (canal === 'mayorista') entry.comprasMay   = (entry.comprasMay   || 0) + 1;
       else                       entry.comprasDetal = (entry.comprasDetal || 0) + 1;
+      if (o.fechaObj && (!entry.ultimaCompra || new Date(o.fechaObj) > new Date(entry.ultimaCompra))) {
+        entry.ultimaCompra = o.fechaObj;
+      }
     };
 
     if (histKeysAbsorbidos.has(histKey)) {
@@ -6346,6 +6761,7 @@ function getTodosClientes() {
           totalComprado: o.total || 0,
           comprasDetal:  canal === 'mayorista' ? 0 : 1,
           comprasMay:    canal === 'mayorista' ? 1 : 0,
+          ultimaCompra:  o.fechaObj,
           origen:        'historial'
         });
       }
@@ -6707,9 +7123,7 @@ function _renderCliPage() {
         </span>
       </td>
       <td>
-        <span class="cli-origen">
-          ${c.origen === 'directorio' ? '📁 Directorio' : '🛒 Historial'}
-        </span>
+        ${_fmtUltimaCompra(c.ultimaCompra)}
       </td>
       <td style="white-space:nowrap" class="cli-action-cell">
         <button class="btn btn-ghost btn-sm cli-edit-btn"
@@ -11231,8 +11645,356 @@ function _cdRenderRanking(clts) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  FEATURE 4: COMPARATIVA PERÍODO ANTERIOR EN DASHBOARD
+//  ASISTENCIA DE CLIENTES (¿quién vino, quién faltó, quién está inactivo?)
 // ══════════════════════════════════════════════════════════
+
+// Resuelve alias de nombre (historial → directorio) y devuelve una lista plana
+// de todas las ventas (detal + mayorista) con nombre/tel/cc ya normalizados.
+function _asisTodasLasVentas() {
+  const aliasMap = new Map();
+  clientes.forEach(c => {
+    const dirKey = c.nombre.trim().toLowerCase();
+    if (c._histKey) aliasMap.set(c._histKey.replace(/^hist_/, ''), dirKey);
+    if (c._histNombre) aliasMap.set(c._histNombre.trim().toLowerCase(), dirKey);
+    if (Array.isArray(c._histNombres)) c._histNombres.forEach(n => aliasMap.set(n.trim().toLowerCase(), dirKey));
+  });
+  const dirByKey = new Map(clientes.map(c => [c.nombre.trim().toLowerCase(), c]));
+
+  const out = [];
+  const push = (o, canal) => {
+    if (!o.nombre) return;
+    const rawKey = o.nombre.trim().toLowerCase();
+    const key = aliasMap.get(rawKey) || rawKey;
+    const dir = dirByKey.get(key);
+    out.push({
+      key,
+      nombre: dir ? dir.nombre : o.nombre,
+      tel:    (dir && dir.tel) || o.tel || '',
+      cc:     (dir && dir.cc)  || o.cc  || '',
+      canal,
+      fecha:  new Date(o.fechaObj),
+      total:  o.total || 0,
+    });
+  };
+  ordenes.forEach(o => push(o, 'detal'));
+  mayorista.forEach(o => push(o, 'mayorista'));
+  return out;
+}
+
+// Calcula {desde, hasta} (objetos Date) para una clave de periodo dada.
+// Soporta las mismas claves que el dashboard, más 'yesterday'/'lastweek'/'lastmonth'
+// para la comparación de dos periodos independientes.
+function _asisRango(period, desdeStr, hastaStr) {
+  const now   = new Date();
+  const hoy0  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const hoy23 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  switch (period) {
+    case 'today': return { desde: hoy0, hasta: hoy23 };
+    case 'yesterday': {
+      const d0  = new Date(hoy0);  d0.setDate(d0.getDate() - 1);
+      const d23 = new Date(hoy23); d23.setDate(d23.getDate() - 1);
+      return { desde: d0, hasta: d23 };
+    }
+    case 'week': {
+      const day  = now.getDay();
+      const diff = (day === 0) ? 6 : day - 1;
+      const lunes   = new Date(hoy0); lunes.setDate(hoy0.getDate() - diff);
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); domingo.setHours(23,59,59,999);
+      return { desde: lunes, hasta: domingo };
+    }
+    case 'lastweek': {
+      const r = _asisRango('week');
+      const desde = new Date(r.desde); desde.setDate(desde.getDate() - 7);
+      const hasta = new Date(r.hasta); hasta.setDate(hasta.getDate() - 7);
+      return { desde, hasta };
+    }
+    case 'month': {
+      const inicio = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      const fin    = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return { desde: inicio, hasta: fin };
+    }
+    case 'lastmonth': {
+      const inicio = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+      const fin    = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      return { desde: inicio, hasta: fin };
+    }
+    case 'custom': {
+      if (!desdeStr || !hastaStr) return null;
+      return { desde: new Date(desdeStr + 'T00:00:00'), hasta: new Date(hastaStr + 'T23:59:59') };
+    }
+    case 'all':
+    default:
+      return { desde: new Date(0), hasta: new Date(8640000000000000) };
+  }
+}
+
+function renderAsistencia() {
+  const activeView = document.querySelector('.asis-view.active');
+  const id = activeView ? activeView.id.replace('asis-view-', '') : 'periodo';
+  if (id === 'periodo')   renderAsisPeriodo();
+  if (id === 'inactivos') renderAsisInactivos();
+  // 'comparar' no se auto-renderiza: requiere pulsar "Comparar periodos"
+}
+
+function setAsisView(view) {
+  document.querySelectorAll('.asis-subtab').forEach(b => b.classList.toggle('active', b.dataset.asisview === view));
+  document.querySelectorAll('.asis-view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`asis-view-${view}`).classList.add('active');
+  if (view === 'periodo')   renderAsisPeriodo();
+  if (view === 'inactivos') renderAsisInactivos();
+}
+
+// ── Vista: Por periodo ──────────────────────────────────────
+let _asisCanal  = 'ambos';
+let _asisPeriod = 'today';
+let _asisDesde  = null;
+let _asisHasta  = null;
+
+function setAsisCanal(canal) {
+  _asisCanal = canal;
+  document.querySelectorAll('#asis-canal-btns .cd-seg').forEach(b => b.classList.toggle('active', b.dataset.canal === canal));
+  renderAsisPeriodo();
+}
+
+function setAsisPeriod(period) {
+  _asisPeriod = period;
+  document.querySelectorAll('#asis-period-btns .period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  document.getElementById('asis-custom-range').style.display = period === 'custom' ? 'flex' : 'none';
+  if (period !== 'custom') renderAsisPeriodo();
+}
+
+function applyAsisCustomRange() {
+  const d = document.getElementById('asis-date-desde').value;
+  const h = document.getElementById('asis-date-hasta').value;
+  if (!d || !h) return;
+  _asisDesde = d; _asisHasta = h;
+  renderAsisPeriodo();
+}
+
+function _asisPeriodLabel() {
+  const fmtDate = d => d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+  switch (_asisPeriod) {
+    case 'today': return 'Hoy';
+    case 'week':  return 'Esta semana';
+    case 'month': return 'Este mes';
+    case 'all':   return 'Todo el historial';
+    case 'custom':
+      if (!_asisDesde || !_asisHasta) return 'Rango personalizado';
+      return `${fmtDate(new Date(_asisDesde+'T00:00:00'))} – ${fmtDate(new Date(_asisHasta+'T00:00:00'))}`;
+    default: return '';
+  }
+}
+
+function renderAsisPeriodo() {
+  const rango  = _asisRango(_asisPeriod, _asisDesde, _asisHasta);
+  const tbody  = document.getElementById('asis-periodo-tbody');
+  const emptyEl= document.getElementById('asis-periodo-empty');
+  const kpisEl = document.getElementById('asis-kpis');
+  if (!tbody) return;
+
+  if (!rango) {
+    kpisEl.innerHTML = '';
+    tbody.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+
+  let ventas = _asisTodasLasVentas().filter(v => v.fecha >= rango.desde && v.fecha <= rango.hasta);
+  if (_asisCanal !== 'ambos') ventas = ventas.filter(v => v.canal === _asisCanal);
+
+  const map = new Map();
+  ventas.forEach(v => {
+    if (!map.has(v.key)) map.set(v.key, { nombre: v.nombre, tel: v.tel, canales: new Set(), visitas: 0, total: 0, ultima: v.fecha });
+    const e = map.get(v.key);
+    e.canales.add(v.canal);
+    e.visitas++;
+    e.total += v.total;
+    if (v.fecha > e.ultima) e.ultima = v.fecha;
+  });
+  const clientesArr = Array.from(map.values());
+
+  const totalVisitas   = ventas.length;
+  const totalFacturado = ventas.reduce((s,v) => s + v.total, 0);
+  const promVisitas    = clientesArr.length > 0 ? totalVisitas / clientesArr.length : 0;
+  kpisEl.innerHTML = `
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#00b4d8"></div><div class="cd-kpi-icon">👥</div><div class="cd-kpi-val">${clientesArr.length}</div><div class="cd-kpi-label">Clientes únicos</div><div class="cd-kpi-sub">${_asisPeriodLabel()}</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#9d4edd"></div><div class="cd-kpi-icon">🛒</div><div class="cd-kpi-val">${totalVisitas}</div><div class="cd-kpi-label">Visitas / órdenes</div><div class="cd-kpi-sub">${promVisitas.toFixed(1)} prom. por cliente</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#06d6a0"></div><div class="cd-kpi-icon">💵</div><div class="cd-kpi-val">${fmtShort(totalFacturado)}</div><div class="cd-kpi-label">Total facturado</div><div class="cd-kpi-sub">${fmtShort(clientesArr.length > 0 ? totalFacturado/clientesArr.length : 0)} prom. por cliente</div></div>
+  `;
+
+  if (clientesArr.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const sortBy = document.getElementById('asis-sort')?.value || 'visitas';
+  clientesArr.sort((a,b) => {
+    if (sortBy === 'total')    return b.total - a.total;
+    if (sortBy === 'nombre')   return a.nombre.localeCompare(b.nombre);
+    if (sortBy === 'reciente') return b.ultima - a.ultima;
+    return b.visitas - a.visitas;
+  });
+
+  tbody.innerHTML = clientesArr.map(c => `
+    <tr>
+      <td><strong>${escHtml(c.nombre)}</strong></td>
+      <td>${escHtml(c.tel) || '—'}</td>
+      <td>${
+        c.canales.size > 1 ? '<span class="cd-seg-pill ambos">🔀 Ambos</span>'
+        : c.canales.has('mayorista') ? '<span class="cd-seg-pill mayorista">📦 May.</span>'
+        : '<span class="cd-seg-pill detal">🛒 Det.</span>'
+      }</td>
+      <td style="font-weight:600;color:var(--teal)">${c.visitas}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-weight:600">${fmt(c.total)}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${c.ultima.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Vista: Comparar periodos ────────────────────────────────
+let _asisCmp = {
+  A: { period: 'week',  desde: null, hasta: null },
+  B: { period: 'month', desde: null, hasta: null },
+};
+let _asisCmpTabActiva = 'faltaron';
+let _asisCmpData = { faltaron: [], repitieron: [], nuevos: [] };
+
+function setAsisCmpPeriod(lado, period) {
+  _asisCmp[lado].period = period;
+  const l = lado.toLowerCase();
+  document.querySelectorAll(`#asis-cmp-${l}-btns .period-btn`).forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  document.getElementById(`asis-cmp-${l}-range`).style.display = period === 'custom' ? 'flex' : 'none';
+}
+
+function applyAsisCmpCustom(lado) {
+  const l = lado.toLowerCase();
+  const d = document.getElementById(`asis-cmp-${l}-desde`).value;
+  const h = document.getElementById(`asis-cmp-${l}-hasta`).value;
+  if (!d || !h) return;
+  _asisCmp[lado].desde = d;
+  _asisCmp[lado].hasta = h;
+}
+
+function renderAsisComparar() {
+  const rangoA = _asisRango(_asisCmp.A.period, _asisCmp.A.desde, _asisCmp.A.hasta);
+  const rangoB = _asisRango(_asisCmp.B.period, _asisCmp.B.desde, _asisCmp.B.hasta);
+  if (!rangoA || !rangoB) { toast('Selecciona un rango de fechas válido en los dos periodos', true); return; }
+
+  const todas = _asisTodasLasVentas();
+  const setA = new Map();
+  const setB = new Map();
+  todas.forEach(v => {
+    if (v.fecha >= rangoA.desde && v.fecha <= rangoA.hasta) setA.set(v.key, { nombre: v.nombre, tel: v.tel });
+    if (v.fecha >= rangoB.desde && v.fecha <= rangoB.hasta) setB.set(v.key, { nombre: v.nombre, tel: v.tel });
+  });
+
+  const repitieron = [], nuevos = [], faltaron = [];
+  setB.forEach((info, key) => { if (setA.has(key)) repitieron.push(info); else nuevos.push(info); });
+  setA.forEach((info, key) => { if (!setB.has(key)) faltaron.push(info); });
+  _asisCmpData = { faltaron, repitieron, nuevos };
+
+  document.getElementById('asis-cmp-kpis').innerHTML = `
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ef476f"></div><div class="cd-kpi-icon">🔴</div><div class="cd-kpi-val">${faltaron.length}</div><div class="cd-kpi-label">Faltaron</div><div class="cd-kpi-sub">Vinieron en A, no volvieron en B</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#06d6a0"></div><div class="cd-kpi-icon">🟢</div><div class="cd-kpi-val">${repitieron.length}</div><div class="cd-kpi-label">Repitieron</div><div class="cd-kpi-sub">Vinieron en A y en B</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#00b4d8"></div><div class="cd-kpi-icon">🆕</div><div class="cd-kpi-val">${nuevos.length}</div><div class="cd-kpi-label">Nuevos en B</div><div class="cd-kpi-sub">No habían venido en A</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ffd166"></div><div class="cd-kpi-icon">👥</div><div class="cd-kpi-val">${setB.size}</div><div class="cd-kpi-label">Total en B</div><div class="cd-kpi-sub">${setA.size} clientes vinieron en A</div></div>
+  `;
+
+  document.getElementById('asis-cmp-detalle-card').style.display = '';
+  setAsisCmpTab(_asisCmpTabActiva);
+}
+
+function setAsisCmpTab(cat) {
+  _asisCmpTabActiva = cat;
+  document.querySelectorAll('#asis-cmp-tabs .asis-result-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  const list = _asisCmpData[cat] || [];
+  const cont = document.getElementById('asis-cmp-list');
+  if (!cont) return;
+  if (list.length === 0) {
+    cont.innerHTML = `<div class="empty-state" style="padding:24px"><p>Sin clientes en esta categoría.</p></div>`;
+    return;
+  }
+  cont.innerHTML = [...list]
+    .sort((a,b) => a.nombre.localeCompare(b.nombre))
+    .map(c => `<div class="asis-name-row"><span class="nombre">${escHtml(c.nombre)}</span><span class="meta">${escHtml(c.tel) || '—'}</span></div>`)
+    .join('');
+}
+
+// ── Vista: Inactivos ────────────────────────────────────────
+let _asisInactCanal = 'ambos';
+
+function setAsisInactCanal(canal) {
+  _asisInactCanal = canal;
+  document.querySelectorAll('#asis-inact-canal-btns .cd-seg').forEach(b => b.classList.toggle('active', b.dataset.canal === canal));
+  renderAsisInactivos();
+}
+
+function renderAsisInactivos() {
+  const tbody  = document.getElementById('asis-inact-tbody');
+  const emptyEl= document.getElementById('asis-inact-empty');
+  const kpisEl = document.getElementById('asis-inact-kpis');
+  if (!tbody) return;
+
+  let ventas = _asisTodasLasVentas();
+  if (_asisInactCanal !== 'ambos') ventas = ventas.filter(v => v.canal === _asisInactCanal);
+
+  const map = new Map();
+  ventas.forEach(v => {
+    if (!map.has(v.key)) map.set(v.key, { nombre: v.nombre, tel: v.tel, fechas: [] });
+    map.get(v.key).fechas.push(v.fecha);
+  });
+
+  const now = Date.now();
+  const filas = [];
+  map.forEach(c => {
+    if (c.fechas.length < 2) return; // se necesitan al menos 2 compras para calcular una frecuencia
+    c.fechas.sort((a,b) => a - b);
+    const intervalos = [];
+    for (let i = 1; i < c.fechas.length; i++) intervalos.push((c.fechas[i] - c.fechas[i-1]) / 864e5);
+    const freqProm = intervalos.reduce((s,v) => s+v, 0) / intervalos.length;
+    const ultima = c.fechas[c.fechas.length - 1];
+    const diasSinComprar = (now - ultima.getTime()) / 864e5;
+    // Umbrales relativos a la frecuencia habitual de cada cliente (con piso mínimo para no marcar por ruido)
+    const umbralAtrasado    = Math.max(freqProm * 1.5, freqProm + 2);
+    const umbralMuyAtrasado = Math.max(freqProm * 2.5, freqProm + 5);
+    if (diasSinComprar < umbralAtrasado) return; // al día — no se muestra
+    filas.push({
+      nombre: c.nombre, tel: c.tel, compras: c.fechas.length,
+      freqProm, ultima, diasSinComprar,
+      estado: diasSinComprar >= umbralMuyAtrasado ? 'muy' : 'atrasado',
+    });
+  });
+
+  filas.sort((a,b) => (b.diasSinComprar - b.freqProm) - (a.diasSinComprar - a.freqProm));
+
+  const muyAtrasados = filas.filter(f => f.estado === 'muy').length;
+  kpisEl.innerHTML = `
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ef476f"></div><div class="cd-kpi-icon">🔴</div><div class="cd-kpi-val">${muyAtrasados}</div><div class="cd-kpi-label">Muy atrasados</div><div class="cd-kpi-sub">Más del doble de su frecuencia habitual</div></div>
+    <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ffd166"></div><div class="cd-kpi-icon">🟡</div><div class="cd-kpi-val">${filas.length - muyAtrasados}</div><div class="cd-kpi-label">Atrasados</div><div class="cd-kpi-sub">Sobrepasaron su frecuencia habitual</div></div>
+  `;
+
+  if (filas.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  tbody.innerHTML = filas.map(f => `
+    <tr>
+      <td><strong>${escHtml(f.nombre)}</strong></td>
+      <td>${escHtml(f.tel) || '—'}</td>
+      <td style="font-weight:600;color:var(--teal)">${f.compras}</td>
+      <td>cada ${Math.round(f.freqProm)} días</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${f.ultima.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</td>
+      <td style="font-weight:600">${Math.round(f.diasSinComprar)} días</td>
+      <td>${f.estado === 'muy' ? '<span class="badge badge-coral">🔴 Muy atrasado</span>' : '<span class="badge badge-gold">🟡 Atrasado</span>'}</td>
+    </tr>
+  `).join('');
+}
 
 function _getPrevPeriodLists() {
   // Devuelve [ordenesPrev, mayoristasPrev] del período equivalente anterior
@@ -11421,6 +12183,9 @@ function _guardarFormularioEnSesion() {
     const cc      = document.getElementById('cliente-cc')?.value     || '';
     const nota    = document.getElementById('nota-input')?.value     || '';
     const pago    = document.getElementById('pago-input')?.value     || '';
+    const pagoEfectivo = document.getElementById('pago-input-efectivo')?.value || '';
+    const pagoNequi    = document.getElementById('pago-input-nequi')?.value    || '';
+    const metodoPago   = _metodoPago;
     const especies = {};
     ESPECIES.forEach(e => {
       const qty   = document.getElementById(`qty-${e.id}`)?.value   || '';
@@ -11429,7 +12194,7 @@ function _guardarFormularioEnSesion() {
       const especieOtro = e.id === 'otro' ? (document.getElementById('especie-otro')?.value || '') : null;
       if (qty) { especies[e.id] = { qty, ev, precio, especieOtro }; }
     });
-    const saved = { nombre, tel, cc, nota, pago, especies };
+    const saved = { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especies };
     safeSessionStorage.setItem('aquacot_form_backup', JSON.stringify(saved));
   } catch(e) {}
 }
@@ -11449,6 +12214,9 @@ function _restaurarFormularioDesdeSesion() {
     if (saved.cc)     { const el = document.getElementById('cliente-cc');     if (el) el.value = saved.cc; }
     if (saved.nota)   { const el = document.getElementById('nota-input');     if (el) el.value = saved.nota; }
     if (saved.pago)   { const el = document.getElementById('pago-input');     if (el) el.value = saved.pago; }
+    if (saved.pagoEfectivo) { const el = document.getElementById('pago-input-efectivo'); if (el) el.value = saved.pagoEfectivo; }
+    if (saved.pagoNequi)    { const el = document.getElementById('pago-input-nequi');    if (el) el.value = saved.pagoNequi; }
+    if (saved.metodoPago)   { setMetodoPago(saved.metodoPago); }
     Object.entries(saved.especies || {}).forEach(([id, data]) => {
       const qtyEl   = document.getElementById(`qty-${id}`);
       const evEl    = document.getElementById(`ev-${id}`);
@@ -11496,7 +12264,7 @@ renderOrdenesEnEspera();
 _evaluarGeneroCliente();
 
 // Pestañas protegidas — declaradas aquí para evitar TDZ en restoreLastTab()
-const _TABS_PROTEGIDAS   = ['dashboard', 'clientes-dash'];
+const _TABS_PROTEGIDAS   = ['dashboard', 'clientes-dash', 'asistencia'];
 let   _tabsDesbloqueadas = false;
 let   _tabPendiente      = null;
 const _origShowTab       = showTab;  // alias antes de restoreLastTab()
