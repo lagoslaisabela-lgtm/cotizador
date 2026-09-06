@@ -2809,13 +2809,13 @@
 
   /* KPI strip */
   .cd-kpis {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px; margin-bottom: 18px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px; margin-bottom: 18px;
   }
   .cd-kpi {
     background: var(--card-bg); border: 1px solid var(--card-border);
-    border-radius: var(--radius-sm); padding: 14px 16px;
-    display: flex; flex-direction: column; gap: 4px;
+    border-radius: var(--radius-sm); padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 6px;
     position: relative; overflow: hidden;
     transition: transform 0.18s, box-shadow 0.18s;
   }
@@ -2824,13 +2824,14 @@
     position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
     border-radius: 3px 0 0 3px;
   }
-  .cd-kpi-icon { font-size: 22px; margin-bottom: 2px; }
+  .cd-kpi-icon { font-size: 26px; margin-bottom: 2px; }
   .cd-kpi-val {
-    font-size: 22px; font-weight: 800; color: var(--text-primary);
-    font-family: 'Roboto Mono', monospace; line-height: 1.1;
+    font-size: 26px; font-weight: 800; color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace; line-height: 1.15;
+    overflow-wrap: anywhere; word-break: break-word;
   }
-  .cd-kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
-  .cd-kpi-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .cd-kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+  .cd-kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 
   /* Cards grid */
   .cd-grid-2 {
@@ -3010,7 +3011,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.1.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.3.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -4489,7 +4490,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.1.0';
+const APP_VERSION = '6.3.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4735,7 +4736,10 @@ function buildMaySpeciesGrid() {
         </label>
       </div>
       <div class="species-subtotal">
-        <span id="may-sub-label-${e.id}">— lb</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span id="may-sub-label-${e.id}">— lb</span>
+          <span id="may-sub-expr-${e.id}" class="qty-expr-result" style="display:none"></span>
+        </div>
         <span id="may-sub-${e.id}">$0</span>
       </div>
     </div>
@@ -4746,7 +4750,8 @@ function calcularMayorista() {
   let totalLibras = 0, total = 0, totalEviscerado = 0;
 
   ESPECIES.forEach(e => {
-    const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
+    const qtyRaw = document.getElementById(`may-qty-${e.id}`)?.value || '';
+    const { valor: qty, esExpr } = evaluarLbs(qtyRaw);
     const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
     const ev     = document.getElementById(`may-ev-${e.id}`)?.checked || false;
     const subPescado  = qty * precio;
@@ -4758,10 +4763,19 @@ function calcularMayorista() {
 
     const card = document.getElementById(`may-sc-${e.id}`);
     if (card) card.classList.toggle('has-value', qty > 0 && precio > 0);
-    const subEl = document.getElementById(`may-sub-${e.id}`);
-    const lblEl = document.getElementById(`may-sub-label-${e.id}`);
+    const subEl  = document.getElementById(`may-sub-${e.id}`);
+    const lblEl  = document.getElementById(`may-sub-label-${e.id}`);
+    const exprEl = document.getElementById(`may-sub-expr-${e.id}`);
     if (subEl) subEl.textContent = fmt(sub);
-    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb${ev ? ' 🔪' : ''}` : '— lb';
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty.toFixed(2).replace(/\.?0+$/, '')} lb${ev ? ' 🔪' : ''}` : '— lb';
+    if (exprEl) {
+      if (esExpr && qty > 0) {
+        exprEl.textContent = `= ${qty.toFixed(2).replace(/\.?0+$/, '')} lb`;
+        exprEl.style.display = 'block';
+      } else {
+        exprEl.style.display = 'none';
+      }
+    }
   });
 
   const totalEl   = document.getElementById('may-total-display');
@@ -4790,7 +4804,7 @@ function guardarVentaMayorista() {
   let totalLibras = 0, total = 0, totalEviscerado = 0;
 
   ESPECIES.forEach(e => {
-    const qty    = parseFloat(document.getElementById(`may-qty-${e.id}`)?.value)    || 0;
+    const { valor: qty } = evaluarLbs(document.getElementById(`may-qty-${e.id}`)?.value || '');
     const precio = parseFloat(document.getElementById(`may-precio-${e.id}`)?.value) || 0;
     if (qty <= 0) return;
     const ev           = document.getElementById(`may-ev-${e.id}`)?.checked || false;
@@ -4879,8 +4893,10 @@ function resetMayorista(silent = false) {
     if (card) card.classList.remove('has-value');
     const subEl = document.getElementById(`may-sub-${e.id}`);
     const lblEl = document.getElementById(`may-sub-label-${e.id}`);
+    const exprEl = document.getElementById(`may-sub-expr-${e.id}`);
     if (subEl) subEl.textContent = '$0';
     if (lblEl) lblEl.textContent = '— lb';
+    if (exprEl) exprEl.style.display = 'none';
   });
   const totalEl  = document.getElementById('may-total-display');
   const detailEl = document.getElementById('may-total-details');
@@ -5087,7 +5103,10 @@ function abrirEdicionMayorista(id) {
             🔪 Eviscerado
           </label>
           <div class="may-subtotal" style="border:none;padding:0;margin:0">
-            <span id="may-edit-sub-label-${e.id}">${qty ? qty + ' lb' : '— lb'}</span>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span id="may-edit-sub-label-${e.id}">${qty ? qty + ' lb' : '— lb'}</span>
+              <span id="may-edit-sub-expr-${e.id}" class="qty-expr-result" style="display:none"></span>
+            </div>
             <span id="may-edit-sub-${e.id}">${item ? fmt(item.subTotal) : '$0'}</span>
           </div>
         </div>
@@ -5119,7 +5138,7 @@ function abrirEdicionMayorista(id) {
 function calcularMayEdit() {
   let total = 0, totalEviscerado = 0;
   ESPECIES.forEach(e => {
-    const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
+    const { valor: qty, esExpr } = evaluarLbs(document.getElementById(`may-edit-qty-${e.id}`)?.value || '');
     const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
     const ev     = document.getElementById(`may-edit-ev-${e.id}`)?.checked || false;
     const subPescado   = qty * precio;
@@ -5127,11 +5146,20 @@ function calcularMayEdit() {
     const sub          = subPescado + subEv;
     total           += sub;
     totalEviscerado += subEv;
-    const subEl = document.getElementById(`may-edit-sub-${e.id}`);
-    const lblEl = document.getElementById(`may-edit-sub-label-${e.id}`);
-    const card  = document.getElementById(`may-edit-sc-${e.id}`);
+    const subEl  = document.getElementById(`may-edit-sub-${e.id}`);
+    const lblEl  = document.getElementById(`may-edit-sub-label-${e.id}`);
+    const exprEl = document.getElementById(`may-edit-sub-expr-${e.id}`);
+    const card   = document.getElementById(`may-edit-sc-${e.id}`);
     if (subEl) subEl.textContent = fmt(sub);
-    if (lblEl) lblEl.textContent = qty > 0 ? `${qty} lb${ev ? ' 🔪' : ''}` : '— lb';
+    if (lblEl) lblEl.textContent = qty > 0 ? `${qty.toFixed(2).replace(/\.?0+$/, '')} lb${ev ? ' 🔪' : ''}` : '— lb';
+    if (exprEl) {
+      if (esExpr && qty > 0) {
+        exprEl.textContent = `= ${qty.toFixed(2).replace(/\.?0+$/, '')} lb`;
+        exprEl.style.display = 'block';
+      } else {
+        exprEl.style.display = 'none';
+      }
+    }
     if (card)  card.classList.toggle('has-value', qty > 0 && precio > 0);
   });
   const totalEl = document.getElementById('may-edit-total');
@@ -5160,7 +5188,7 @@ function guardarEdicionMayorista() {
   const items = [];
   let totalLibras = 0, total = 0, totalEviscerado = 0;
   ESPECIES.forEach(e => {
-    const qty    = parseFloat(document.getElementById(`may-edit-qty-${e.id}`)?.value)    || 0;
+    const { valor: qty } = evaluarLbs(document.getElementById(`may-edit-qty-${e.id}`)?.value || '');
     const precio = parseFloat(document.getElementById(`may-edit-precio-${e.id}`)?.value) || 0;
     if (qty <= 0) return;
     const ev           = document.getElementById(`may-edit-ev-${e.id}`)?.checked || false;
@@ -9249,14 +9277,14 @@ function silentRenew() {
       // Solo bloquear la UI después de varios fallos consecutivos y unos minutos,
       // para evitar falsos positivos por conectividad momentánea o timers
       // congelados en móvil/tablet. Mientras tanto se sigue reintentando solo.
-      if (_syncFailCount >= 3) {
+      if (_syncFailCount >= 5) {
         showSyncBlock('Sesión cerrada', 'La sesión de Google se cerró y no pudo renovarse automáticamente.');
       }
-      // Reintento automático en 2.° plano: 30s, 60s, 90s… tope de 5 min.
+      // Reintento automático en 2.° plano: 30s, 60s, 90s… tope de 8 min.
       // Así, si vuelve la conexión o el navegador libera las cookies, la app
       // se reconecta sola sin que el usuario tenga que tocar nada.
       if (_autoRetryTimer) clearTimeout(_autoRetryTimer);
-      const backoff = Math.min(30000 * _syncFailCount, 5 * 60 * 1000);
+      const backoff = Math.min(30000 * _syncFailCount, 8 * 60 * 1000);
       _autoRetryTimer = setTimeout(silentRenew, backoff);
       return;
     }
@@ -9585,9 +9613,18 @@ function scheduleDriveSync() {
       const now = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
       setDriveStatus('connected', '✓ Drive sincronizado', now);
     } catch(e) {
-      setDriveStatus('error', 'Error al guardar');
-      _setSyncPendingBadge(false);
-      // No bloquear la app — se reintentará solo en el próximo auto-sync
+      // FIX: antes syncPending se quedaba en `true` para siempre tras un fallo
+      // (ej. se cortó la conexión mientras subía a Drive). Como autoSync()
+      // se salta por completo cuando syncPending===true, la sincronización con
+      // Drive quedaba "atascada" en silencio hasta que el usuario generara
+      // otro cambio local. Los datos locales NUNCA se pierden (ya están en
+      // localStorage desde antes de llamar a scheduleDriveSync), pero sin este
+      // reset el respaldo en la nube podía quedar desactualizado indefinidamente.
+      // Al resetear aquí, el próximo ciclo de autoSync (cada 20s) detecta que
+      // sigue habiendo diferencias y reintenta la subida automáticamente.
+      syncPending = false;
+      setDriveStatus('error', 'Error al guardar — reintentando…');
+      _setSyncPendingBadge(true);
     }
   }, 1500);
 }
@@ -10001,7 +10038,15 @@ window.addEventListener('resize', () => {
   document.getElementById('ac-may-cc-list').style.display = 'none';
   const cliEditList = document.getElementById('ac-cli-edit-list');
   if (cliEditList) cliEditList.style.display = 'none';
+
+  // Re-ajustar tamaño de los valores de las tarjetas KPI (Perfiles/Asistencia)
+  // al cambiar el ancho de la ventana, ya que el grid reflowea las columnas.
+  if (_kpiResizeDebounce) clearTimeout(_kpiResizeDebounce);
+  _kpiResizeDebounce = setTimeout(() => {
+    document.querySelectorAll('.cd-kpis').forEach(el => _cdFitKpiValues(el));
+  }, 150);
 });
+let _kpiResizeDebounce = null;
 
 // ─────────────────────────────────────────────
 //  AUTOCOMPLETE TELÉFONO
@@ -11658,6 +11703,26 @@ function renderClientesDash() {
   _cdRenderRanking(clts);
 }
 
+// Ajusta el tamaño de fuente de los valores dentro de un contenedor de tarjetas
+// KPI (.cd-kpi-val) para que nunca se corten ni desborden, sin importar qué tan
+// grande sea el número/texto. Solo reduce las que realmente no caben — el resto
+// conserva el tamaño grande definido en CSS.
+function _cdFitKpiValues(containerEl) {
+  if (!containerEl) return;
+  requestAnimationFrame(() => {
+    containerEl.querySelectorAll('.cd-kpi-val').forEach(el => {
+      el.style.fontSize = ''; // reset al tamaño base del CSS antes de medir
+      let fontSize = parseFloat(getComputedStyle(el).fontSize);
+      let guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && fontSize > 14 && guard < 14) {
+        fontSize -= 1;
+        el.style.fontSize = fontSize + 'px';
+        guard++;
+      }
+    });
+  });
+}
+
 // ── KPIs ─────────────────────────────────────────────────
 
 function _cdRenderKPIs(clts) {
@@ -11696,6 +11761,7 @@ function _cdRenderKPIs(clts) {
       <div class="cd-kpi-label">${k.label}</div>
       <div class="cd-kpi-sub">${k.sub}</div>
     </div>`).join('');
+  _cdFitKpiValues(document.getElementById('cd-kpis'));
 }
 
 // ── Utilidad canvas ───────────────────────────────────────
@@ -12398,6 +12464,7 @@ function renderAsisPeriodo() {
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#9d4edd"></div><div class="cd-kpi-icon">🛒</div><div class="cd-kpi-val">${totalVisitas}</div><div class="cd-kpi-label">Visitas / órdenes</div><div class="cd-kpi-sub">${promVisitas.toFixed(1)} prom. por cliente</div></div>
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#06d6a0"></div><div class="cd-kpi-icon">💵</div><div class="cd-kpi-val">${fmtShort(totalFacturado)}</div><div class="cd-kpi-label">Total facturado</div><div class="cd-kpi-sub">${fmtShort(clientesArr.length > 0 ? totalFacturado/clientesArr.length : 0)} prom. por cliente</div></div>
   `;
+  _cdFitKpiValues(kpisEl);
 
   if (clientesArr.length === 0) {
     tbody.innerHTML = '';
@@ -12478,6 +12545,7 @@ function renderAsisComparar() {
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#00b4d8"></div><div class="cd-kpi-icon">🆕</div><div class="cd-kpi-val">${nuevos.length}</div><div class="cd-kpi-label">Nuevos en B</div><div class="cd-kpi-sub">No habían venido en A</div></div>
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ffd166"></div><div class="cd-kpi-icon">👥</div><div class="cd-kpi-val">${setB.size}</div><div class="cd-kpi-label">Total en B</div><div class="cd-kpi-sub">${setA.size} clientes vinieron en A</div></div>
   `;
+  _cdFitKpiValues(document.getElementById('asis-cmp-kpis'));
 
   document.getElementById('asis-cmp-detalle-card').style.display = '';
   setAsisCmpTab(_asisCmpTabActiva);
@@ -12551,6 +12619,7 @@ function renderAsisInactivos() {
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ef476f"></div><div class="cd-kpi-icon">🔴</div><div class="cd-kpi-val">${muyAtrasados}</div><div class="cd-kpi-label">Muy atrasados</div><div class="cd-kpi-sub">Más del doble de su frecuencia habitual</div></div>
     <div class="cd-kpi"><div class="cd-kpi-accent" style="background:#ffd166"></div><div class="cd-kpi-icon">🟡</div><div class="cd-kpi-val">${filas.length - muyAtrasados}</div><div class="cd-kpi-label">Atrasados</div><div class="cd-kpi-sub">Sobrepasaron su frecuencia habitual</div></div>
   `;
+  _cdFitKpiValues(kpisEl);
 
   if (filas.length === 0) {
     tbody.innerHTML = '';
@@ -12729,9 +12798,9 @@ function showSyncBlock(title, msg) {
   // Grace period: no bloquear la UI por una falla aislada (ej. tablet/móvil que vuelve
   // de background o tiene wifi inestable). Solo mostrar si llevamos varios minutos con
   // fallos continuos O si ya van 3 fallos consecutivos de renovación.
-  if (_syncFailCount < 3) {
+  if (_syncFailCount < 5) {
     if (!window._syncBlockGraceStart) window._syncBlockGraceStart = Date.now();
-    if (Date.now() - window._syncBlockGraceStart < 5 * 60 * 1000) {
+    if (Date.now() - window._syncBlockGraceStart < 10 * 60 * 1000) {
       // Todavía en periodo de gracia: mostrar advertencia suave en el botón, no bloquear
       setDriveStatus('error', '⚠️ Reconectando…');
       return;
