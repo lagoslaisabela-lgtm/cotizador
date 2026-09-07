@@ -117,7 +117,7 @@
     border: 1px solid var(--card-border);
     border-radius: var(--radius);
     width: 100%;
-    max-width: 380px;
+    max-width: 460px;
     max-height: 82vh;
     display: flex;
     flex-direction: column;
@@ -2136,6 +2136,38 @@
   .ev-empty .icon { font-size: 36px; margin-bottom: 10px; }
   @media (max-width: 600px) { .ev-cards-grid { grid-template-columns: 1fr; } }
 
+  /* Paginación de completadas (normal y fullscreen) */
+  .ev-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--card-border);
+  }
+  .ev-page-btn {
+    padding: 8px 16px;
+    background: rgba(0,180,216,0.1);
+    border: 1px solid rgba(0,180,216,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--teal-pale);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ev-page-btn:hover:not(:disabled) { background: rgba(0,180,216,0.2); }
+  .ev-page-btn:disabled { opacity: 0.35; cursor: default; }
+  .ev-page-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   /* ──────────────── MAYORISTA ──────────────── */
   .may-species-card {
     background: var(--card-bg);
@@ -3203,7 +3235,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.4.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.5.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3635,16 +3667,22 @@
 
     <div class="ev-divider"></div>
 
-    <!-- Completadas -->
+    <!-- Completadas: colapsadas por defecto — las tarjetas solo se construyen
+         y pintan en el DOM cuando el usuario despliega la lista (carga
+         perezosa), y se muestran paginadas para no sobrecargar la vista. -->
     <div class="section" id="ev-completadas-wrap">
-      <div class="ev-section-title done-title">
-        ✅ Completadas
+      <button class="ev-fs-collapse-btn" id="ev-completadas-toggle-btn" onclick="toggleEvCompletadas()">
+        <span>✅ Completadas</span>
         <span class="ev-count" id="ev-badge-completadas">0</span>
-      </div>
-      <div class="ev-cards-grid" id="ev-cards-completadas"></div>
-      <div class="ev-empty" id="ev-empty-completadas" style="display:none">
-        <div class="icon">🔪</div>
-        <p>Aún no hay órdenes procesadas.</p>
+        <span class="ev-fs-collapse-arrow" id="ev-completadas-arrow">▶</span>
+      </button>
+      <div id="ev-completadas-body" style="display:none;margin-top:16px">
+        <div class="ev-cards-grid" id="ev-cards-completadas"></div>
+        <div class="ev-empty" id="ev-empty-completadas" style="display:none">
+          <div class="icon">🔪</div>
+          <p>Aún no hay órdenes procesadas.</p>
+        </div>
+        <div class="ev-pagination" id="ev-completadas-pagination" style="display:none"></div>
       </div>
     </div>
 
@@ -4149,13 +4187,15 @@
       </div>
     </div>
 
-    <!-- Completadas expandidas (solo cuando están abiertas se muestran aquí dentro del scroll) -->
+    <!-- Completadas expandidas (solo cuando están abiertas se construyen y
+         se muestran aquí dentro del scroll, con paginación) -->
     <div id="ev-fs-completadas-body" style="display:none;margin-top:4px">
       <div class="ev-divider"></div>
       <div class="ev-cards-grid" id="ev-fs-cards-completadas"></div>
       <div class="ev-empty" id="ev-fs-empty-completadas" style="display:none">
         <div class="icon">🔪</div><p>Aún no hay órdenes procesadas.</p>
       </div>
+      <div class="ev-pagination" id="ev-fs-completadas-pagination" style="display:none"></div>
     </div>
 
   </div><!-- /ev-fs-scroll-area -->
@@ -4713,7 +4753,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.4.0';
+const APP_VERSION = '6.5.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -10628,6 +10668,14 @@ function getEvPeriodLabel() {
   }
 }
 
+// Cuántas tarjetas de completadas se muestran por página (normal y fullscreen)
+const EV_COMPLETADAS_PAGE_SIZE = 8;
+
+// Estado de la lista "Completadas" de la página normal de Eviscerado
+let evCompletadasOpen = false;   // si está desplegada
+let evCompletadasPage = 1;       // página actual
+let _evCompletadasList = [];     // caché de la lista filtrada, para paginar sin recalcular
+
 function renderEviscerado() {
   const done = getEvDone();
   const conEv = getEvFiltered();
@@ -10652,18 +10700,80 @@ function renderEviscerado() {
     gridP.innerHTML = pendientes.map(c => buildEvCard(c, false)).join('');
   }
 
-  const gridC  = document.getElementById('ev-cards-completadas');
-  const emptyC = document.getElementById('ev-empty-completadas');
-  if (completadas.length === 0) {
-    gridC.innerHTML = '';
-    emptyC.style.display = 'block';
+  // Completadas: carga perezosa — mientras la lista esté colapsada no se
+  // construye ni una sola tarjeta HTML; solo se pintan (paginadas) cuando
+  // el usuario la despliega con toggleEvCompletadas().
+  _evCompletadasList = completadas;
+  if (evCompletadasOpen) {
+    renderEvCompletadasPage();
   } else {
-    emptyC.style.display = 'none';
-    gridC.innerHTML = completadas.map(c => buildEvCard(c, true)).join('');
+    document.getElementById('ev-cards-completadas').innerHTML = '';
+    document.getElementById('ev-empty-completadas').style.display = 'none';
+    const pagEl = document.getElementById('ev-completadas-pagination');
+    if (pagEl) pagEl.style.display = 'none';
   }
 
   // Actualizar estimador
   calcularEstimadorEv();
+}
+
+// Pinta la página actual de "Completadas" (página normal) a partir de la
+// caché _evCompletadasList — se llama solo cuando la lista está desplegada.
+function renderEvCompletadasPage() {
+  const list   = _evCompletadasList;
+  const gridC  = document.getElementById('ev-cards-completadas');
+  const emptyC = document.getElementById('ev-empty-completadas');
+  const pagEl  = document.getElementById('ev-completadas-pagination');
+
+  if (list.length === 0) {
+    gridC.innerHTML = '';
+    emptyC.style.display = 'block';
+    if (pagEl) pagEl.style.display = 'none';
+    return;
+  }
+  emptyC.style.display = 'none';
+
+  const totalPages = Math.max(1, Math.ceil(list.length / EV_COMPLETADAS_PAGE_SIZE));
+  if (evCompletadasPage > totalPages) evCompletadasPage = totalPages;
+  if (evCompletadasPage < 1) evCompletadasPage = 1;
+
+  const start = (evCompletadasPage - 1) * EV_COMPLETADAS_PAGE_SIZE;
+  gridC.innerHTML = list.slice(start, start + EV_COMPLETADAS_PAGE_SIZE)
+    .map(c => buildEvCard(c, true)).join('');
+
+  if (pagEl) {
+    pagEl.style.display = totalPages > 1 ? 'flex' : 'none';
+    pagEl.innerHTML = buildEvPaginationHtml(evCompletadasPage, totalPages, 'evCompletadasGoPage');
+  }
+}
+
+function evCompletadasGoPage(delta) {
+  evCompletadasPage += delta;
+  renderEvCompletadasPage();
+}
+
+// Despliega/colapsa la lista de completadas de la página normal. Solo al
+// desplegar se construyen y pintan las tarjetas (carga perezosa).
+function toggleEvCompletadas() {
+  evCompletadasOpen = !evCompletadasOpen;
+  const body  = document.getElementById('ev-completadas-body');
+  const arrow = document.getElementById('ev-completadas-arrow');
+  body.style.display = evCompletadasOpen ? 'block' : 'none';
+  if (arrow) arrow.classList.toggle('open', evCompletadasOpen);
+  if (evCompletadasOpen) {
+    evCompletadasPage = 1;
+    renderEvCompletadasPage();
+  }
+}
+
+// Genera el HTML de los controles de paginación (compartido entre la vista
+// normal y la de pantalla completa).
+function buildEvPaginationHtml(page, totalPages, gotoFnName) {
+  return `
+    <button class="ev-page-btn" ${page <= 1 ? 'disabled' : ''} onclick="${gotoFnName}(-1)">‹ Anterior</button>
+    <span class="ev-page-info">Página ${page} de ${totalPages}</span>
+    <button class="ev-page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="${gotoFnName}(1)">Siguiente ›</button>
+  `;
 }
 
 function buildEvCard(c, isDone) {
@@ -11238,6 +11348,10 @@ let evFsCountdownInterval = null;
 let evFsTickerSec = null;
 let evFsTickerMin = null;
 
+// Estado de la lista "Completadas" en pantalla completa
+let evFsCompletadasPage = 1;
+let _evFsCompletadasList = [];
+
 function toggleEvFsCompletadas() {
   const body      = document.getElementById('ev-fs-completadas-body');
   const arrow     = document.getElementById('ev-fs-collapse-arrow');
@@ -11245,6 +11359,12 @@ function toggleEvFsCompletadas() {
   const open      = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
   arrow.classList.toggle('open', open);
+  // Carga perezosa: las tarjetas de completadas solo se construyen y
+  // pintan (paginadas) cuando el usuario despliega la lista.
+  if (open) {
+    evFsCompletadasPage = 1;
+    renderEvFsCompletadasPage();
+  }
   // Al abrir: llevar el scroll justo al inicio de "Completadas" (donde
   // está la orden más reciente, por ser la primera del listado ordenado
   // de más nueva a más vieja) — no hasta el fondo del todo, para que el
@@ -11254,6 +11374,41 @@ function toggleEvFsCompletadas() {
       body.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }, 40); // pequeño delay para que el DOM se actualice
   }
+}
+
+// Pinta la página actual de "Completadas" en pantalla completa — solo se
+// llama cuando la lista está desplegada.
+function renderEvFsCompletadasPage() {
+  const list   = _evFsCompletadasList;
+  const gridC  = document.getElementById('ev-fs-cards-completadas');
+  const emptyC = document.getElementById('ev-fs-empty-completadas');
+  const pagEl  = document.getElementById('ev-fs-completadas-pagination');
+
+  if (list.length === 0) {
+    gridC.innerHTML = '';
+    emptyC.style.display = 'block';
+    if (pagEl) pagEl.style.display = 'none';
+    return;
+  }
+  emptyC.style.display = 'none';
+
+  const totalPages = Math.max(1, Math.ceil(list.length / EV_COMPLETADAS_PAGE_SIZE));
+  if (evFsCompletadasPage > totalPages) evFsCompletadasPage = totalPages;
+  if (evFsCompletadasPage < 1) evFsCompletadasPage = 1;
+
+  const start = (evFsCompletadasPage - 1) * EV_COMPLETADAS_PAGE_SIZE;
+  gridC.innerHTML = list.slice(start, start + EV_COMPLETADAS_PAGE_SIZE)
+    .map(c => buildEvCard(c, true)).join('');
+
+  if (pagEl) {
+    pagEl.style.display = totalPages > 1 ? 'flex' : 'none';
+    pagEl.innerHTML = buildEvPaginationHtml(evFsCompletadasPage, totalPages, 'evFsCompletadasGoPage');
+  }
+}
+
+function evFsCompletadasGoPage(delta) {
+  evFsCompletadasPage += delta;
+  renderEvFsCompletadasPage();
 }
 
 function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
@@ -11376,14 +11531,19 @@ function renderEvFullscreen() {
     gridP.innerHTML = pendientes.map(c => buildEvCard(c, false)).join('');
   }
 
-  // Cards completadas
-  const gridC  = document.getElementById('ev-fs-cards-completadas');
-  const emptyC = document.getElementById('ev-fs-empty-completadas');
-  if (completadas.length === 0) {
-    gridC.innerHTML = ''; emptyC.style.display = 'block';
+  // Cards completadas: carga perezosa — solo se construyen y pintan
+  // (paginadas) si la lista está desplegada; si está colapsada solo
+  // se actualiza el contador (badge) de arriba.
+  _evFsCompletadasList = completadas;
+  const bodyC = document.getElementById('ev-fs-completadas-body');
+  const fsCompletadasOpen = !!bodyC && bodyC.style.display !== 'none';
+  if (fsCompletadasOpen) {
+    renderEvFsCompletadasPage();
   } else {
-    emptyC.style.display = 'none';
-    gridC.innerHTML = completadas.map(c => buildEvCard(c, true)).join('');
+    document.getElementById('ev-fs-cards-completadas').innerHTML = '';
+    document.getElementById('ev-fs-empty-completadas').style.display = 'none';
+    const pagEl = document.getElementById('ev-fs-completadas-pagination');
+    if (pagEl) pagEl.style.display = 'none';
   }
 
   // Estimador en fullscreen (usa los mismos IDs del estimador principal pero prefijados con ev-fs-)
