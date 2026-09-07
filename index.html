@@ -243,7 +243,7 @@
     --surface:       #0d1f3c;
     --text-primary:  #e8f4f8;
     --text-secondary:#90b4c4;
-    --text-muted:    #4a7a8f;
+    --text-muted:    #5f93a8;
     --card-bg:       rgba(13,34,64,0.85);
     --card-border:   rgba(0,180,216,0.2);
     --input-bg:      rgba(10,22,40,0.8);
@@ -251,6 +251,13 @@
     --shadow-teal:   0 0 30px rgba(0,180,216,0.15);
     --radius:        14px;
     --radius-sm:     8px;
+
+    /* Escala tipográfica — números y KPIs comparten estos tamaños
+       para que el peso visual sea consistente entre pantallas */
+    --fs-num-sm:   16px;  /* valores pequeños en tarjetas compactas */
+    --fs-num-md:   20px;  /* valores secundarios */
+    --fs-num-lg:   26px;  /* KPIs / stat-cards estándar */
+    --fs-num-xl:   30px;  /* total principal de la cotización */
   }
 
 
@@ -276,15 +283,15 @@
         0deg,
         transparent,
         transparent 60px,
-        rgba(0,180,216,0.015) 60px,
-        rgba(0,180,216,0.015) 61px
+        rgba(0,180,216,0.03) 60px,
+        rgba(0,180,216,0.03) 61px
       ),
       repeating-linear-gradient(
         90deg,
         transparent,
         transparent 60px,
-        rgba(0,180,216,0.015) 60px,
-        rgba(0,180,216,0.015) 61px
+        rgba(0,180,216,0.03) 60px,
+        rgba(0,180,216,0.03) 61px
       );
     pointer-events: none;
     z-index: 0;
@@ -652,6 +659,89 @@
 
   input::placeholder { color: var(--text-muted); }
 
+  /* ──────────────── SELECTS (menús desplegables) ────────────────
+     Estilo base aplicado a TODO <select> de la app, para que el
+     recuadro cerrado sea consistente (fondo oscuro, borde redondeado,
+     flecha propia) sin depender de estilos inline repetidos por
+     cada instancia. Los selects dinámicos (creados por JS) también
+     lo heredan automáticamente al ser elementos <select> normales. */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size: 14px;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 8px 32px 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  select:hover  { border-color: rgba(0,180,216,0.5); }
+  select:focus  { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,216,0.18); }
+  select:disabled { opacity: 0.5; cursor: not-allowed; }
+  select option { background: var(--ocean-mid); color: var(--text-primary); }
+
+  /* Menú desplegable propio (reemplaza el popup nativo del <select>
+     para que también luzca con bordes redondeados y el tema oscuro,
+     ya que el popup nativo no se puede estilizar de forma confiable
+     entre navegadores). Ver enhanceNativeSelects() en el JS. */
+  .themed-select-menu {
+    position: fixed;
+    z-index: 3000;
+    background: var(--ocean-mid);
+    border: 1px solid rgba(0,180,216,0.35);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,180,216,0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+  }
+  .themed-select-menu.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .themed-select-option {
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.1s ease;
+  }
+  .themed-select-option:hover,
+  .themed-select-option.hovered {
+    background: rgba(0,180,216,0.15);
+  }
+  .themed-select-option.selected {
+    background: rgba(0,180,216,0.22);
+    color: var(--teal-pale);
+  }
+  .themed-select-option.disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+  .themed-select-menu::-webkit-scrollbar { width: 5px; }
+  .themed-select-menu::-webkit-scrollbar-track { background: transparent; }
+  .themed-select-menu::-webkit-scrollbar-thumb { background: rgba(0,180,216,0.35); border-radius: 4px; }
+
+
+
   /* ──────────────── SPECIES GRID ──────────────── */
   .species-grid {
     display: grid;
@@ -896,7 +986,7 @@
 
   .total-amount {
     font-family: 'Roboto Mono', monospace;
-    font-size: 30px;
+    font-size: var(--fs-num-xl);
     font-weight: 700;
     color: var(--teal-bright);
     letter-spacing: -0.5px;
@@ -1025,7 +1115,7 @@
   }
   .devuelta-amount {
     font-family: 'Roboto Mono', monospace;
-    font-size: 26px;
+    font-size: var(--fs-num-lg);
     font-weight: 700;
     transition: color 0.2s;
   }
@@ -1114,12 +1204,14 @@
 
   /* ──────────────── STAT CARDS ──────────────── */
   .stat-card {
+    --sc: var(--teal);
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius);
     padding: 20px;
     position: relative;
     overflow: hidden;
+    transition: border-color 0.22s, box-shadow 0.22s, transform 0.18s;
   }
 
   .stat-card::before {
@@ -1129,19 +1221,35 @@
     height: 2px;
   }
 
-  .stat-card.blue::before { background: linear-gradient(90deg, var(--teal), transparent); }
+  .stat-card.blue::before  { background: linear-gradient(90deg, var(--teal), transparent); }
   .stat-card.green::before { background: linear-gradient(90deg, var(--green), transparent); }
-  .stat-card.gold::before { background: linear-gradient(90deg, var(--gold), transparent); }
+  .stat-card.gold::before  { background: linear-gradient(90deg, var(--gold), transparent); }
   .stat-card.coral::before { background: linear-gradient(90deg, var(--coral), transparent); }
+
+  .stat-card.blue  { --sc: var(--teal); }
+  .stat-card.green { --sc: var(--green); }
+  .stat-card.gold  { --sc: var(--gold); }
+  .stat-card.coral { --sc: var(--coral); }
+
+  /* Mismo lenguaje de micro-interacción que .species-card, para que
+     todas las tarjetas "vivas" del sistema se sientan parte del mismo set */
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--sc) 50%, transparent);
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--sc) 18%, transparent);
+  }
 
   .stat-icon {
     font-size: 24px;
     margin-bottom: 12px;
+    transition: transform 0.18s;
   }
+
+  .stat-card:hover .stat-icon { transform: scale(1.12) rotate(-6deg); }
 
   .stat-value {
     font-family: 'Roboto Mono', monospace;
-    font-size: 26px;
+    font-size: var(--fs-num-lg);
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1;
@@ -1336,17 +1444,6 @@
     gap: 8px;
   }
   .fs-title-green { color: var(--green); }
-  .fs-count-badge {
-    background: rgba(6,214,160,0.15);
-    color: var(--green);
-    border-radius: 20px;
-    font-size: 11px;
-    padding: 1px 9px;
-    font-weight: 800;
-    margin-left: auto;
-    letter-spacing: 0;
-    text-transform: none;
-  }
   .fs-row {
     display: flex;
     justify-content: space-between;
@@ -1434,6 +1531,13 @@
   }
   .fab-add:hover { transform: scale(1.06); box-shadow: 0 10px 28px rgba(0,180,216,0.6); }
   .fab-add:active { transform: scale(0.96); }
+  /* Variante verde para acciones de exportación/descarga, distinta del "+" teal de agregar */
+  .fab-add.fab-export {
+    background: linear-gradient(135deg, var(--green), #05a87e);
+    box-shadow: 0 8px 24px rgba(6,214,160,0.4);
+    font-size: 22px;
+  }
+  .fab-add.fab-export:hover { box-shadow: 0 10px 28px rgba(6,214,160,0.55); }
   @media (max-width: 640px) {
     .fab-add { bottom: 18px; right: 18px; width: 52px; height: 52px; font-size: 24px; }
   }
@@ -1910,7 +2014,7 @@
   }
   .ev-card-row .label { color: var(--text-muted); font-size: 13px; }
   .ev-card-row .val { font-family: 'Roboto Mono', monospace; font-weight: 600; color: var(--teal-pale); }
-  .ev-card-row .val.big { font-size: 26px; color: var(--teal); }
+  .ev-card-row .val.big { font-size: var(--fs-num-lg); color: var(--teal); }
   .ev-species-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .ev-species-pill {
     background: rgba(0,180,216,0.1);
@@ -2754,7 +2858,7 @@
   }
   .cd-kpi-icon { font-size: 26px; margin-bottom: 2px; }
   .cd-kpi-val {
-    font-size: 26px; font-weight: 800; color: var(--text-primary);
+    font-size: var(--fs-num-lg); font-weight: 800; color: var(--text-primary);
     font-family: 'Roboto Mono', monospace; line-height: 1.15;
     overflow-wrap: anywhere; word-break: break-word;
   }
@@ -2909,7 +3013,99 @@
     animation: sbSlideUp 0.32s cubic-bezier(.25,.8,.25,1);
   }
   @keyframes sbSlideUp { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
-  #sync-block-icon { font-size: 56px; margin-bottom: 18px; line-height: 1; }
+
+  /* ── Ícono de insignia reutilizable para modales de alerta ──
+     Reemplaza los emojis por un set SVG coherente con el tema:
+     círculo con el color semántico (--ic) + trazo currentColor. */
+  .modal-icon-badge {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    background: color-mix(in srgb, var(--ic, var(--coral)) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ic, var(--coral)) 40%, transparent);
+    color: var(--ic, var(--coral));
+    flex-shrink: 0;
+  }
+  .modal-icon-badge svg { width: 30px; height: 30px; }
+  .modal-icon-badge.pulse { animation: lockPulse 2s ease-in-out infinite; }
+
+  /* ── Modales de acción puntual (confirmación, aviso, bloqueo) ──
+     Unifican lo que antes eran estilos inline sueltos con las mismas
+     variables (--radius, --card-bg) que el resto de la interfaz. */
+  .app-modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 1100;
+    background: var(--mo-bg, rgba(4,11,22,0.88));
+    backdrop-filter: blur(var(--mo-blur, 12px)) saturate(var(--mo-sat, 1));
+    -webkit-backdrop-filter: blur(var(--mo-blur, 12px)) saturate(var(--mo-sat, 1));
+    align-items: center; justify-content: center;
+    padding: 16px;
+    animation: sbFadeIn 0.2s ease;
+  }
+  .app-modal-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--mo-border, var(--card-border));
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    max-width: 400px; width: 92%;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    text-align: center;
+    animation: sbSlideUp 0.28s cubic-bezier(.25,.8,.25,1);
+  }
+  .app-modal-panel--tight { padding: 36px 32px; max-width: 360px; position: relative; }
+  .app-modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 10px;
+  }
+  .app-modal-panel--tight .app-modal-title { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+  .app-modal-msg {
+    color: var(--text-secondary);
+    font-size: 13px; line-height: 1.5;
+    margin: 0 0 20px;
+  }
+  .app-modal-hint { color: var(--text-muted); font-size: 12px; margin-bottom: 8px; }
+  .app-modal-confirm-input {
+    width: 100%; box-sizing: border-box;
+    background: var(--input-bg);
+    border: 1px solid rgba(239,71,111,0.4);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px; padding: 10px 14px;
+    outline: none; text-align: center;
+    margin-bottom: 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .app-modal-confirm-input:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(239,71,111,0.15); }
+  .app-modal-actions { display: flex; gap: 10px; }
+  .app-modal-actions .btn { flex: 1; min-width: 0; white-space: normal; justify-content: center; }
+  .app-modal-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none;
+    color: var(--text-muted); font-size: 20px;
+    cursor: pointer; line-height: 1;
+    padding: 4px 8px; border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+  }
+  .app-modal-close:hover { color: var(--coral); background: rgba(239,71,111,0.1); }
+  .app-modal-pwd-input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 10px 14px; font-size: 15px;
+    outline: none; font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.18s, box-shadow 0.2s;
+  }
+  .app-modal-pwd-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,216,0.15); }
+  .app-modal-pwd-btn { white-space: nowrap; }
+  .app-modal-error { display: none; font-size: 12px; color: var(--coral); font-weight: 600; }
+
+  #sync-block-icon { margin-bottom: 18px; }
   #sync-block-title {
     font-size: 21px; font-weight: 800; letter-spacing: -.3px;
     color: var(--coral); margin-bottom: 10px;
@@ -3122,21 +3318,21 @@
     <div class="card section">
       <div class="card-title">🔍 Buscar Ordenes</div>
       <div class="search-row">
-        <input type="text" id="search-nombre" placeholder="Buscar por nombre…" oninput="filtrarHistorial()">
-        <input type="tel" id="search-tel" placeholder="Buscar por celular…" oninput="filtrarHistorial()">
-        <input type="text" id="search-cc" placeholder="Buscar por identificación…" oninput="filtrarHistorial()">
+        <input type="text" id="search-general" placeholder="Buscar por nombre, celular o identificación…" oninput="filtrarHistorial()">
         <input type="text" id="search-nota" placeholder="Buscar por nota…" oninput="filtrarHistorial()">
-        <select id="search-especie" onchange="filtrarHistorial()" style="background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:8px 12px;min-width:140px">
+        <select id="search-especie" onchange="filtrarHistorial()" style="min-width:140px">
           <option value="">🐟 Todas las especies</option>
         </select>
-        <select id="search-ev" onchange="filtrarHistorial()" style="background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:8px 12px">
+        <select id="search-ev" onchange="filtrarHistorial()">
           <option value="">🔪 Eviscerado: todos</option>
           <option value="si">Solo con eviscerado</option>
           <option value="no">Solo sin eviscerado</option>
         </select>
-        <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Excel</button>
       </div>
     </div>
+
+    <!-- Botón flotante de exportar a Excel — solo visible en la sección Historial -->
+    <button class="fab-add fab-export" id="hist-fab-export" onclick="exportarExcel()" title="Exportar historial a Excel" aria-label="Exportar historial a Excel">📥</button>
 
     <!-- Filtro de período -->
     <div class="filter-bar">
@@ -3305,7 +3501,8 @@
           </div>
           <!-- Grupo mayorista (se oculta si no hay datos) -->
           <div class="fs-group" id="fs-mayorista" style="display:none">
-            <div class="fs-group-title fs-title-green">🚚 Mayorista <span id="fs-may-count" class="fs-count-badge">0</span></div>
+            <div class="fs-group-title fs-title-green">🚚 Mayorista</div>
+            <div class="fs-row"><span>Total ordenes mayorista</span><span id="fs-may-count">0</span></div>
             <div class="fs-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
             <div class="fs-row fs-subtotal"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
           </div>
@@ -4084,7 +4281,7 @@
         <div class="add-item-row">
           <div class="fg">
             <label>Especie</label>
-            <select id="add-especie" style="width:100%;background:var(--input-bg);border:1px solid rgba(0,180,216,0.25);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;">
+            <select id="add-especie" style="width:100%">
               <option value="">— Seleccionar —</option>
             </select>
           </div>
@@ -4098,13 +4295,13 @@
           </div>
           <div class="fg" id="add-especie-otro-wrap" style="display:none">
             <label>¿Qué especie es?</label>
-            <select id="add-especie-otro" style="width:100%;background:var(--input-bg);border:1px solid rgba(0,180,216,0.25);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;">
+            <select id="add-especie-otro" style="width:100%">
               <option value="">— Seleccionar —</option>
             </select>
           </div>
           <div class="fg">
             <label>🔪 Eviscerado</label>
-            <select id="add-ev" style="width:100%;background:var(--input-bg);border:1px solid rgba(0,180,216,0.25);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;">
+            <select id="add-ev" style="width:100%">
               <option value="0">No</option>
               <option value="1">Sí</option>
             </select>
@@ -4484,7 +4681,7 @@ const ESPECIES_REASIGNABLES = ESPECIES.filter(e => e.id !== 'otro');
 
 // Genera el <select> que se inserta en la tarjeta "Otro Pescado"
 function _htmlSelectEspecieOtro(id, onchange) {
-  return `<select id="${id}" onchange="${onchange}" style="width:100%;margin-bottom:8px;background:var(--input-bg);border:1px solid var(--input-border,rgba(0,180,216,0.25));border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:9px 12px;">
+  return `<select id="${id}" onchange="${onchange}" style="width:100%;margin-bottom:8px">
     <option value="">🐟 ¿Qué especie es?</option>
     ${ESPECIES_REASIGNABLES.map(es => `<option value="${escHtml(es.nombre)}">${es.emoji} ${es.nombre}</option>`).join('')}
   </select>`;
@@ -6221,9 +6418,7 @@ function _renderHistPage() {
 }
 
 function renderHistorial(filter = '') {
-  const nombre  = document.getElementById('search-nombre')?.value.toLowerCase() || '';
-  const tel     = document.getElementById('search-tel')?.value.toLowerCase() || '';
-  const cc      = document.getElementById('search-cc')?.value.toLowerCase() || '';
+  const general = document.getElementById('search-general')?.value.toLowerCase() || '';
   const nota    = document.getElementById('search-nota')?.value.toLowerCase() || '';
   const especie = document.getElementById('search-especie')?.value || '';
   const evFilt  = document.getElementById('search-ev')?.value || '';
@@ -6250,9 +6445,11 @@ function renderHistorial(filter = '') {
   // Filtrado completo
   let lista = getHistFiltered(ordenes);
   lista = lista.filter(c => {
-    if (nombre  && !c.nombre.toLowerCase().includes(nombre)) return false;
-    if (tel     && !(c.tel||'').includes(tel)) return false;
-    if (cc      && !(c.cc||'').toLowerCase().includes(cc)) return false;
+    if (general && !(
+      c.nombre.toLowerCase().includes(general) ||
+      (c.tel||'').toLowerCase().includes(general) ||
+      (c.cc||'').toLowerCase().includes(general)
+    )) return false;
     if (nota    && !(c.nota||'').toLowerCase().includes(nota)) return false;
     if (especie && !c.items.some(it => it.especie === especie)) return false;
     if (evFilt === 'si' && !_tieneEviscerado(c)) return false;
@@ -8364,8 +8561,7 @@ function renderEditItems() {
           oninput="updateEditItem(${idx},'precio',this.value)" style="max-width:90px">
       </td>
       <td>
-        <select onchange="updateEditItem(${idx},'ev',this.value)"
-          style="background:var(--input-bg);border:1px solid rgba(0,180,216,0.25);border-radius:6px;padding:6px 9px;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;">
+        <select onchange="updateEditItem(${idx},'ev',this.value)">
           <option value="0" ${!item.ev ? 'selected' : ''}>No</option>
           <option value="1" ${item.ev  ? 'selected' : ''}>Sí ✓</option>
         </select>
@@ -8636,10 +8832,8 @@ function captureUIState() {
     evDesde:       evCustomDesde,
     evHasta:       evCustomHasta,
     // Historial búsqueda
-    searchNombre:  document.getElementById('search-nombre')?.value || '',
-    searchTel:     document.getElementById('search-tel')?.value    || '',
-    searchCc:      document.getElementById('search-cc')?.value     || '',
-    searchNota:    document.getElementById('search-nota')?.value   || '',
+    searchGeneral: document.getElementById('search-general')?.value || '',
+    searchNota:    document.getElementById('search-nota')?.value    || '',
   };
 }
 
@@ -8687,10 +8881,8 @@ function restoreUIState(state) {
   }
 
   // Restaurar búsqueda del historial
-  if (state.searchNombre) document.getElementById('search-nombre').value = state.searchNombre;
-  if (state.searchTel)    document.getElementById('search-tel').value    = state.searchTel;
-  if (state.searchCc)     document.getElementById('search-cc').value     = state.searchCc;
-  if (state.searchNota)   { const el = document.getElementById('search-nota'); if (el) el.value = state.searchNota; }
+  if (state.searchGeneral) { const el = document.getElementById('search-general'); if (el) el.value = state.searchGeneral; }
+  if (state.searchNota)    { const el = document.getElementById('search-nota');    if (el) el.value = state.searchNota; }
 
   // Restaurar scroll (ligero delay para que el DOM esté pintado)
   requestAnimationFrame(() => window.scrollTo({ top: state.scrollY, behavior: 'instant' }));
@@ -12713,36 +12905,158 @@ setInterval(() => {
   // Verificar si la sync está desactualizada (>30 min)
   _actualizarStaleBadge();
 }, 60000);
+
+// ══════════════════════════════════════════════════════════
+//  MENÚS DESPLEGABLES TEMATIZADOS
+//  El popup nativo de <select> no se puede estilizar de forma
+//  confiable entre navegadores (esquinas cuadradas, colores del
+//  sistema). Esta capa intercepta la apertura de CUALQUIER <select>
+//  (presente o creado dinámicamente después) y dibuja en su lugar
+//  un menú propio con el tema oscuro/redondeado de la app, sin
+//  tocar el valor, los eventos onchange ni la lógica existente.
+// ══════════════════════════════════════════════════════════
+(function () {
+  let menuEl = null;
+  let activeSelect = null;
+  let hoveredIndex = -1;
+
+  function closeMenu() {
+    if (menuEl) menuEl.classList.remove('open');
+    activeSelect = null;
+    hoveredIndex = -1;
+  }
+
+  function positionMenu(select) {
+    const r = menuEl.getBoundingClientRect();
+    const sr = select.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - sr.bottom;
+    const openUp = spaceBelow < r.height + 12 && sr.top > r.height + 12;
+    menuEl.style.left = Math.max(8, Math.min(sr.left, window.innerWidth - sr.width - 8)) + 'px';
+    menuEl.style.width = sr.width + 'px';
+    menuEl.style.top = openUp ? '' : (sr.bottom + 6) + 'px';
+    menuEl.style.bottom = openUp ? (window.innerHeight - sr.top + 6) + 'px' : '';
+  }
+
+  function buildMenu(select) {
+    if (!menuEl) {
+      menuEl = document.createElement('div');
+      menuEl.className = 'themed-select-menu';
+      document.body.appendChild(menuEl);
+    }
+    menuEl.innerHTML = '';
+    hoveredIndex = -1;
+    Array.from(select.options).forEach((opt, i) => {
+      const row = document.createElement('div');
+      row.className = 'themed-select-option' + (opt.selected ? ' selected' : '') + (opt.disabled ? ' disabled' : '');
+      row.textContent = opt.textContent;
+      row.dataset.index = i;
+      if (opt.selected) hoveredIndex = i;
+      row.addEventListener('mousemove', () => setHovered(i));
+      row.addEventListener('mousedown', (e) => { e.preventDefault(); pickOption(select, i); });
+      row.addEventListener('touchstart', (e) => { e.preventDefault(); pickOption(select, i); }, { passive: false });
+      menuEl.appendChild(row);
+    });
+  }
+
+  function setHovered(i) {
+    if (!menuEl) return;
+    hoveredIndex = i;
+    Array.from(menuEl.children).forEach((row, idx) => row.classList.toggle('hovered', idx === i));
+  }
+
+  function pickOption(select, i) {
+    const opt = select.options[i];
+    if (!opt || opt.disabled) return;
+    if (select.selectedIndex !== i) {
+      select.selectedIndex = i;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    closeMenu();
+    select.focus({ preventScroll: true });
+  }
+
+  function openMenu(select) {
+    activeSelect = select;
+    buildMenu(select);
+    menuEl.classList.add('open');
+    positionMenu(select);
+  }
+
+  // Interceptar la apertura nativa: al hacer mousedown en un <select>,
+  // prevenimos el popup del sistema y abrimos el nuestro en su lugar.
+  function handlePointerDown(e) {
+    const select = e.target.closest('select');
+    if (select) {
+      e.preventDefault();
+      select.focus({ preventScroll: true });
+      if (activeSelect === select) { closeMenu(); } else { openMenu(select); }
+      return;
+    }
+    if (menuEl && !menuEl.contains(e.target)) closeMenu();
+  }
+  document.addEventListener('mousedown', handlePointerDown);
+  document.addEventListener('touchstart', handlePointerDown, { passive: false });
+
+  // Abrir también con teclado (Enter/Espacio/flechas) cuando el select tiene foco
+  document.addEventListener('keydown', (e) => {
+    const select = document.activeElement;
+    if (!select || select.tagName !== 'SELECT') return;
+    if (!activeSelect && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      openMenu(select);
+      return;
+    }
+    if (activeSelect === select) {
+      if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setHovered(Math.min(select.options.length - 1, (hoveredIndex < 0 ? select.selectedIndex : hoveredIndex) + 1)); }
+      else if (e.key === 'ArrowUp')   { e.preventDefault(); setHovered(Math.max(0, (hoveredIndex < 0 ? select.selectedIndex : hoveredIndex) - 1)); }
+      else if (e.key === 'Enter')     { e.preventDefault(); pickOption(select, hoveredIndex); }
+      else if (e.key === 'Tab')       { closeMenu(); }
+    }
+  });
+
+  window.addEventListener('resize', () => { if (activeSelect) positionMenu(activeSelect); });
+  window.addEventListener('scroll', () => { if (activeSelect) closeMenu(); }, true);
+})();
 </script>
 <!-- ══════ MODAL: CONFIRMACIÓN ACCIÓN DESTRUCTIVA ══════ -->
-<div id="danger-confirm-overlay" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(4,11,22,0.88);backdrop-filter:blur(12px);align-items:center;justify-content:center">
-  <div style="background:var(--card-bg);border:1px solid rgba(239,71,111,0.45);border-radius:16px;padding:32px 28px;max-width:400px;width:92%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
-    <div style="font-size:36px;text-align:center;margin-bottom:12px">⚠️</div>
-    <h3 id="danger-confirm-title" style="color:var(--coral);text-align:center;margin:0 0 10px;font-size:17px"></h3>
-    <p id="danger-confirm-msg" style="color:var(--text-secondary);font-size:13px;text-align:center;margin:0 0 20px;line-height:1.5"></p>
-    <p style="color:var(--text-muted);font-size:12px;margin-bottom:8px;text-align:center">
+<div id="danger-confirm-overlay" class="app-modal-overlay" style="display:none;--mo-border:rgba(239,71,111,0.45)">
+  <div class="app-modal-panel">
+    <div class="modal-icon-badge" style="--ic:var(--coral)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h3 id="danger-confirm-title" class="app-modal-title" style="color:var(--coral)"></h3>
+    <p id="danger-confirm-msg" class="app-modal-msg"></p>
+    <p class="app-modal-hint">
       Escribe <strong style="color:var(--coral);font-family:'Roboto Mono',monospace">BORRAR</strong> para confirmar:
     </p>
-    <input id="danger-confirm-input" type="text" autocomplete="off"
+    <input id="danger-confirm-input" class="app-modal-confirm-input" type="text" autocomplete="off"
       placeholder="Escribe BORRAR aquí…"
-      oninput="document.getElementById('danger-confirm-ok').disabled = this.value !== 'BORRAR'"
-      style="width:100%;box-sizing:border-box;background:var(--input-bg);border:1px solid rgba(239,71,111,0.4);border-radius:8px;color:var(--text-primary);font-family:'Roboto Mono',monospace;font-size:14px;padding:10px 14px;outline:none;text-align:center;margin-bottom:20px">
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" style="flex:1;min-width:0;white-space:normal;text-align:center;justify-content:center" onclick="closeDangerConfirm()">Cancelar</button>
-      <button id="danger-confirm-ok" class="btn btn-danger" style="flex:1;min-width:0;white-space:normal;text-align:center;justify-content:center" disabled onclick="_dangerConfirmCallback && _dangerConfirmCallback()">🗑 Confirmar borrado</button>
+      oninput="document.getElementById('danger-confirm-ok').disabled = this.value !== 'BORRAR'">
+    <div class="app-modal-actions">
+      <button class="btn btn-ghost" onclick="closeDangerConfirm()">Cancelar</button>
+      <button id="danger-confirm-ok" class="btn btn-danger" disabled onclick="_dangerConfirmCallback && _dangerConfirmCallback()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Confirmar borrado
+      </button>
     </div>
   </div>
 </div>
 
 <!-- ══════ MODAL: SUGERENCIA DE DATOS FALTANTES (celular/documento) ══════ -->
-<div id="datos-faltantes-overlay" style="display:none;position:fixed;inset:0;z-index:1150;background:rgba(4,11,22,0.88);backdrop-filter:blur(10px);align-items:center;justify-content:center">
-  <div style="background:var(--card-bg);border:1px solid rgba(0,180,216,0.35);border-radius:16px;padding:32px 28px;max-width:400px;width:92%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
-    <div style="font-size:36px;text-align:center;margin-bottom:12px">💡</div>
-    <h3 style="color:var(--teal-pale);text-align:center;margin:0 0 10px;font-size:17px;font-family:'Syne',sans-serif;font-weight:700">Faltan datos del cliente</h3>
-    <p id="datos-faltantes-msg" style="color:var(--text-secondary);font-size:13px;text-align:center;margin:0 0 24px;line-height:1.5"></p>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" style="flex:1;min-width:0;white-space:normal;text-align:center;justify-content:center" onclick="_datosFaltantesContinuar()">Continuar sin este dato</button>
-      <button class="btn btn-success" style="flex:1;min-width:0;white-space:normal;text-align:center;justify-content:center" onclick="_datosFaltantesCompletar()">✍️ Completar ahora</button>
+<div id="datos-faltantes-overlay" class="app-modal-overlay" style="display:none;--mo-border:rgba(0,180,216,0.35)">
+  <div class="app-modal-panel">
+    <div class="modal-icon-badge" style="--ic:var(--teal)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+    </div>
+    <h3 class="app-modal-title" style="color:var(--teal-pale)">Faltan datos del cliente</h3>
+    <p id="datos-faltantes-msg" class="app-modal-msg"></p>
+    <div class="app-modal-actions">
+      <button class="btn btn-ghost" onclick="_datosFaltantesContinuar()">Continuar sin este dato</button>
+      <button class="btn btn-success" onclick="_datosFaltantesCompletar()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Completar ahora
+      </button>
     </div>
   </div>
 </div>
@@ -12750,37 +13064,38 @@ setInterval(() => {
 <!-- ══════ PANTALLA DE BLOQUEO ══════ -->
 <div id="sync-block-overlay" style="display:none">
   <div id="sync-block-card">
-    <div id="sync-block-icon">⚠️</div>
+    <div id="sync-block-icon" class="modal-icon-badge" style="--ic:var(--coral)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
     <div id="sync-block-title">Error de sincronización</div>
     <div id="sync-block-msg">No se pudo conectar con el servidor de sincronización.</div>
     <div id="sync-block-sub">Tus datos locales están seguros. Reintenta cuando tengas conexión.</div>
     <div id="sync-block-actions">
-      <button class="btn btn-success" onclick="syncBlockReconnect()">🔄 Reintentar</button>
-      <button class="btn btn-ghost"   onclick="syncBlockDismiss()">Continuar sin sincronizar</button>
+      <button class="btn btn-success" onclick="syncBlockReconnect()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Reintentar
+      </button>
+      <button class="btn btn-ghost" onclick="syncBlockDismiss()">Continuar sin sincronizar</button>
     </div>
   </div>
 </div>
 
 <!-- ══════ MODAL: BLOQUEO DE PESTAÑAS ══════ -->
-<div id="tab-lock-overlay" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(4,11,22,0.92);backdrop-filter:blur(18px) saturate(0.5);align-items:center;justify-content:center">
-  <div style="background:var(--card-bg);border:1px solid rgba(0,180,216,0.3);border-radius:20px;padding:36px 32px;max-width:360px;width:92%;box-shadow:0 32px 80px rgba(0,0,0,0.7);text-align:center;position:relative">
-    <!-- Botón cerrar -->
-    <button onclick="closeLockTab()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:8px;transition:color 0.15s" onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--text-muted)'">×</button>
-    <!-- Ícono candado animado -->
-    <div style="font-size:48px;margin-bottom:14px;line-height:1;animation:lockPulse 2s ease-in-out infinite">🔐</div>
-    <h3 style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--text-primary);margin:0 0 8px;letter-spacing:-0.3px">Sección protegida</h3>
-    <p style="font-size:13px;color:var(--text-muted);margin:0 0 24px;line-height:1.5">Esta sección requiere contraseña de administrador.</p>
-    <!-- Input contraseña -->
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="tab-pwd-input" type="password" placeholder="Contraseña"
-        autocomplete="off"
-        onkeydown="if(event.key==='Enter') _verificarPasswordTab()"
-        style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);border-radius:10px;color:var(--text-primary);padding:10px 14px;font-size:15px;outline:none;font-family:'DM Sans',sans-serif;transition:border-color 0.18s"
-        onfocus="this.style.borderColor='var(--teal)'"
-        onblur="this.style.borderColor='var(--input-border)'">
-      <button onclick="_verificarPasswordTab()" style="background:linear-gradient(135deg,var(--teal),var(--green));border:none;border-radius:10px;color:#001820;font-weight:700;font-size:14px;padding:10px 18px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:opacity 0.18s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Entrar</button>
+<div id="tab-lock-overlay" class="app-modal-overlay" style="display:none;--mo-blur:18px;--mo-sat:0.5;--mo-bg:rgba(4,11,22,0.92)">
+  <div class="app-modal-panel app-modal-panel--tight">
+    <button class="app-modal-close" onclick="closeLockTab()" aria-label="Cerrar">×</button>
+    <div class="modal-icon-badge pulse" style="--ic:var(--teal)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </div>
-    <span id="tab-pwd-error" style="display:none;font-size:12px;color:var(--coral);font-weight:600"></span>
+    <h3 class="app-modal-title">Sección protegida</h3>
+    <p class="app-modal-msg">Esta sección requiere contraseña de administrador.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="tab-pwd-input" class="app-modal-pwd-input" type="password" placeholder="Contraseña"
+        autocomplete="off"
+        onkeydown="if(event.key==='Enter') _verificarPasswordTab()">
+      <button class="btn btn-primary app-modal-pwd-btn" onclick="_verificarPasswordTab()">Entrar</button>
+    </div>
+    <span id="tab-pwd-error" class="app-modal-error"></span>
   </div>
 </div>
 
