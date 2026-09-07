@@ -9225,7 +9225,18 @@ async function _deriveSyncKey(passphrase, saltBytes) {
     ['encrypt', 'decrypt']
   );
 }
-function _b64(buf)   { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function _b64(buf) {
+  // No usar String.fromCharCode(...bytes) — con archivos grandes (miles de
+  // bytes) revienta "Maximum call stack size exceeded" porque cada byte se
+  // pasa como argumento individual. Se convierte en trozos pequeños en su lugar.
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  const chunkSize = 0x8000; // 32 KB por trozo
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
 function _unb64(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
 
 async function encryptSyncPayload(plainText, passphrase) {
