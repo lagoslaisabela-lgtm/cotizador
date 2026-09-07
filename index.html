@@ -9315,6 +9315,13 @@ async function initDriveSync() {
         // Subir el resultado del merge para que todos tengan la misma versión
         await uploadDriveFile();
         refreshUI(uiState);
+      } else {
+        // Archivo remoto vacío o inexistente (primera conexión, o el
+        // archivo aún no tiene contenido): subir los datos locales tal
+        // cual para que la nube deje de estar vacía. Sin este paso, si
+        // alguien borra el almacenamiento local antes de que exista una
+        // copia en la nube, los datos se pierden sin remedio.
+        await uploadDriveFile();
       }
     } else {
       // Primera vez: subir datos locales
