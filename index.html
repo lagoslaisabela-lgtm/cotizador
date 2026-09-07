@@ -828,12 +828,61 @@
     background: linear-gradient(135deg, rgba(0,180,216,0.12), rgba(6,214,160,0.08));
     border: 1px solid rgba(0,180,216,0.35);
     border-radius: var(--radius);
-    padding: 20px 24px;
+    padding: 22px 26px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    align-items: stretch;
+    gap: 24px;
     flex-wrap: wrap;
+  }
+
+  .total-info {
+    flex: 1 1 380px;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Panel que agrupa método de pago + monto recibido/devuelta,
+     separado visualmente del monto total para reducir el ruido */
+  .payment-panel {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(4,11,22,0.32);
+    border: 1px solid rgba(0,180,216,0.15);
+  }
+  .payment-panel .metodo-pago-selector {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /* Columna de acciones: separada por un divisor y centrada verticalmente
+     para que no quede "flotando" lejos del resto de la tarjeta */
+  .total-box .btn-group {
+    flex: 0 0 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding-left: 24px;
+    border-left: 1px solid rgba(0,180,216,0.18);
+  }
+  .total-box .btn-group .btn { width: 100%; justify-content: center; }
+
+  @media (max-width: 760px) {
+    .total-box { flex-direction: column; }
+    .total-box .btn-group {
+      flex: 1 1 auto;
+      width: 100%;
+      flex-direction: row;
+      border-left: none;
+      border-top: 1px solid rgba(0,180,216,0.18);
+      padding-left: 0;
+      padding-top: 16px;
+    }
+    .total-box .btn-group .btn { flex: 1; }
   }
 
   .total-label {
@@ -2983,35 +3032,36 @@
     <!-- Total -->
     <div class="section">
       <div class="total-box">
-        <div>
+        <div class="total-info">
           <div class="text-primary">TOTAL</div>
           <div class="total-amount" id="total-display">$0</div>
           <div class="total-details" id="total-details">— libras · Eviscerado: $0</div>
-          <!-- Método de pago -->
-          <div class="metodo-pago-selector" id="metodo-pago-selector">
-            <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPago('efectivo')">💵 Efectivo</button>
-            <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPago('nequi')">📱 Nequi</button>
-            <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPago('mixto')">🔀 Mixto</button>
-          </div>
-          <!-- Pago y devuelta -->
-          <div class="pago-row">
-            <div class="pago-input-wrap" id="pago-single-wrap">
-              <label id="pago-single-label">💵 Pago con</label>
-              <input type="text" id="pago-input" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+          <!-- Panel: método de pago + monto recibido/devuelta -->
+          <div class="payment-panel">
+            <div class="metodo-pago-selector" id="metodo-pago-selector">
+              <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPago('efectivo')">💵 Efectivo</button>
+              <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPago('nequi')">📱 Nequi</button>
+              <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPago('mixto')">🔀 Mixto</button>
             </div>
-            <div class="pago-mixto-wrap" id="pago-mixto-wrap" style="display:none">
-              <div class="pago-input-wrap">
-                <label>💵 Efectivo</label>
-                <input type="text" id="pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+            <div class="pago-row">
+              <div class="pago-input-wrap" id="pago-single-wrap">
+                <label id="pago-single-label">💵 Pago con</label>
+                <input type="text" id="pago-input" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
               </div>
-              <div class="pago-input-wrap">
-                <label>📱 Nequi</label>
-                <input type="text" id="pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+              <div class="pago-mixto-wrap" id="pago-mixto-wrap" style="display:none">
+                <div class="pago-input-wrap">
+                  <label>💵 Efectivo</label>
+                  <input type="text" id="pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+                </div>
+                <div class="pago-input-wrap">
+                  <label>📱 Nequi</label>
+                  <input type="text" id="pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off" oninput="pagoInput(this)" onfocus="pagoFocus(this)" onblur="pagoBlur(this)">
+                </div>
               </div>
-            </div>
-            <div class="devuelta-box">
-              <span class="devuelta-label">Devuelta</span>
-              <span class="devuelta-amount pending" id="devuelta-display">—</span>
+              <div class="devuelta-box">
+                <span class="devuelta-label">Devuelta</span>
+                <span class="devuelta-amount pending" id="devuelta-display">—</span>
+              </div>
             </div>
           </div>
         </div>
@@ -3218,25 +3268,18 @@
             <div class="fs-row fs-gold"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
             <div class="fs-row fs-subtotal"><span>Total detal</span><span id="fs-total">$0</span></div>
           </div>
-          <!-- Grupo métodos de pago (detal) -->
-          <div class="fs-group" id="fs-metodos-pago">
-            <div class="fs-group-title">💳 Métodos de pago <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">· Detal</span></div>
-            <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo">$0</span></div>
-            <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi">$0</span></div>
-            <div class="fs-row" id="fs-pago-sinespecificar-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar">$0</span></div>
-          </div>
           <!-- Grupo mayorista (se oculta si no hay datos) -->
           <div class="fs-group" id="fs-mayorista" style="display:none">
             <div class="fs-group-title fs-title-green">🚚 Mayorista <span id="fs-may-count" class="fs-count-badge">0</span></div>
             <div class="fs-row"><span>Libras mayorista</span><span id="fs-may-libras">0 lb</span></div>
             <div class="fs-row fs-subtotal"><span>Total mayorista</span><span id="fs-may-total" style="color:var(--green)">$0</span></div>
           </div>
-          <!-- Grupo métodos de pago (mayorista, se oculta si no hay datos) -->
-          <div class="fs-group" id="fs-metodos-pago-may" style="display:none">
-            <div class="fs-group-title fs-title-green">💳 Métodos de pago <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">· Mayorista</span></div>
-            <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo-may">$0</span></div>
-            <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi-may">$0</span></div>
-            <div class="fs-row" id="fs-pago-sinespecificar-may-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar-may">$0</span></div>
+          <!-- Grupo métodos de pago (unificado: detal + mayorista) -->
+          <div class="fs-group" id="fs-metodos-pago">
+            <div class="fs-group-title">💳 Métodos de pago</div>
+            <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo">$0</span></div>
+            <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi">$0</span></div>
+            <div class="fs-row" id="fs-pago-sinespecificar-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar">$0</span></div>
           </div>
           <!-- Total general combinado -->
           <div class="fs-total-box" id="fs-total-combinado" style="display:none">
@@ -3669,38 +3712,39 @@
     <!-- Total -->
     <div class="section">
       <div class="total-box">
-        <div>
+        <div class="total-info">
           <div class="text-primary" style="font-size:11px;letter-spacing:1px;font-weight:700;color:var(--text-muted)">TOTAL MAYORISTA</div>
           <div class="total-amount" id="may-total-display">$0</div>
           <div class="total-details" id="may-total-details">— libras</div>
-          <!-- Método de pago -->
-          <div class="metodo-pago-selector" id="may-metodo-pago-selector">
-            <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPagoMay('efectivo')">💵 Efectivo</button>
-            <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPagoMay('nequi')">📱 Nequi</button>
-            <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPagoMay('mixto')">🔀 Mixto</button>
-          </div>
-          <!-- Pago y devuelta -->
-          <div class="pago-row">
-            <div class="pago-input-wrap" id="may-pago-single-wrap">
-              <label id="may-pago-single-label">💵 Pago con</label>
-              <input type="text" id="may-pago-input" inputmode="numeric" placeholder="$0" autocomplete="off"
-                oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+          <!-- Panel: método de pago + monto recibido/devuelta -->
+          <div class="payment-panel">
+            <div class="metodo-pago-selector" id="may-metodo-pago-selector">
+              <button type="button" class="metodo-btn active" data-metodo="efectivo" onclick="setMetodoPagoMay('efectivo')">💵 Efectivo</button>
+              <button type="button" class="metodo-btn" data-metodo="nequi" onclick="setMetodoPagoMay('nequi')">📱 Nequi</button>
+              <button type="button" class="metodo-btn" data-metodo="mixto" onclick="setMetodoPagoMay('mixto')">🔀 Mixto</button>
             </div>
-            <div class="pago-mixto-wrap" id="may-pago-mixto-wrap" style="display:none">
-              <div class="pago-input-wrap">
-                <label>💵 Efectivo</label>
-                <input type="text" id="may-pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off"
+            <div class="pago-row">
+              <div class="pago-input-wrap" id="may-pago-single-wrap">
+                <label id="may-pago-single-label">💵 Pago con</label>
+                <input type="text" id="may-pago-input" inputmode="numeric" placeholder="$0" autocomplete="off"
                   oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
               </div>
-              <div class="pago-input-wrap">
-                <label>📱 Nequi</label>
-                <input type="text" id="may-pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off"
-                  oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+              <div class="pago-mixto-wrap" id="may-pago-mixto-wrap" style="display:none">
+                <div class="pago-input-wrap">
+                  <label>💵 Efectivo</label>
+                  <input type="text" id="may-pago-input-efectivo" inputmode="numeric" placeholder="$0" autocomplete="off"
+                    oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+                </div>
+                <div class="pago-input-wrap">
+                  <label>📱 Nequi</label>
+                  <input type="text" id="may-pago-input-nequi" inputmode="numeric" placeholder="$0" autocomplete="off"
+                    oninput="pagoMayInput(this)" onfocus="pagoMayFocus(this)" onblur="pagoMayBlur(this)">
+                </div>
               </div>
-            </div>
-            <div class="devuelta-box">
-              <span class="devuelta-label">Devuelta</span>
-              <span class="devuelta-amount pending" id="may-devuelta-display">—</span>
+              <div class="devuelta-box">
+                <span class="devuelta-label">Devuelta</span>
+                <span class="devuelta-amount pending" id="may-devuelta-display">—</span>
+              </div>
             </div>
           </div>
         </div>
@@ -6565,28 +6609,6 @@ function renderDashboard() {
   document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
   document.getElementById('fs-total').textContent      = fmt(totalVentasDetal);
 
-  // Desglose por método de pago (detal) del período
-  // Se usa el monto NETO (descontando la devuelta entregada) para que
-  // el efectivo/Nequi reflejen lo que realmente entra al negocio.
-  let totalPagoEfectivo = 0, totalPagoNequi = 0, totalPagoSinEspecificar = 0;
-  lista.forEach(c => {
-    const neto = _pagoNetoPorMetodo(c);
-    totalPagoEfectivo       += neto.efectivo;
-    totalPagoNequi          += neto.nequi;
-    totalPagoSinEspecificar += neto.sinEspecificar;
-  });
-  const fsMetodosEl = document.getElementById('fs-metodos-pago');
-  if (fsMetodosEl) {
-    fsMetodosEl.style.display = lista.length > 0 ? '' : 'none';
-    document.getElementById('fs-pago-efectivo').textContent = fmt(totalPagoEfectivo);
-    document.getElementById('fs-pago-nequi').textContent    = fmt(totalPagoNequi);
-    const sinEspRow = document.getElementById('fs-pago-sinespecificar-row');
-    if (sinEspRow) {
-      sinEspRow.style.display = totalPagoSinEspecificar > 0 ? '' : 'none';
-      document.getElementById('fs-pago-sinespecificar').textContent = fmt(totalPagoSinEspecificar);
-    }
-  }
-
   // Filas mayorista en resumen financiero
   const fsMayEl = document.getElementById('fs-mayorista');
   if (fsMayEl) {
@@ -6596,23 +6618,31 @@ function renderDashboard() {
     document.getElementById('fs-may-total').textContent  = fmt(totalVentasMay);
   }
 
-  // Desglose por método de pago (mayorista) del período
-  let totalPagoEfectivoMay = 0, totalPagoNequiMay = 0, totalPagoSinEspecificarMay = 0;
+  // Desglose por método de pago (unificado: detal + mayorista) del período
+  // Se usa el monto NETO (descontando la devuelta entregada) para que
+  // el efectivo/Nequi reflejen lo que realmente entra al negocio.
+  let totalPagoEfectivo = 0, totalPagoNequi = 0, totalPagoSinEspecificar = 0;
+  lista.forEach(c => {
+    const neto = _pagoNetoPorMetodo(c);
+    totalPagoEfectivo       += neto.efectivo;
+    totalPagoNequi          += neto.nequi;
+    totalPagoSinEspecificar += neto.sinEspecificar;
+  });
   listaMay.forEach(v => {
     const neto = _pagoNetoPorMetodo(v);
-    totalPagoEfectivoMay       += neto.efectivo;
-    totalPagoNequiMay          += neto.nequi;
-    totalPagoSinEspecificarMay += neto.sinEspecificar;
+    totalPagoEfectivo       += neto.efectivo;
+    totalPagoNequi          += neto.nequi;
+    totalPagoSinEspecificar += neto.sinEspecificar;
   });
-  const fsMetodosMayEl = document.getElementById('fs-metodos-pago-may');
-  if (fsMetodosMayEl) {
-    fsMetodosMayEl.style.display = listaMay.length > 0 ? '' : 'none';
-    document.getElementById('fs-pago-efectivo-may').textContent = fmt(totalPagoEfectivoMay);
-    document.getElementById('fs-pago-nequi-may').textContent    = fmt(totalPagoNequiMay);
-    const sinEspRowMay = document.getElementById('fs-pago-sinespecificar-may-row');
-    if (sinEspRowMay) {
-      sinEspRowMay.style.display = totalPagoSinEspecificarMay > 0 ? '' : 'none';
-      document.getElementById('fs-pago-sinespecificar-may').textContent = fmt(totalPagoSinEspecificarMay);
+  const fsMetodosEl = document.getElementById('fs-metodos-pago');
+  if (fsMetodosEl) {
+    fsMetodosEl.style.display = (lista.length > 0 || listaMay.length > 0) ? '' : 'none';
+    document.getElementById('fs-pago-efectivo').textContent = fmt(totalPagoEfectivo);
+    document.getElementById('fs-pago-nequi').textContent    = fmt(totalPagoNequi);
+    const sinEspRow = document.getElementById('fs-pago-sinespecificar-row');
+    if (sinEspRow) {
+      sinEspRow.style.display = totalPagoSinEspecificar > 0 ? '' : 'none';
+      document.getElementById('fs-pago-sinespecificar').textContent = fmt(totalPagoSinEspecificar);
     }
   }
 
