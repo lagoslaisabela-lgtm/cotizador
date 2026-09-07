@@ -2437,6 +2437,38 @@
     50%       { box-shadow: 0 4px 24px rgba(0,0,0,0.5),  0 0 22px rgba(239,71,111,0.45); }
   }
 
+  /* ──────────────── BOTÓN FLOTANTE: PANTALLA COMPLETA EVISCERADO ──────────────── */
+  /* Solo se muestra mientras la pestaña de Eviscerado está activa (ver showTab/toggleEvFullscreen) */
+  #ev-fs-float-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;       /* lado derecho — no choca con ev-float-btn (izquierda) */
+    z-index: 300;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,180,216,0.4);
+    background: rgba(13,34,64,0.92);
+    color: var(--teal);
+    font-size: 21px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 14px rgba(0,180,216,0.18);
+    transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    user-select: none;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.7);
+  }
+  #ev-fs-float-btn.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: scale(1);
+  }
+  #ev-fs-float-btn.visible:hover { transform: scale(1.08) translateY(-2px); border-color: rgba(0,180,216,0.7); }
+
   /* ──────────────── EVISCERADO FULLSCREEN ──────────────── */
   #ev-fullscreen-overlay {
     display: none;
@@ -2904,6 +2936,9 @@
   🔪 <span id="ev-float-text">—</span>
 </button>
 
+<!-- Botón flotante: pantalla completa de eviscerado (solo visible en esa pestaña) -->
+<button id="ev-fs-float-btn" onclick="toggleEvFullscreen()" title="Pantalla completa">⛶</button>
+
 <div id="top-bar">
 <header>
   <div class="header-inner">
@@ -3295,14 +3330,6 @@
 
   <!-- ══════════════ PÁGINA: EVISCERADO ══════════════ -->
   <div class="page" id="page-eviscerado">
-
-    <div class="card section">
-      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>🔪 Órdenes con Eviscerado</span>
-        <button class="btn btn-ghost btn-sm" id="ev-fullscreen-btn" onclick="toggleEvFullscreen()" title="Pantalla completa">⛶ Pantalla completa</button>
-      </div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:0">Ordenes que incluyen servicio de eviscerado. Márcalas como completadas una vez procesadas.</p>
-    </div>
 
     <!-- Filtro fechas eviscerado -->
     <div class="filter-bar">
@@ -4581,6 +4608,9 @@ function showTab(tab) {
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   // Guardar última pestaña activa
   safeStorage.setItem('aquacot_active_tab', tab);
+  // Botón flotante de pantalla completa: solo visible en Eviscerado y fuera del modo fullscreen
+  const evFsBtn = document.getElementById('ev-fs-float-btn');
+  if (evFsBtn) evFsBtn.classList.toggle('visible', tab === 'eviscerado' && !evFullscreenOpen);
   // Marca si la pestaña activa tiene botones de acción en la parte inferior
   if (tab === 'historial')     renderHistorial();
   if (tab === 'dashboard')     renderDashboard();
@@ -10828,12 +10858,13 @@ function toggleEvFsCompletadas() {
 
 function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
   const overlay = document.getElementById('ev-fullscreen-overlay');
-  const btn     = document.getElementById('ev-fullscreen-btn');
+  const btn     = document.getElementById('ev-fs-float-btn');
 
   if (evFullscreenOpen) {
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    btn.innerHTML = '✕ Salir de pantalla completa';
+    // El overlay ya trae su propio botón de salida (ev-fs-close); ocultamos el flotante mientras tanto
+    if (btn) btn.classList.remove('visible');
     safeStorage.setItem('aquacot_ev_fullscreen', '1');
     // Sincronizar mini indicador con el estado actual del drive
     (function _syncFsMini() {
@@ -10867,7 +10898,8 @@ function toggleEvFullscreen() {  evFullscreenOpen = !evFullscreenOpen;
   } else {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
-    btn.innerHTML = '⛶ Pantalla completa';
+    // Reaparece el flotante solo si seguimos en la pestaña de Eviscerado
+    if (btn) btn.classList.toggle('visible', activeTab === 'eviscerado');
     safeStorage.setItem('aquacot_ev_fullscreen', '0');
     if (evFsCountdownInterval) { clearInterval(evFsCountdownInterval); evFsCountdownInterval = null; }
     if (evFsTickerSec) { clearInterval(evFsTickerSec); evFsTickerSec = null; }
@@ -12352,10 +12384,10 @@ let   _evAlertedIds      = new Set(); // IDs ya alertados para no repetir
     // Abrir el fullscreen directamente (sin toggle para no invertir el estado)
     evFullscreenOpen = true;
     const overlay = document.getElementById('ev-fullscreen-overlay');
-    const btn     = document.getElementById('ev-fullscreen-btn');
+    const btn     = document.getElementById('ev-fs-float-btn');
     if (overlay) overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    if (btn) btn.innerHTML = '✕ Salir de pantalla completa';
+    if (btn) btn.classList.remove('visible'); // el overlay trae su propio botón de salida
     renderEvFullscreen();
     evFsTickerSec = setInterval(() => {
       document.querySelectorAll('#ev-fs-cards-pendientes .ev-timer-chip[data-start]').forEach(chip => {
