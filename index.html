@@ -26,7 +26,7 @@
 ">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-<title>Lagos La Isabela — Ordenes</title>
+<title>🐟 Lagos La Isabela — Ordenes</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23040b16'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,94 +161,6 @@
   }
 
   .setup-body { padding: 20px; }
-
-  .setup-step {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 20px;
-    align-items: flex-start;
-  }
-  .step-num {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: rgba(0,180,216,0.15);
-    border: 1px solid rgba(0,180,216,0.3);
-    color: var(--teal);
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .step-content { flex: 1; }
-  .step-content strong {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-  }
-  .step-content p, .step-content a {
-    font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-  }
-  .step-content a { color: var(--teal); text-decoration: none; }
-  .step-content a:hover { text-decoration: underline; }
-  .step-content code {
-    background: rgba(0,180,216,0.1);
-    border: 1px solid rgba(0,180,216,0.2);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 11px;
-    color: var(--teal-pale);
-    word-break: break-all;
-  }
-
-  .setup-input-wrap { margin-top: 8px; display: flex; gap: 8px; }
-  .setup-input-wrap input { flex: 1; font-size: 13px; }
-
-  .divider-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 16px 0;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-  }
-  .divider-label::before, .divider-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--card-border);
-  }
-
-  .google-btn {
-    width: 100%;
-    padding: 12px 20px;
-    background: white;
-    color: #3c4043;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s;
-    margin-top: 8px;
-  }
-  .google-btn:hover { background: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-  .google-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .google-btn svg { flex-shrink: 0; }
 
   .setup-footer {
     padding: 14px 20px;
@@ -394,14 +306,6 @@
     align-items: center;
     gap: 10px;
     text-decoration: none;
-  }
-
-  .logo-icon {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
   }
 
   /* ══════════════════════════════════════════
@@ -686,7 +590,8 @@
 
   input[type="text"],
   input[type="number"],
-  input[type="tel"] {
+  input[type="tel"],
+  input[type="date"] {
     width: 100%;
     background: var(--input-bg);
     border: 1px solid rgba(0,180,216,0.25);
@@ -698,6 +603,7 @@
     transition: border-color 0.2s, box-shadow 0.2s;
     -webkit-appearance: none;
   }
+  input[type="date"] { color-scheme: dark; }
 
   input:focus {
     outline: none;
@@ -706,6 +612,16 @@
   }
 
   input::placeholder { color: var(--text-muted); }
+
+  /* Ícono del calendario nativo teñido en teal para que combine con el
+     resto de los acentos de la app (flecha de los <select>, etc). */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+    filter: invert(48%) sepia(85%) saturate(1000%) hue-rotate(150deg) brightness(97%) contrast(101%);
+    transition: opacity 0.15s;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
   /* ──────────────── SELECTS (menús desplegables) ────────────────
      Estilo base aplicado a TODO <select> de la app, para que el
@@ -1021,15 +937,6 @@
       padding-top: 16px;
     }
     .total-box .btn-group .btn { flex: 1; }
-  }
-
-  .total-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
   }
 
   .total-amount {
@@ -1381,13 +1288,6 @@
   /* ──────────────── SECTION SPACING ──────────────── */
   .section { margin-bottom: 24px; }
 
-  /* ──────────────── DIVIDER ──────────────── */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--card-border);
-    margin: 20px 0;
-  }
-
   /* ──────────────── TOAST ──────────────── */
   #toast {
     position: fixed;
@@ -1447,30 +1347,6 @@
     nav { padding: 10px 12px; }
     .nav-inner { padding: 4px; gap: 4px; }
   }
-
-  /* ──────────────── SUMMARY ITEMS ──────────────── */
-  .quote-items-preview {
-    background: var(--input-bg);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    margin-bottom: 14px;
-    font-size: 13px;
-  }
-
-  .quote-item-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(0,180,216,0.06);
-  }
-  .quote-item-row:last-child { border-bottom: none; }
-  .quote-item-row span:first-child { color: var(--text-secondary); }
-  .quote-item-row span:last-child { color: var(--text-primary); font-weight: 500; }
-
-  .highlight-row span:last-child { color: var(--gold) !important; font-family: 'Roboto Mono', monospace; }
-  .highlight-row.total-row { border-top: 1px solid rgba(0,180,216,0.2); margin-top: 4px; padding-top: 9px; }
-  .highlight-row.total-row span:last-child { color: var(--teal-bright) !important; font-size: 15px; font-weight: 700; font-family: 'Roboto Mono', monospace; }
-  .quote-item-row span:last-child { font-family: 'Roboto Mono', monospace; }
 
   /* ──────────────── RESUMEN FINANCIERO ──────────────── */
   .fs-group {
@@ -1579,13 +1455,6 @@
   }
   .fab-add:hover { transform: scale(1.06); box-shadow: 0 10px 28px rgba(0,180,216,0.6); }
   .fab-add:active { transform: scale(0.96); }
-  /* Variante verde para acciones de exportación/descarga, distinta del "+" teal de agregar */
-  .fab-add.fab-export {
-    background: linear-gradient(135deg, var(--green), #05a87e);
-    box-shadow: 0 8px 24px rgba(6,214,160,0.4);
-    font-size: 22px;
-  }
-  .fab-add.fab-export:hover { box-shadow: 0 10px 28px rgba(6,214,160,0.55); }
   /* Variante glass: mismo estilo translúcido de las tarjetas de la app */
   .fab-add.fab-glass {
     background: var(--card-bg);
@@ -1872,7 +1741,6 @@
     padding: 7px 12px;
     font-size: 13px;
     width: auto;
-    color-scheme: dark;
   }
 
   input[type="datetime-local"] {
@@ -2276,26 +2144,6 @@
     color: var(--coral);
     font-weight: 600;
   }
-  .clientes-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-    align-items: end;
-  }
-  .clientes-form-row .form-group-btn {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-end;
-  }
-  .clientes-form-row .form-group-btn .btn { min-width: 140px; justify-content: center; }
-  @media (max-width: 800px) {
-    .clientes-form-row { grid-template-columns: 1fr 1fr; }
-    .clientes-form-row .form-group-btn { grid-column: 1 / -1; }
-  }
-  @media (max-width: 500px) {
-    .clientes-form-row { grid-template-columns: 1fr; }
-  }
-
   .cli-compras-badge {
     display: inline-flex; align-items: center; gap: 5px;
     background: rgba(0,180,216,0.10);
@@ -2315,10 +2163,6 @@
     color: var(--green);
   }
   .cli-total.cero { color: var(--text-muted); font-weight: 400; }
-  .cli-origen {
-    font-size: 11px; color: var(--text-muted);
-    display: inline-flex; align-items: center; gap: 4px;
-  }
 
   /* ──────────────── Género en Nueva Orden ──────────────── */
   .genero-btn {
@@ -3079,32 +2923,14 @@
   }
   .cobrar-success { animation: cobrarpulse 0.65s ease-out; }
 
-  /* ── PANTALLA DE BLOQUEO (sync error / sesión cerrada) ── */
-  #sync-block-overlay {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(4, 11, 22, 0.92);
-    backdrop-filter: blur(20px) saturate(0.6);
-    -webkit-backdrop-filter: blur(20px) saturate(0.6);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    animation: sbFadeIn 0.3s ease;
-  }
+  /* Keyframes compartidos por los modales de la app (ver .app-modal-overlay /
+     .app-modal-panel / .modal-icon-badge.pulse más abajo) */
   @keyframes sbFadeIn { from { opacity: 0 } to { opacity: 1 } }
   @keyframes lockPulse {
     0%,100% { transform: scale(1) rotate(0deg);   }
     15%      { transform: scale(1.12) rotate(-8deg); }
     30%      { transform: scale(1.08) rotate(6deg);  }
     45%      { transform: scale(1) rotate(0deg);   }
-  }
-  #sync-block-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(239,71,111,0.5);
-    border-radius: var(--radius);
-    padding: 44px 40px 36px;
-    max-width: 460px; width: 100%;
-    text-align: center;
-    box-shadow: 0 0 80px rgba(239,71,111,0.18), 0 32px 64px rgba(0,0,0,0.5);
-    animation: sbSlideUp 0.32s cubic-bezier(.25,.8,.25,1);
   }
   @keyframes sbSlideUp { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
 
@@ -3198,23 +3024,6 @@
   .app-modal-pwd-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,216,0.15); }
   .app-modal-pwd-btn { white-space: nowrap; }
   .app-modal-error { display: none; font-size: 12px; color: var(--coral); font-weight: 600; }
-
-  #sync-block-icon { margin-bottom: 18px; }
-  #sync-block-title {
-    font-size: 21px; font-weight: 800; letter-spacing: -.3px;
-    color: var(--coral); margin-bottom: 10px;
-    font-family: 'Syne', sans-serif;
-  }
-  #sync-block-msg {
-    font-size: 15px; color: var(--text-primary);
-    margin-bottom: 6px; line-height: 1.55;
-  }
-  #sync-block-sub {
-    font-size: 13px; color: var(--text-muted);
-    margin-bottom: 30px; line-height: 1.65;
-  }
-  #sync-block-actions { display: flex; flex-direction: column; gap: 10px; }
-  #sync-block-actions .btn { width: 100%; justify-content: center; padding: 13px 20px; font-size: 15px; }
 </style>
 </head>
 <body>
@@ -3234,6 +3043,7 @@
   <div class="header-inner">
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
+        <span aria-hidden="true" style="font-size:22px;line-height:1;flex-shrink:0">🐟</span>
         <span class="logo-text">LAGOS LA ISABELA</span>
         <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.5.0</span>
       </a>
@@ -9166,15 +8976,6 @@ function mergeBilateral(localOrdenes, remoteData) {
     .sort((a, b) => new Date(b.fechaObj) - new Date(a.fechaObj));
 }
 
-// ── evDone bilateral ─────────────────────────
-// evDone también se sincroniza: gana la unión de los sets de ambos dispositivos
-function mergeEvDone(localDone, remoteDone) {
-  // No usamos la unión simple — el set final se reconstruye desde mergeEvTimes.
-  // Esta función solo se llama para compatibilidad; el set real lo calcula
-  // _recalcEvDoneFromTimes() después del merge de times.
-  return getEvDone();
-}
-
 // Recalcula el set evDone desde evTimes tras un merge bilateral.
 // Una orden está "done" si tiene 'end' Y ese 'end' es posterior al último 'unmarkedAt'.
 function _recalcEvDoneFromTimes(times) {
@@ -11697,13 +11498,6 @@ function setCDSeg(seg) {
 
 // ── Helpers de datos ─────────────────────────────────────
 
-function _cdGetOrdenes() {
-  // Retorna órdenes según segmento activo
-  if (_cdSeg === 'detal')     return ordenes;
-  if (_cdSeg === 'mayorista') return [];
-  return ordenes; // 'todos' incluye ambos pero mayorista se maneja aparte
-}
-
 function _cdBuildClientes() {
   // Construye mapa enriquecido: nombre → datos agregados de ambos canales
   // Primero construir mapa de alias: nombre_historial → nombre_actual_directorio
@@ -11889,12 +11683,6 @@ function _cdCtx(id) {
   el.width  = Math.max(w, 100);
   el.height = h;
   return { ctx: el.getContext('2d'), W: el.width, H: el.height };
-}
-
-function _cdClearCanvas(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.width = el.offsetWidth || el.parentElement?.offsetWidth || 400;
 }
 
 const _cdFont = "'Outfit', 'Roboto Mono', sans-serif";
@@ -12808,53 +12596,6 @@ function _renderDelta(elId, current, prev) {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  FEATURE 9: HISTORIAL DE PRECIOS POR COMPRADOR MAYORISTA
-// ══════════════════════════════════════════════════════════
-
-function showSyncBlock(title, msg) {
-  // Con el backend propio (Apps Script) ya no hay tokens que expiren, así que
-  // esto solo se usa para errores persistentes de red/servidor, no de sesión.
-  const overlay = document.getElementById('sync-block-overlay');
-  if (!overlay || overlay.style.display !== 'none') return;
-
-  if (title) document.getElementById('sync-block-title').textContent = title;
-  if (msg)   document.getElementById('sync-block-msg').textContent   = msg;
-  // Guardar datos del formulario de cotizar antes de mostrar el bloqueo
-  _guardarFormularioEnSesion();
-  overlay.style.display = 'flex';
-  // Pulso de alerta en el icono
-  const icon = document.getElementById('sync-block-icon');
-  icon.style.animation = 'none';
-  void icon.offsetWidth;
-  icon.style.animation = 'sbSlideUp 0.32s cubic-bezier(.25,.8,.25,1)';
-}
-
-// Guarda los datos del formulario de nueva orden en sessionStorage
-function _guardarFormularioEnSesion() {
-  try {
-    const nombre  = document.getElementById('cliente-nombre')?.value || '';
-    const tel     = document.getElementById('cliente-tel')?.value    || '';
-    const cc      = document.getElementById('cliente-cc')?.value     || '';
-    const nota    = document.getElementById('nota-input')?.value     || '';
-    const pago    = document.getElementById('pago-input')?.value     || '';
-    const pagoEfectivo = document.getElementById('pago-input-efectivo')?.value || '';
-    const pagoNequi    = document.getElementById('pago-input-nequi')?.value    || '';
-    const metodoPago   = _metodoPago;
-    const especies = {};
-    ESPECIES.forEach(e => {
-      const qty   = document.getElementById(`qty-${e.id}`)?.value   || '';
-      const ev    = document.getElementById(`ev-${e.id}`)?.checked  || false;
-      const evGratis = ev && _evGratisItems.has(e.id);
-      const precio = e.precio === null ? (document.getElementById(`precio-${e.id}`)?.value || '') : null;
-      const especieOtro = e.id === 'otro' ? (document.getElementById('especie-otro')?.value || '') : null;
-      if (qty) { especies[e.id] = { qty, ev, evGratis, precio, especieOtro }; }
-    });
-    const saved = { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especies };
-    safeSessionStorage.setItem('aquacot_form_backup', JSON.stringify(saved));
-  } catch(e) {}
-}
-
 // Restaura los datos del formulario de nueva orden desde sessionStorage
 function _restaurarFormularioDesdeSesion() {
   try {
@@ -12894,18 +12635,6 @@ function _restaurarFormularioDesdeSesion() {
     calcular();
     toast('📋 Se recuperaron los datos del formulario anterior');
   } catch(e) {}
-}
-
-function syncBlockDismiss() {
-  document.getElementById('sync-block-overlay').style.display = 'none';
-  if (autoSyncTimer) { clearInterval(autoSyncTimer); autoSyncTimer = null; }
-  setDriveStatus('error', 'Sincronización pausada');
-  toast('Continuando en modo local — los datos están seguros');
-}
-
-function syncBlockReconnect() {
-  document.getElementById('sync-block-overlay').style.display = 'none';
-  initDriveSync();
 }
 
 
@@ -13038,27 +12767,6 @@ function _formTieneDatos() {
 // Advertir al cambiar de pestaña si hay datos sin guardar
 
 // ══════════════════════════════════════════════════════════
-//  CONTRASEÑA PARA SALIR DEL FULLSCREEN DE EVISCERADO
-// ══════════════════════════════════════════════════════════
-function solicitarPasswordSalirFullscreen() {
-  // Reutilizamos el modal de bloqueo de pestañas pero con texto diferente
-  _tabPendiente = '__exit_ev_fullscreen__';
-  const overlay = document.getElementById('tab-lock-overlay');
-  if (!overlay) { toggleEvFullscreen(); return; }
-  // Cambiar el mensaje del modal
-  const h3 = overlay.querySelector('h3');
-  const p  = overlay.querySelector('p');
-  if (h3) h3.textContent = 'Salir de pantalla completa';
-  if (p)  p.textContent  = 'Ingresa la contraseña de administrador para salir.';
-  const inp = document.getElementById('tab-pwd-input');
-  const err = document.getElementById('tab-pwd-error');
-  if (inp) inp.value = '';
-  if (err) { err.textContent = ''; err.style.display = 'none'; }
-  overlay.style.display = 'flex';
-  setTimeout(() => inp?.focus(), 80);
-}
-
-// ══════════════════════════════════════════════════════════
 //  CONTRASEÑA PARA PESTAÑAS PROTEGIDAS (Dashboard y Perfiles)
 //  Mismo hash SHA-256 que el panel de precios
 // ══════════════════════════════════════════════════════════
@@ -13105,12 +12813,8 @@ async function _verificarPasswordTab() {
       if (h3) h3.textContent = 'Sección protegida';
       if (p)  p.textContent  = 'Esta sección requiere contraseña de administrador.';
     }
-    if (dest === '__exit_ev_fullscreen__') {
-      toggleEvFullscreen();
-    } else {
-      _tabsDesbloqueadas = true;
-      if (dest) _origShowTab(dest);
-    }
+    _tabsDesbloqueadas = true;
+    if (dest) _origShowTab(dest);
   } else {
     if (err) { err.textContent = '❌ Contraseña incorrecta'; err.style.display = 'block'; }
     if (inp) { inp.value = ''; inp.focus(); }
@@ -13427,25 +13131,6 @@ setInterval(() => {
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Completar ahora
       </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════ PANTALLA DE BLOQUEO ══════ -->
-<div id="sync-block-overlay" style="display:none">
-  <div id="sync-block-card">
-    <div id="sync-block-icon" class="modal-icon-badge" style="--ic:var(--coral)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </div>
-    <div id="sync-block-title">Error de sincronización</div>
-    <div id="sync-block-msg">No se pudo conectar con el servidor de sincronización.</div>
-    <div id="sync-block-sub">Tus datos locales están seguros. Reintenta cuando tengas conexión.</div>
-    <div id="sync-block-actions">
-      <button class="btn btn-success" onclick="syncBlockReconnect()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Reintentar
-      </button>
-      <button class="btn btn-ghost" onclick="syncBlockDismiss()">Continuar sin sincronizar</button>
     </div>
   </div>
 </div>
