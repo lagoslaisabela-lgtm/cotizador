@@ -463,9 +463,6 @@
     background: rgba(0,180,216,0.5);
   }
 
-  /* May price modal */
-  #may-price-modal-overlay .modal-body::-webkit-scrollbar { width: 4px; }
-
   .logo-text {
     font-family: 'DM Sans', sans-serif;
     font-weight: 800;
@@ -724,6 +721,26 @@
     50%  { transform: scale(1.55) rotate(12deg) }
     100% { transform: scale(1) }
   }
+
+  /* Select "¿Qué especie es?" que reemplaza el título en la tarjeta "Otro Pescado" */
+  .species-otro-select {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
+    background-size: 12px;
+    border: none;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0 18px 0 0;
+    max-width: 165px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .species-otro-select:focus { outline: none; }
+  .species-otro-select option { background: var(--ocean-mid); color: var(--text-primary); }
 
   .species-price {
     font-size: 12px;
@@ -1705,28 +1722,6 @@
   .delta-up   { color: #06d6a0; }
   .delta-down { color: #ef476f; }
   .delta-flat { color: var(--text-muted); }
-
-  /* Historial precios mayorista */
-  .price-hist-esp {
-    margin-bottom: 18px;
-  }
-  .price-hist-esp-title {
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 8px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .price-hist-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 0; border-bottom: 1px solid rgba(0,180,216,0.07);
-    font-size: 13px;
-  }
-  .price-hist-date { color: var(--text-muted); font-size: 11px; min-width: 90px; }
-  .price-hist-qty  { color: var(--text-secondary); min-width: 60px; }
-  .price-hist-val  { font-family:'Roboto Mono',monospace; font-weight: 700; color: var(--green); margin-left: auto; }
-  .price-hist-bar  { flex:1; background: rgba(255,255,255,0.05); border-radius:4px; height:5px; overflow:hidden; max-width:120px; }
-  .price-hist-bar-fill { height:100%; background: linear-gradient(90deg,var(--teal),var(--green)); border-radius:4px; }
-  .price-trend-up   { color: var(--green);  font-size: 10px; }
-  .price-trend-down { color: var(--coral);  font-size: 10px; }
 
   /* Recibo térmico — print styles removed */
 
@@ -2866,7 +2861,7 @@
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:1">
       <a class="logo" href="#">
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.3.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.4.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3055,7 +3050,6 @@
           <option value="no">Solo sin eviscerado</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">📥 Excel</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportarHistorialPDF()">📄 PDF</button>
       </div>
     </div>
 
@@ -3222,7 +3216,6 @@
             <div class="fs-row"><span>Libras detal</span><span id="fs-libras">0 lb</span></div>
             <div class="fs-row"><span>Ingresos por pescado</span><span id="fs-pescado">$0</span></div>
             <div class="fs-row fs-gold"><span>Ingresos por eviscerado</span><span id="fs-eviscerado">$0</span></div>
-            <div class="fs-row"><span>🔪 Libras peladas</span><span id="fs-libras-peladas">0 lb</span></div>
             <div class="fs-row fs-subtotal"><span>Total detal</span><span id="fs-total">$0</span></div>
           </div>
           <!-- Grupo métodos de pago (detal) -->
@@ -3338,19 +3331,20 @@
       <div class="search-row">
         <input type="text" id="cli-search" placeholder="Buscar por nombre, celular o CC…" oninput="renderClientes()">
         <button class="btn btn-ghost btn-sm" onclick="exportarClientesExcel()">📥 Excel</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportarClientesPDF()">📄 PDF</button>
       </div>
-      <div class="cd-seg-btns" style="margin-top:10px">
-        <button class="cd-seg active" data-canal="todos"     onclick="setCliFiltroCanal('todos')">🌐 Todos</button>
-        <button class="cd-seg"        data-canal="detal"     onclick="setCliFiltroCanal('detal')">🛒 Solo Detal</button>
-        <button class="cd-seg"        data-canal="mayorista" onclick="setCliFiltroCanal('mayorista')">📦 Solo Mayorista</button>
-        <button class="cd-seg"        data-canal="ambos"     onclick="setCliFiltroCanal('ambos')">🔀 Ambos canales</button>
-      </div>
-      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="filter-bar-label">🐟 Especie</span>
-        <select id="cli-filtro-especie" onchange="renderClientes()" class="cd-select" style="min-width:190px">
-          <option value="todas">Todas las especies</option>
-        </select>
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div class="cd-seg-btns">
+          <button class="cd-seg active" data-canal="todos"     onclick="setCliFiltroCanal('todos')">🌐 Todos</button>
+          <button class="cd-seg"        data-canal="detal"     onclick="setCliFiltroCanal('detal')">🛒 Solo Detal</button>
+          <button class="cd-seg"        data-canal="mayorista" onclick="setCliFiltroCanal('mayorista')">📦 Solo Mayorista</button>
+          <button class="cd-seg"        data-canal="ambos"     onclick="setCliFiltroCanal('ambos')">🔀 Ambos canales</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="filter-bar-label">🐟 Especie</span>
+          <select id="cli-filtro-especie" onchange="renderClientes()" class="cd-select" style="min-width:190px">
+            <option value="todas">Todas las especies</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -3784,19 +3778,6 @@
   </div><!-- /mayorista -->
 
 </main>
-
-<!-- ══════ MODAL: HISTORIAL DE PRECIOS MAYORISTA ══════ -->
-<div class="modal-overlay" id="may-price-modal-overlay" onclick="closeMayPriceModal()" style="display:none;position:fixed;inset:0;background:rgba(4,11,22,0.75);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
-  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:720px;width:95%;max-height:88vh;overflow:hidden;display:flex;flex-direction:column">
-    <div class="modal-header">
-      <h3 id="may-price-modal-title">📊 Historial de Precios</h3>
-      <button class="btn btn-ghost btn-sm" onclick="closeMayPriceModal()">✕</button>
-    </div>
-    <div class="modal-body" style="overflow-y:auto;flex:1;padding:20px 24px">
-      <div id="may-price-modal-body"></div>
-    </div>
-  </div>
-</div>
 
 <!-- ══════════════ OVERLAY: EVISCERADO PANTALLA COMPLETA ══════════════ -->
 <div id="ev-fullscreen-overlay">
@@ -4373,7 +4354,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.3.0';
+const APP_VERSION = '6.4.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4434,6 +4415,15 @@ const ESPECIES_REASIGNABLES = ESPECIES.filter(e => e.id !== 'otro');
 function _htmlSelectEspecieOtro(id, onchange) {
   return `<select id="${id}" onchange="${onchange}" style="width:100%;margin-bottom:8px;background:var(--input-bg);border:1px solid var(--input-border,rgba(0,180,216,0.25));border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;padding:9px 12px;">
     <option value="">🐟 ¿Qué especie es?</option>
+    ${ESPECIES_REASIGNABLES.map(es => `<option value="${escHtml(es.nombre)}">${es.emoji} ${es.nombre}</option>`).join('')}
+  </select>`;
+}
+
+// Versión compacta del selector "Otro Pescado" que reemplaza el título de la tarjeta
+// (en vez de ir en una fila aparte), para que todas las tarjetas queden del mismo tamaño.
+function _htmlSelectEspecieOtroInline(id, onchange) {
+  return `<select id="${id}" onchange="${onchange}" class="species-otro-select">
+    <option value="">¿Qué especie es?</option>
     ${ESPECIES_REASIGNABLES.map(es => `<option value="${escHtml(es.nombre)}">${es.emoji} ${es.nombre}</option>`).join('')}
   </select>`;
 }
@@ -4566,10 +4556,12 @@ function buildSpeciesGrid() {
     <div class="species-card" id="sc-${e.id}" style="--sc:${e.color||'var(--teal)'}">
       <div class="species-accent"></div>
       <div class="species-header">
-        <span class="species-name"><span class="species-emoji">${e.emoji||'🐟'}</span>${e.nombre}</span>
+        <span class="species-name">
+          <span class="species-emoji">${e.emoji||'🐟'}</span>
+          ${e.id === 'otro' ? _htmlSelectEspecieOtroInline('especie-otro', 'calcular()') : e.nombre}
+        </span>
         <span class="species-price" style="color:${e.color||'var(--teal)'}">${e.precio ? fmt(e.precio)+'/lb' : 'Precio libre'}</span>
       </div>
-      ${e.id === 'otro' ? _htmlSelectEspecieOtro('especie-otro', 'calcular()') : ''}
       <div class="species-inputs">
         ${e.precio === null ? `<input type="number" min="0" step="0.1" placeholder="Precio/lb" id="precio-${e.id}" oninput="calcular()" style="max-width:100px">` : ''}
         <input type="text" inputmode="decimal" placeholder="0.0 lb" id="qty-${e.id}" oninput="calcular()" autocomplete="off">
@@ -4601,10 +4593,12 @@ function buildMaySpeciesGrid() {
     <div class="species-card" id="may-sc-${e.id}" style="--sc:${e.color||'var(--teal)'}">
       <div class="species-accent"></div>
       <div class="species-header">
-        <span class="species-name"><span class="species-emoji">${e.emoji||'🐟'}</span>${e.nombre}</span>
+        <span class="species-name">
+          <span class="species-emoji">${e.emoji||'🐟'}</span>
+          ${e.id === 'otro' ? _htmlSelectEspecieOtroInline('may-especie-otro', 'calcularMayorista()') : e.nombre}
+        </span>
         <span class="species-price" style="color:${e.color||'var(--teal)'}">${e.precio ? 'Ref. '+fmt(e.precio)+'/lb' : 'Precio libre'}</span>
       </div>
-      ${e.id === 'otro' ? _htmlSelectEspecieOtro('may-especie-otro', 'calcularMayorista()') : ''}
       <div class="species-inputs">
         <input type="text" inputmode="decimal"
           placeholder="${e.precio ? e.precio : 'Precio/lb'}"
@@ -4925,7 +4919,6 @@ function renderMayorista() {
         v.nota ? `<span title="${escHtml(v.nota)}">📝 ${escHtml(v.nota.length > 30 ? v.nota.slice(0,30)+'…' : v.nota)}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick='eliminarVentaMayorista("${v.id}")' title="Eliminar">🗑</button>
       </td>
@@ -6287,157 +6280,6 @@ function buildExcelResumen() {
 }
 
 // ─────────────────────────────────────────────
-//  EXPORTAR HISTORIAL → PDF
-// ─────────────────────────────────────────────
-function exportarHistorialPDF() {
-  // Obtener la lista filtrada actualmente visible (mismo criterio que renderHistorial)
-  const nombre = (document.getElementById('search-nombre')?.value || '').toLowerCase();
-  const tel    = (document.getElementById('search-tel')?.value    || '').toLowerCase();
-  const cc     = (document.getElementById('search-cc')?.value     || '').toLowerCase();
-
-  let lista = getHistFiltered(ordenes);
-  lista = lista.filter(c =>
-    (!nombre || c.nombre.toLowerCase().includes(nombre)) &&
-    (!tel    || (c.tel || '').includes(tel)) &&
-    (!cc     || (c.cc  || '').toLowerCase().includes(cc))
-  );
-
-  if (lista.length === 0) { toast('No hay órdenes en la vista actual para exportar', true); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  const W = 297, M = 14;
-  let y = 18;
-
-  // ── Cabecera ──
-  doc.setFillColor(5, 18, 38);
-  doc.rect(0, 0, W, 26, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.setTextColor(0, 180, 216);
-  doc.text('Lagos La Isabela', M, 11);
-  doc.setFontSize(9);
-  doc.setTextColor(160, 200, 220);
-  doc.text('Historial de Órdenes', M, 17);
-
-  const periodoLabel = getHistPeriodLabel();
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(120, 180, 210);
-  doc.text(`Período: ${periodoLabel}`, W - M, 11, { align: 'right' });
-  doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, W - M, 17, { align: 'right' });
-
-  y = 34;
-
-  // ── Resumen rápido ──
-  const totalVentas = lista.reduce((s, c) => s + (c.total || 0), 0);
-  const totalLibras = lista.reduce((s, c) => s + c.items.reduce((a, i) => a + (i.qty || 0), 0), 0);
-  doc.setFillColor(12, 30, 55);
-  doc.roundedRect(M, y - 5, (W - 2*M), 14, 2, 2, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(0, 180, 216);
-  doc.text(`${lista.length} órdenes`, M + 4, y + 2);
-  doc.setTextColor(6, 214, 160);
-  doc.text(`Total: ${fmt(totalVentas)}`, M + 40, y + 2);
-  doc.setTextColor(255, 209, 102);
-  doc.text(`${totalLibras.toFixed(1)} lb`, M + 105, y + 2);
-  y += 16;
-
-  // ── Cabeceras de tabla ──
-  const cols = [
-    { h: '#',           w: 8  },
-    { h: 'Fecha',       w: 30 },
-    { h: 'Cliente',     w: 38 },
-    { h: 'Identificación', w: 28 },
-    { h: 'Celular',     w: 26 },
-    { h: 'Especies',    w: 48 },
-    { h: 'Libras',      w: 16 },
-    { h: 'Eviscerado',  w: 20 },
-    { h: 'Total',       w: 22 },
-    { h: 'Nota',        w: 37 },
-  ];
-
-  const ROW_H = 7.5;
-  const PAGE_H = 195;
-
-  function drawHeader() {
-    doc.setFillColor(0, 100, 140);
-    let xh = M;
-    cols.forEach(col => {
-      doc.rect(xh, y, col.w, ROW_H, 'F');
-      xh += col.w;
-    });
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
-    xh = M;
-    cols.forEach(col => {
-      doc.text(col.h, xh + 2, y + 5);
-      xh += col.w;
-    });
-    y += ROW_H;
-  }
-
-  drawHeader();
-
-  // ── Filas ──
-  lista.forEach((c, idx) => {
-    if (y + ROW_H > PAGE_H) {
-      doc.addPage();
-      y = 18;
-      drawHeader();
-    }
-
-    const bg = idx % 2 === 0 ? [12, 25, 48] : [8, 18, 35];
-    let xr = M;
-    doc.setFillColor(...bg);
-    let rowW = cols.reduce((s, col) => s + col.w, 0);
-    doc.rect(M, y, rowW, ROW_H, 'F');
-
-    const especiesStr = c.items.map(i => `${i.especie}${i.ev ? '🔪' : ''}`).join(', ');
-    const librasTotal = c.items.reduce((s, i) => s + (i.qty || 0), 0);
-    const tieneEv     = c.items.some(i => i.ev) ? `${fmt(c.totalEviscerado)}` : '—';
-
-    const cells = [
-      String(lista.length - idx),
-      c.fecha,
-      c.nombre || '—',
-      c.cc     || '—',
-      c.tel    || '—',
-      especiesStr,
-      librasTotal.toFixed(2),
-      tieneEv,
-      fmt(c.total || 0),
-      c.nota   || '',
-    ];
-
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(210, 230, 245);
-    cols.forEach((col, ci) => {
-      const cellText = String(cells[ci] || '');
-      const maxW = col.w - 3;
-      // Truncar si es muy largo
-      const truncated = doc.getTextWidth(cellText) > maxW
-        ? cellText.slice(0, Math.floor(cellText.length * maxW / doc.getTextWidth(cellText)) - 1) + '…'
-        : cellText;
-      doc.text(truncated, xr + 2, y + 5);
-      xr += col.w;
-    });
-
-    y += ROW_H;
-  });
-
-  // ── Pie de página ──
-  const pages = doc.internal.getNumberOfPages();
-  for (let p = 1; p <= pages; p++) {
-    doc.setPage(p);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 140, 170);
-    doc.text(`Página ${p} de ${pages} · Lagos La Isabela`, W / 2, 205, { align: 'center' });
-  }
-
-  const fecha = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
-  doc.save(`Historial_LagosLaIsabela_${fecha}.pdf`);
-  toast('📄 PDF del historial exportado');
-}
-
-// ─────────────────────────────────────────────
 //  EXPORTAR DIRECTORIO CLIENTES → EXCEL
 // ─────────────────────────────────────────────
 function exportarClientesExcel() {
@@ -6484,126 +6326,6 @@ function exportarClientesExcel() {
 
   XLSX.writeFile(wb, `Clientes_LagosLaIsabela_${new Date().toLocaleDateString('es-CO').replace(/\//g,'-')}.xlsx`);
   toast('📥 Excel de clientes exportado');
-}
-
-// ─────────────────────────────────────────────
-//  EXPORTAR DIRECTORIO CLIENTES → PDF
-// ─────────────────────────────────────────────
-function exportarClientesPDF() {
-  const q = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
-  let lista = getTodosClientes();
-  if (q) {
-    lista = lista.filter(c =>
-      c.nombre.toLowerCase().includes(q) ||
-      (c.tel || '').includes(q) ||
-      (c.cc  || '').toLowerCase().includes(q)
-    );
-  }
-
-  if (lista.length === 0) { toast('No hay clientes para exportar', true); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-  const W = 210, M = 14;
-  let y = 18;
-
-  // ── Cabecera ──
-  doc.setFillColor(5, 18, 38);
-  doc.rect(0, 0, W, 26, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(0, 180, 216);
-  doc.text('Lagos La Isabela', M, 11);
-  doc.setFontSize(9); doc.setTextColor(160, 200, 220);
-  doc.text('Directorio de Clientes', M, 17);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 180, 210);
-  doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, W - M, 17, { align: 'right' });
-
-  y = 34;
-
-  // ── Resumen ──
-  const totalComprado = lista.reduce((s, c) => s + (c.totalComprado || 0), 0);
-  doc.setFillColor(12, 30, 55);
-  doc.roundedRect(M, y - 5, W - 2*M, 12, 2, 2, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(0, 180, 216);
-  doc.text(`${lista.length} clientes`, M + 4, y + 2);
-  doc.setTextColor(6, 214, 160);
-  doc.text(`Total comprado: ${fmt(totalComprado)}`, M + 40, y + 2);
-  y += 16;
-
-  // ── Tabla ──
-  const cols = [
-    { h: '#',              w: 10 },
-    { h: 'Nombre',         w: 52 },
-    { h: 'Identificación', w: 36 },
-    { h: 'Celular',        w: 30 },
-    { h: 'Compras',        w: 18 },
-    { h: 'Total comprado', w: 30 },
-    { h: 'Origen',         w: 22 },
-  ];
-
-  const ROW_H = 8;
-  const PAGE_H = 280;
-
-  function drawHeader() {
-    doc.setFillColor(0, 100, 140);
-    let xh = M;
-    cols.forEach(col => { doc.rect(xh, y, col.w, ROW_H, 'F'); xh += col.w; });
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
-    xh = M;
-    cols.forEach(col => { doc.text(col.h, xh + 2, y + 5.5); xh += col.w; });
-    y += ROW_H;
-  }
-
-  drawHeader();
-
-  lista.forEach((c, idx) => {
-    if (y + ROW_H > PAGE_H) {
-      doc.addPage();
-      y = 18;
-      drawHeader();
-    }
-
-    const bg = idx % 2 === 0 ? [12, 25, 48] : [8, 18, 35];
-    doc.setFillColor(...bg);
-    const rowW = cols.reduce((s, col) => s + col.w, 0);
-    doc.rect(M, y, rowW, ROW_H, 'F');
-
-    const vetado = c.perfil?.estado === 'vetado' ? ' [VETADO]' : '';
-    const cells = [
-      String(idx + 1),
-      (c.nombre || '—') + vetado,
-      c.cc  || '—',
-      c.tel || '—',
-      String(c.compras || 0),
-      c.totalComprado > 0 ? fmt(c.totalComprado) : '—',
-      c.origen === 'directorio' ? 'Directorio' : 'Historial',
-    ];
-
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(210, 230, 245);
-    let xr = M;
-    cols.forEach((col, ci) => {
-      const txt = String(cells[ci] || '');
-      const maxW = col.w - 3;
-      const truncated = doc.getTextWidth(txt) > maxW
-        ? txt.slice(0, Math.floor(txt.length * maxW / doc.getTextWidth(txt)) - 1) + '…'
-        : txt;
-      doc.text(truncated, xr + 2, y + 5.5);
-      xr += col.w;
-    });
-    y += ROW_H;
-  });
-
-  // ── Pie de página ──
-  const pages = doc.internal.getNumberOfPages();
-  for (let p = 1; p <= pages; p++) {
-    doc.setPage(p);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 140, 170);
-    doc.text(`Página ${p} de ${pages} · Lagos La Isabela`, W / 2, 290, { align: 'center' });
-  }
-
-  const fecha = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
-  doc.save(`Clientes_LagosLaIsabela_${fecha}.pdf`);
-  toast('📄 PDF de clientes exportado');
 }
 
 // ─────────────────────────────────────────────
@@ -6841,8 +6563,6 @@ function renderDashboard() {
   document.getElementById('fs-libras').textContent     = totalLibrasDetal.toFixed(1) + ' lb';
   document.getElementById('fs-pescado').textContent    = fmt(totalPescadoDetal);
   document.getElementById('fs-eviscerado').textContent = fmt(totalEviscerado);
-  const fsLibrasPeladasEl = document.getElementById('fs-libras-peladas');
-  if (fsLibrasPeladasEl) fsLibrasPeladasEl.textContent = totalLibrasPeladas.toFixed(1) + ' lb';
   document.getElementById('fs-total').textContent      = fmt(totalVentasDetal);
 
   // Desglose por método de pago (detal) del período
@@ -8805,8 +8525,8 @@ function guardarEdicion() {
 //    escáneres automáticos que encuentren la URL puedan leer/escribir el archivo.
 //    La confidencialidad real la da la contraseña de sincronización (SYNC_PASS_KEY),
 //    que el usuario escribe una vez por dispositivo y NUNCA queda en este archivo.
-const SYNC_ENDPOINT   = 'https://script.google.com/macros/s/AKfycby3NG8Tsva-j34gmLZQz988qQPaT1QW3qe9PtklBOl1a2AUhxh7G_mumamnab3pagjI8w/exec';
-const AUTH_SYNC_TOKEN = '457d62b3c17b\nada740a38-5181-4951-a259isa8384*[pÑlk]';
+const SYNC_ENDPOINT   = 'https://script.google.com/macros/s/PEGA_AQUI_TU_ID_DE_DESPLIEGUE/exec';
+const AUTH_SYNC_TOKEN = 'PEGA_AQUI_EL_MISMO_TOKEN_QUE_PUSISTE_EN_CODE_GS';
 const SYNC_PASS_KEY   = 'aquacot_sync_pass';
 const DRIVE_TOKEN_KEY = 'aquacot_drive_token'; // legado, se limpia si existe
 const DELETED_IDS_KEY      = 'aquacot_deleted_ids';
@@ -11145,9 +10865,6 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('datos-faltantes-overlay')?.style.display !== 'none') {
     _datosFaltantesCancelar(); return;
   }
-  if (document.getElementById('may-price-modal-overlay')?.style.display !== 'none') {
-    closeMayPriceModal(); return;
-  }
   if (document.getElementById('cli-modal-overlay')?.classList.contains('open')) {
     closeCliModal(); return;
   }
@@ -12472,95 +12189,6 @@ function _renderDelta(elId, current, prev) {
 // ══════════════════════════════════════════════════════════
 //  FEATURE 9: HISTORIAL DE PRECIOS POR COMPRADOR MAYORISTA
 // ══════════════════════════════════════════════════════════
-
-function abrirHistorialPrecios(nombre) {
-  // Filtrar ventas de este comprador, ordenar por fecha
-  const ventas = mayorista
-    .filter(v => v.nombre.trim().toLowerCase() === nombre.trim().toLowerCase())
-    .sort((a, b) => new Date(a.fechaObj) - new Date(b.fechaObj));
-
-  if (!ventas.length) { toast('Sin historial para este comprador', true); return; }
-
-  // Construir mapa especie → [{fecha, qty, precio}]
-  const especieMap = {};
-  ventas.forEach(v => {
-    const f = new Date(v.fechaObj).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'2-digit' });
-    v.items.forEach(it => {
-      if (!especieMap[it.especie]) especieMap[it.especie] = [];
-      especieMap[it.especie].push({ fecha: f, qty: it.qty, precio: it.precio, fechaObj: v.fechaObj });
-    });
-  });
-
-  const especies = Object.keys(especieMap).sort();
-  const espInfo  = {};
-  ESPECIES.forEach(e => { espInfo[e.nombre] = e; });
-
-  let html = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:18px">
-    ${ventas.length} ventas registradas · ${especies.length} especies distintas
-  </p>`;
-
-  especies.forEach(esp => {
-    const rows  = especieMap[esp];
-    const maxP  = Math.max(...rows.map(r => r.precio));
-    const info  = espInfo[esp] || {};
-    const color = info.color || 'var(--teal)';
-    const emoji = info.emoji || '🐟';
-
-    html += `<div class="price-hist-esp">
-      <div class="price-hist-esp-title">
-        <span style="color:${escHtml(color)}">${emoji}</span>
-        ${escHtml(esp)}
-        <span style="font-weight:400;color:var(--text-muted)">· ${rows.length} compras</span>
-      </div>`;
-
-    rows.forEach((r, i) => {
-      const prev   = rows[i-1];
-      let trend    = '';
-      if (prev && r.precio !== prev.precio) {
-        trend = r.precio > prev.precio
-          ? `<span class="price-trend-up">▲ +${fmt(r.precio - prev.precio)}/lb</span>`
-          : `<span class="price-trend-down">▼ ${fmt(r.precio - prev.precio)}/lb</span>`;
-      }
-      const barW = maxP > 0 ? Math.round((r.precio / maxP) * 100) : 0;
-      html += `<div class="price-hist-row">
-        <span class="price-hist-date">${escHtml(r.fecha)}</span>
-        <span class="price-hist-qty">${r.qty.toFixed(1)} lb</span>
-        <div class="price-hist-bar"><div class="price-hist-bar-fill" style="width:${barW}%"></div></div>
-        <span class="price-hist-val">${fmt(r.precio)}/lb</span>
-        ${trend}
-      </div>`;
-    });
-
-    // Promedio y tendencia general
-    const avg = rows.reduce((s,r) => s + r.precio, 0) / rows.length;
-    const first = rows[0].precio, last = rows[rows.length-1].precio;
-    const tendEl = rows.length > 1
-      ? (last > first
-          ? `<span class="price-trend-up">↗ tendencia al alza</span>`
-          : last < first
-            ? `<span class="price-trend-down">↘ tendencia a la baja</span>`
-            : `<span class="delta-flat">→ precio estable</span>`)
-      : '';
-    html += `<div style="font-size:11px;color:var(--text-muted);padding:6px 0 0;display:flex;gap:16px">
-      <span>Promedio: <strong style="color:var(--text-primary)">${fmt(avg)}/lb</strong></span>
-      <span>Mín: <strong>${fmt(Math.min(...rows.map(r=>r.precio)))}/lb</strong></span>
-      <span>Máx: <strong>${fmt(maxP)}/lb</strong></span>
-      ${tendEl}
-    </div>`;
-    html += `</div>`;
-  });
-
-  document.getElementById('may-price-modal-title').textContent = `📊 Precios de ${nombre}`;
-  document.getElementById('may-price-modal-body').innerHTML = html;
-  const overlay = document.getElementById('may-price-modal-overlay');
-  overlay.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeMayPriceModal() {
-  document.getElementById('may-price-modal-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
 
 function showSyncBlock(title, msg) {
   // Con el backend propio (Apps Script) ya no hay tokens que expiren, así que
