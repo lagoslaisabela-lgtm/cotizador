@@ -444,21 +444,6 @@
   }
   #ev-fs-sync-mini.syncing .fs-sync-dot { animation: pulse-dot 1s infinite; }
 
-  #ev-fs-reload-btn {
-    background: rgba(0,180,216,0.08);
-    border: 1px solid rgba(0,180,216,0.2);
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 13px;
-    padding: 4px 8px;
-    cursor: pointer;
-    line-height: 1;
-    flex-shrink: 0;
-    transition: all 0.18s;
-  }
-  #ev-fs-reload-btn:hover { border-color: var(--teal); color: var(--teal); background: rgba(0,180,216,0.14); }
-  #ev-fs-reload-btn:active { transform: rotate(180deg); }
-
   /* Panel lateral perfil de cliente */
   #cli-profile-panel::-webkit-scrollbar { width: 4px; }
   #cli-profile-panel::-webkit-scrollbar-track { background: transparent; }
@@ -3519,7 +3504,6 @@
             <span class="fs-total-value" id="fs-gran-total">$0</span>
           </div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="margin-top:4px">🗑 Borrar todo el historial</button>
       </div>
     </div>
 
@@ -4061,7 +4045,6 @@
         <span class="fs-sync-dot"></span>
         <span id="ev-fs-sync-text">—</span>
       </div>
-      <button id="ev-fs-reload-btn" onclick="renderEvFullscreen()" title="Actualizar tarjetas">↻</button>
     </div>
     <button class="ev-fs-close" onclick="toggleEvFullscreen()">✕ Salir de pantalla completa</button>
   </div>
@@ -4222,6 +4205,35 @@
         <p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.4">
           Los cambios aplican de inmediato y se sincronizan a todos los dispositivos conectados a Drive.
         </p>
+      </div>
+    </div>
+
+    <!-- ══ Sección: Zona de peligro (borrar historial) ══ -->
+    <div style="border-top:1px solid var(--card-border);padding:18px 24px 8px">
+      <div style="font-size:12px;font-weight:700;color:var(--coral);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px">⚠️ Zona de peligro</div>
+
+      <!-- Bloqueo por contraseña -->
+      <div id="danger-lock-overlay" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0 8px">
+        <div style="font-size:32px">🔒</div>
+        <p style="font-size:13px;color:var(--text-secondary);text-align:center;margin:0">
+          Solo el administrador puede borrar el historial.
+        </p>
+        <div style="display:flex;gap:8px;width:100%;max-width:280px">
+          <input id="danger-pwd-input" type="password" placeholder="Contraseña"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') _verificarPasswordDanger()"
+            style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:8px 12px;font-size:14px;outline:none">
+          <button class="btn btn-primary btn-sm" onclick="_verificarPasswordDanger()">Entrar</button>
+        </div>
+        <span id="danger-pwd-error" style="display:none;font-size:12px;color:var(--coral);font-weight:600"></span>
+      </div>
+
+      <!-- Panel real (oculto hasta validar contraseña) -->
+      <div id="danger-panel-content" style="display:none">
+        <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;line-height:1.4">
+          Esta acción borra todas las órdenes del historial en todos los dispositivos sincronizados. No se puede deshacer.
+        </p>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Borrar todo el historial</button>
       </div>
     </div>
 
@@ -8265,6 +8277,40 @@ function _lockPreciosOnClose() {
   if (errEl) errEl.style.display = 'none';
 }
 
+// Misma contraseña de administrador, para la zona de peligro (borrar historial)
+async function _verificarPasswordDanger() {
+  const input = document.getElementById('danger-pwd-input');
+  const errEl = document.getElementById('danger-pwd-error');
+  const val   = input?.value || '';
+  if (!val) return;
+
+  const hash = await _hashStr(val);
+  if (hash === _PRICES_HASH) {
+    document.getElementById('danger-lock-overlay').style.display  = 'none';
+    document.getElementById('danger-panel-content').style.display = 'block';
+    if (input) input.value = '';
+  } else {
+    if (errEl) {
+      errEl.textContent = '❌ Contraseña incorrecta';
+      errEl.style.display = 'block';
+    }
+    if (input) { input.value = ''; input.focus(); }
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  }
+}
+
+function _lockDangerOnClose() {
+  // Volver a bloquear la zona de peligro cuando se cierra el modal
+  const lockOverlay  = document.getElementById('danger-lock-overlay');
+  const panelContent = document.getElementById('danger-panel-content');
+  if (lockOverlay)  lockOverlay.style.display  = 'flex';
+  if (panelContent) panelContent.style.display = 'none';
+  const errEl = document.getElementById('danger-pwd-error');
+  if (errEl) errEl.style.display = 'none';
+  const input = document.getElementById('danger-pwd-input');
+  if (input) input.value = '';
+}
+
 function _initPreciosPanel() {
   const grid = document.getElementById('precios-grid');
   if (!grid) return;
@@ -9109,6 +9155,7 @@ function closeSetupModal() {
   document.getElementById('setup-modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
   _lockPreciosOnClose(); // volver a bloquear precios al cerrar
+  _lockDangerOnClose();  // volver a bloquear zona de peligro al cerrar
 }
 
 function closeSetupOutside(e) {
@@ -11040,10 +11087,13 @@ function toggleEvFsCompletadas() {
   const open      = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
   arrow.classList.toggle('open', open);
-  // Al abrir: desplazar el scroll area hacia abajo para ver las completadas
+  // Al abrir: llevar el scroll justo al inicio de "Completadas" (donde
+  // está la orden más reciente, por ser la primera del listado ordenado
+  // de más nueva a más vieja) — no hasta el fondo del todo, para que el
+  // usuario decida si quiere seguir bajando a ver las más antiguas.
   if (open && scrollArea) {
     setTimeout(() => {
-      scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+      body.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }, 40); // pequeño delay para que el DOM se actualice
   }
 }
