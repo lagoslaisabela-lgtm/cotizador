@@ -4901,14 +4901,18 @@ function showTab(tab) {
   // Botón flotante de pantalla completa: solo visible en Eviscerado y fuera del modo fullscreen
   const evFsBtn = document.getElementById('ev-fs-float-btn');
   if (evFsBtn) evFsBtn.classList.toggle('visible', tab === 'eviscerado' && !evFullscreenOpen);
-  // Marca si la pestaña activa tiene botones de acción en la parte inferior
-  if (tab === 'historial')     renderHistorial();
-  if (tab === 'dashboard')     renderDashboard();
-  if (tab === 'eviscerado')    renderEviscerado();
-  if (tab === 'clientes')      renderClientes();
-  if (tab === 'mayorista')     renderMayorista();
-  if (tab === 'clientes-dash') renderClientesDash();
-  if (tab === 'asistencia')    renderAsistencia();
+  // El render de contenido puede tardar un poco en pestañas con historial grande
+  // (Clientes, Eviscerado). Lo dejamos para el siguiente frame para que el
+  // navegador ya haya pintado el cambio de pestaña y no se sienta "pegado".
+  requestAnimationFrame(() => {
+    if (tab === 'historial')     renderHistorial();
+    if (tab === 'dashboard')     renderDashboard();
+    if (tab === 'eviscerado')    renderEviscerado();
+    if (tab === 'clientes')      renderClientes();
+    if (tab === 'mayorista')     renderMayorista();
+    if (tab === 'clientes-dash') renderClientesDash();
+    if (tab === 'asistencia')    renderAsistencia();
+  });
 }
 
 // ─────────────────────────────────────────────
@@ -7182,7 +7186,24 @@ function updateClientesBadge() {
 // Devuelve lista unificada: clientes del directorio + clientes que solo
 // aparecen en el historial (sin duplicados por nombre normalizado o tel o cc).
 // Cada entrada incluye: id, nombre, tel, cc, compras (count), totalComprado, origen
+let _todosClientesCache = { serial: null, data: null };
+
 function getTodosClientes() {
+  // Caché: si el directorio, las órdenes y las ventas mayorista no cambiaron
+  // desde el último cálculo, reutilizamos el resultado en vez de recorrer
+  // todo el historial de nuevo (esto es lo que causaba el freeze al abrir
+  // la pestaña de Clientes).
+  const serial = clientes.length + '|' + (clientes[0]?.lastUpdated || '') + '|' +
+    ordenes.length + '|' + (ordenes[0]?.lastUpdated || '') + '|' +
+    mayorista.length + '|' + (mayorista[0]?.lastUpdated || '');
+  if (_todosClientesCache.serial === serial) return _todosClientesCache.data;
+
+  const resultado = _calcularTodosClientes();
+  _todosClientesCache = { serial, data: resultado };
+  return resultado;
+}
+
+function _calcularTodosClientes() {
   // Construir set de nombres de historial ya absorbidos por el directorio
   // Soporta _histKey, _histNombre (string) y _histNombres (array)
   const histKeysAbsorbidos = new Set();
@@ -10488,7 +10509,7 @@ function toggleEvDone(cotId) {
 
 function updateEvBadge() {
   const done    = getEvDone();
-  const total   = ordenes.filter(c => _tieneEviscerado(c));
+  const total   = _getOrdenesConEviscerado();
   const pending = total.filter(c => !done.has(String(c.id))).length;
   document.getElementById('badge-ev').textContent = pending;
 }
@@ -10519,12 +10540,25 @@ function applyEvCustomRange() {
   renderEviscerado();
 }
 
+let _evConEviscCache = { serial: null, data: null };
+
+// Subconjunto de `ordenes` que tiene algo para eviscerar. Cachear esto evita
+// recorrer TODO el historial de órdenes cada vez que se abre la pestaña
+// Eviscerado (antes causaba el freeze al cambiar de pestaña).
+function _getOrdenesConEviscerado() {
+  const serial = ordenes.length + '|' + (ordenes[0]?.lastUpdated || '');
+  if (_evConEviscCache.serial === serial) return _evConEviscCache.data;
+  const data = ordenes.filter(c => _tieneEviscerado(c));
+  _evConEviscCache = { serial, data };
+  return data;
+}
+
 function getEvFiltered() {
   const now  = new Date();
   const hoy0 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const hoy23= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-  let lista = ordenes.filter(c => _tieneEviscerado(c));
+  let lista = _getOrdenesConEviscerado();
 
   switch (activeEvPeriod) {
     case 'today':
