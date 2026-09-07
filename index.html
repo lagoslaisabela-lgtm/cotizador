@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="Sistema de cotización y control de ventas — Lagos La Isabela">
 <!-- PWA manifest inline (evita archivo externo) -->
-<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Lagos%20La%20Isabela%22%2C%22short_name%22%3A%22Lagos%22%2C%22description%22%3A%22Cotizador%20y%20control%20de%20ventas%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23040b16%22%2C%22theme_color%22%3A%22%23040b16%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%270%2520054%2560%2560%2527%253E%253Ctext%2520y%3D%2527.9em%2527%2520font-size%3D%252748%2527%253E%25F0%259F%2590%259F%253C%2F%2520text%253E%253C%2FSvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Lagos%20La%20Isabela%22%2C%22short_name%22%3A%22Lagos%22%2C%22description%22%3A%22Cotizador%20y%20control%20de%20ventas%22%2C%22start_url%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23040b16%22%2C%22theme_color%22%3A%22%23040b16%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A//www.w3.org/2000/svg%2527%2520viewBox%253D%25270%25200%2520100%2520100%2527%253E%253Crect%2520width%253D%2527100%2527%2520height%253D%2527100%2527%2520rx%253D%252720%2527%2520fill%253D%2527%2523040b16%2527/%253E%253Ctext%2520x%253D%252750%2527%2520y%253D%252768%2527%2520font-size%253D%252760%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2590%259F%253C/text%253E%253C/svg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/svg%2Bxml%22%7D%5D%7D">
 <!-- CSP — bloquea scripts externos no autorizados -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
@@ -27,6 +27,7 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Lagos La Isabela — Ordenes</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23040b16'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -252,21 +253,6 @@
     --radius-sm:     8px;
   }
 
-  /* ═══════════ TEMA CLARO ═══════════ */
-  body.light {
-    --ocean-deep:    #f0f6ff;
-    --ocean-mid:     #e2ecf9;
-    --ocean-surface: #cce0f5;
-    --surface:       #ffffff;
-    --text-primary:  #0d1f3c;
-    --text-secondary:#2a5278;
-    --text-muted:    #6a8fad;
-    --card-bg:       rgba(255,255,255,0.90);
-    --card-border:   rgba(0,140,200,0.18);
-    --input-bg:      rgba(240,248,255,0.95);
-    --input-border:  rgba(0,140,200,0.25);
-    --shadow-teal:   0 0 30px rgba(0,140,200,0.10);
-  }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -305,13 +291,6 @@
     transition: opacity 0.35s;
   }
 
-  body.light::before {
-    background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,140,200,0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(6,214,160,0.04) 0%, transparent 50%),
-      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(0,140,200,0.025) 60px, rgba(0,140,200,0.025) 61px),
-      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,140,200,0.025) 60px, rgba(0,140,200,0.025) 61px);
-  }
 
   /* ──────────────── HEADER ──────────────── */
   #top-bar {
@@ -326,10 +305,6 @@
     padding: 0 24px;
     overflow: hidden;
     transition: background 0.35s;
-  }
-  body.light header {
-    background: rgba(240,248,255,0.96);
-    border-bottom: 1px solid rgba(0,140,200,0.15);
   }
 
   .header-inner {
@@ -365,7 +340,6 @@
 
   /* Firefox — scrollbars finos con color del tema */
   * { scrollbar-width: thin; scrollbar-color: rgba(0,180,216,0.35) rgba(10,22,40,0.4); }
-  body.light * { scrollbar-color: rgba(0,140,200,0.4) rgba(210,230,245,0.5); }
 
   /* WebKit — Chrome, Safari, Edge ─────────── */
 
@@ -376,9 +350,6 @@
   ::-webkit-scrollbar-track {
     background: rgba(10,22,40,0.4);
     border-radius: 8px;
-  }
-  body.light ::-webkit-scrollbar-track {
-    background: rgba(210,230,245,0.5);
   }
 
   /* El thumb (la manija) */
@@ -395,20 +366,10 @@
   ::-webkit-scrollbar-thumb:active {
     background: linear-gradient(180deg, #00b4d8, #06d6a0);
   }
-  body.light ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(0,140,200,0.55), rgba(0,180,160,0.4));
-    border-color: rgba(0,140,200,0.2);
-  }
-  body.light ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(0,140,200,0.8), rgba(0,180,160,0.65));
-  }
 
   /* Esquina donde se cruzan horizontal + vertical */
   ::-webkit-scrollbar-corner {
     background: rgba(10,22,40,0.4);
-  }
-  body.light ::-webkit-scrollbar-corner {
-    background: rgba(210,230,245,0.5);
   }
 
   /* Scrollbar horizontal (tablas, nav móvil) —
@@ -426,12 +387,6 @@
   }
   .table-wrapper::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(90deg, rgba(0,180,216,0.85), rgba(6,214,160,0.7));
-  }
-  body.light .table-wrapper::-webkit-scrollbar-track {
-    background: rgba(200,220,240,0.6);
-  }
-  body.light .table-wrapper::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, rgba(0,140,200,0.5), rgba(0,180,160,0.4));
   }
 
   /* Modal body: scrollbar vertical interior */
@@ -548,7 +503,6 @@
     justify-content: center;
     transition: background 0.35s;
   }
-  body.light nav { background: var(--ocean-deep); }
 
   .nav-inner {
     display: flex;
@@ -563,11 +517,6 @@
     padding: 5px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
     transition: background 0.35s, border-color 0.35s, box-shadow 0.35s;
-  }
-  body.light .nav-inner {
-    background: rgba(255,255,255,0.88);
-    border-color: rgba(0,140,200,0.28);
-    box-shadow: 0 4px 20px rgba(0,140,200,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
   }
 
   .nav-inner::-webkit-scrollbar { display: none; }
@@ -1378,8 +1327,6 @@
     font-weight: 800;
     color: var(--teal-bright);
   }
-  body.light .fs-group { background: rgba(235,248,255,0.8); }
-  body.light .fs-row { border-color: rgba(0,140,200,0.1); }
 
   /* ──────────────── MODAL EDICIÓN ──────────────── */
   .modal-overlay {
@@ -1397,6 +1344,33 @@
     transition: opacity 0.25s;
   }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  /* Botón flotante (FAB) */
+  .fab-add {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal));
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0,180,216,0.45);
+    cursor: pointer;
+    z-index: 400;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .fab-add:hover { transform: scale(1.06); box-shadow: 0 10px 28px rgba(0,180,216,0.6); }
+  .fab-add:active { transform: scale(0.96); }
+  @media (max-width: 640px) {
+    .fab-add { bottom: 18px; right: 18px; width: 52px; height: 52px; font-size: 24px; }
+  }
 
   .modal {
     background: var(--ocean-mid);
@@ -1622,8 +1596,6 @@
   .canal-btn.active.detal     { background: rgba(0,180,216,0.15); border-color: var(--teal);  color: var(--teal); }
   .canal-btn.active.mayorista { background: rgba(6,214,160,0.15); border-color: var(--green); color: var(--green); }
   .canal-btn.active.ambos     { background: rgba(255,209,102,0.15); border-color: var(--gold); color: var(--gold); }
-  body.light .canal-btn { border-color: rgba(0,140,200,0.2); }
-  body.light .canal-btn:hover { border-color: rgba(0,140,200,0.5); }
 
   .period-btns {
     display: flex;
@@ -2364,103 +2336,6 @@
   /* ════════════════════════════════════════
      MODO CLARO — overrides
   ════════════════════════════════════════ */
-  body.light .card {
-    box-shadow: 0 2px 16px rgba(0,100,180,0.08);
-  }
-  body.light .total-box {
-    background: rgba(255,255,255,0.92);
-    border-color: rgba(0,140,200,0.2);
-    box-shadow: 0 4px 24px rgba(0,140,200,0.1);
-  }
-  body.light .stat-card {
-    box-shadow: 0 2px 16px rgba(0,100,180,0.08);
-  }
-  body.light .tab-btn { color: var(--text-muted); }
-  body.light .tab-btn:hover { color: var(--text-secondary); background: rgba(0,140,200,0.08); }
-  body.light .tab-btn.active {
-    color: #fff;
-    background: linear-gradient(135deg, var(--teal), var(--green));
-    box-shadow: 0 0 14px rgba(0,180,216,0.35), 0 2px 6px rgba(0,0,0,0.12);
-  }
-  body.light .tab-badge {
-    background: rgba(0,140,200,0.15);
-    color: var(--teal);
-    border-color: rgba(0,140,200,0.25);
-  }
-  body.light .filter-bar { background: rgba(255,255,255,0.88); }
-  body.light .period-btn { color: var(--text-secondary); border-color: rgba(0,140,200,0.2); }
-  body.light .period-btn.active { background: rgba(0,140,200,0.12); border-color: var(--teal); color: var(--teal); }
-  body.light select option { background: #fff; color: #0d1f3c; }
-  body.light .ev-card { border-color: rgba(0,140,200,0.22); background: rgba(255,255,255,0.9); }
-  body.light .ev-card::before { background: var(--teal); }
-  body.light .modal { background: #ffffff; border-color: rgba(0,140,200,0.2); }
-  body.light .modal-header { background: rgba(235,246,255,0.95); border-color: rgba(0,140,200,0.15); }
-  body.light .modal-footer { background: rgba(235,246,255,0.95); border-color: rgba(0,140,200,0.15); }
-  body.light #cli-profile-panel { background: #f8fbff; border-color: rgba(0,140,200,0.18); }
-  body.light .profile-header { background: rgba(225,242,255,0.9); border-color: rgba(0,140,200,0.15); }
-  body.light .profile-footer { background: rgba(225,242,255,0.9); border-color: rgba(0,140,200,0.15); }
-  body.light .profile-info-item { background: rgba(235,248,255,0.9); border-color: rgba(0,140,200,0.14); }
-  body.light #cli-profile-overlay { background: rgba(10,40,80,0.4); }
-  body.light .quote-items-preview { background: rgba(235,248,255,0.8); }
-  body.light .quote-item-row { border-color: rgba(0,140,200,0.1); }
-  body.light .table-wrapper table th { color: var(--text-muted); border-color: rgba(0,140,200,0.12); }
-  body.light .table-wrapper table td { border-color: rgba(0,140,200,0.08); }
-  body.light .table-wrapper table tr:hover td { background: rgba(0,140,200,0.05); }
-  body.light .autocomplete-list { background: #fff; border-color: rgba(0,140,200,0.25); box-shadow: 0 8px 24px rgba(0,100,180,0.12); }
-  body.light .ac-item:hover { background: rgba(0,140,200,0.08); }
-  body.light .toast { background: #0d2240; }
-  body.light .may-species-card { background: rgba(235,248,255,0.85); border-color: rgba(0,140,200,0.18); }
-  body.light .may-species-card.has-value { background: rgba(6,214,160,0.07); border-color: rgba(6,214,160,0.35); }
-  body.light .species-card { background: rgba(235,248,255,0.85); border-color: rgba(0,140,200,0.18); }
-  body.light .species-card.has-value { background: rgba(6,214,160,0.07); border-color: rgba(6,214,160,0.35); }
-  body.light .ev-species-pill {
-    background: rgba(0,120,180,0.12);
-    border-color: rgba(0,120,180,0.4);
-    color: #005a8a;
-    font-weight: 700;
-  }
-  /* Cuando la pill tiene color inline de especie, respetar ese color en modo claro */
-  body.light .ev-species-pill[style] {
-    background: revert;
-    border-color: revert;
-    color: revert;
-  }
-  body.light .drive-status-bar { border-color: rgba(0,140,200,0.3); color: var(--text-secondary); }
-  body.light .drive-dot { background: var(--text-muted); }
-  body.light .drive-status-bar.connected { border-color: rgba(6,214,160,0.45); color: var(--green); }
-  body.light .clientes-form-row .form-group { background: transparent; }
-
-  /* ──── Botón toggle de tema ──── */
-  #theme-toggle {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 300;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  body:not(.light) #theme-toggle {
-    background: rgba(13,34,64,0.9);
-    border: 1px solid rgba(0,180,216,0.35);
-    color: #ffd166;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 12px rgba(255,209,102,0.15);
-  }
-  body.light #theme-toggle {
-    background: rgba(255,255,255,0.95);
-    border: 1px solid rgba(0,140,200,0.3);
-    color: var(--teal);
-    box-shadow: 0 4px 20px rgba(0,100,180,0.15);
-  }
-  #theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
 
   /* ──────────────── BOTÓN FLOTANTE EV COUNTDOWN ──────────────── */
   #ev-float-btn {
@@ -2493,12 +2368,6 @@
     color: var(--gold);
     box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 14px rgba(255,209,102,0.18);
   }
-  body.light #ev-float-btn.pending {
-    background: rgba(255,255,255,0.96);
-    border: 1px solid rgba(220,160,0,0.4);
-    color: #b07a00;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 0 10px rgba(220,160,0,0.1);
-  }
   /* Estado: urgente (>30 min pendientes) */
   #ev-float-btn.urgent {
     background: rgba(80,10,20,0.92);
@@ -2507,22 +2376,12 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 0 14px rgba(239,71,111,0.25);
     animation: floatPulse 2s infinite;
   }
-  body.light #ev-float-btn.urgent {
-    background: rgba(255,240,242,0.97);
-    border-color: rgba(239,71,111,0.5);
-    color: var(--coral);
-  }
   /* Estado: todo listo */
   #ev-float-btn.done {
     background: rgba(6,40,30,0.88);
     border: 1px solid rgba(6,214,160,0.45);
     color: var(--green);
     box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 14px rgba(6,214,160,0.18);
-  }
-  body.light #ev-float-btn.done {
-    background: rgba(240,255,250,0.97);
-    border-color: rgba(6,214,160,0.4);
-    color: #048a62;
   }
   /* Estado oculto cuando no hay órdenes de eviscerado */
   #ev-float-btn.hidden { opacity: 0; pointer-events: none; transform: scale(0.7); }
@@ -2594,9 +2453,6 @@
     background: var(--ocean-deep);
     /* Sombra hacia arriba para indicar que hay contenido encima */
     box-shadow: 0 -6px 20px rgba(0,0,0,0.12);
-  }
-  body.light #ev-fs-completadas-footer {
-    box-shadow: 0 -4px 16px rgba(0,100,180,0.08);
   }
 
   /* El cuerpo de completadas desplegado hace scroll dentro del área central */
@@ -2691,7 +2547,6 @@
     #ev-fs-completadas-footer { padding: 0 16px 12px; }
   }
 
-  body.light #ev-fullscreen-overlay { background: var(--ocean-deep); }
 
   /* ──────────────── CHART 15 DÍAS ──────────────── */
   .chart-card { overflow: hidden; }
@@ -2779,8 +2634,6 @@
   }
   .ev-estimador.listo .ev-estimador-hora { color: var(--green); }
 
-  body.light .ev-estimador { background: rgba(255,255,255,0.9); }
-  body.light .ev-timer-chip { background: rgba(255,209,102,0.12); }
 
   /* ══════════════════════════════════════════
      PÁGINA: PERFILES DE CLIENTES (clientes-dash)
@@ -2867,15 +2720,22 @@
   .cd-seg-pill.mayorista { background: rgba(6,214,160,0.15); color: var(--green); }
   .cd-seg-pill.ambos     { background: rgba(255,209,102,0.15); color: var(--gold); }
   .cd-ev-bar-wrap { background: rgba(0,0,0,0.12); border-radius: 6px; height: 8px; overflow: hidden; margin-top: 4px; }
-  body.light .cd-ev-bar-wrap { background: rgba(0,100,160,0.12); }
   .cd-ev-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), var(--teal)); transition: width 0.6s ease; }
   .cd-ev-bar.sin-ev { background: linear-gradient(90deg, rgba(100,130,160,0.55), rgba(80,110,140,0.35)); }
-  body.light .cd-ev-bar.sin-ev { background: linear-gradient(90deg, rgba(0,100,160,0.25), rgba(0,80,140,0.15)); }
   .cd-select {
-    background: var(--input-bg); border: 1px solid var(--input-border);
-    color: var(--text-primary); border-radius: 8px; padding: 5px 10px;
-    font-size: 12px; font-family: inherit; cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size: 14px;
+    border: 1px solid var(--input-border);
+    color: var(--text-primary); border-radius: 8px; padding: 7px 32px 7px 12px;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
+  .cd-select:hover  { border-color: rgba(0,180,216,0.5); }
+  .cd-select:focus  { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,216,0.18); }
+  .cd-select option { background: var(--ocean-mid); color: var(--text-primary); }
 
   /* ══════════════════════════════════════════
      PÁGINA: ASISTENCIA DE CLIENTES
@@ -2989,14 +2849,11 @@
   }
   #sync-block-actions { display: flex; flex-direction: column; gap: 10px; }
   #sync-block-actions .btn { width: 100%; justify-content: center; padding: 13px 20px; font-size: 15px; }
-  body.light #sync-block-overlay { background: rgba(210,225,240,0.92); }
-  body.light #sync-block-card { background: #fff; }
 </style>
 </head>
 <body>
 
 <!-- Botón toggle modo claro/oscuro -->
-<button id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">☀️</button>
 
 <!-- Botón flotante countdown eviscerado -->
 <button id="ev-float-btn" class="pending" onclick="showTab('eviscerado')" title="Ver órdenes de eviscerado">
@@ -3122,7 +2979,6 @@
     <!-- Especies -->
     <div class="card section">
       <div class="card-title">🐟 Especies y Cantidades</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Ingresa la cantidad en libras por especie. Activa el checkbox 🔪 para cobrar eviscerado (+$500/lb). Si aparece el botón 🎁, actívalo para dejar la pelada de esa especie sin cobrar.</p>
 
       <div class="species-grid" id="species-grid">
         <!-- generado por JS -->
@@ -3476,29 +3332,6 @@
   <!-- ══════════════ PÁGINA: CLIENTES ══════════════ -->
   <div class="page" id="page-clientes">
 
-    <!-- Formulario agregar cliente -->
-    <div class="card section">
-      <div class="card-title">➕ Agregar Cliente</div>
-      <div class="clientes-form-row">
-        <div class="form-group">
-          <label>CC / NIT</label>
-          <input type="text" id="cli-cc" placeholder="Ej: 66656526" inputmode="numeric" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>Nombre completo</label>
-          <input type="text" id="cli-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>Celular</label>
-          <input type="tel" id="cli-tel" placeholder="Ej: 3165266913" autocomplete="off"
-            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
-        </div>
-        <div class="form-group form-group-btn">
-          <button class="btn btn-success" onclick="agregarCliente()">💾 Guardar</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Buscador -->
     <div class="card section">
       <div class="card-title">🔍 Buscar Clientes</div>
@@ -3512,6 +3345,12 @@
         <button class="cd-seg"        data-canal="detal"     onclick="setCliFiltroCanal('detal')">🛒 Solo Detal</button>
         <button class="cd-seg"        data-canal="mayorista" onclick="setCliFiltroCanal('mayorista')">📦 Solo Mayorista</button>
         <button class="cd-seg"        data-canal="ambos"     onclick="setCliFiltroCanal('ambos')">🔀 Ambos canales</button>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="filter-bar-label">🐟 Especie</span>
+        <select id="cli-filtro-especie" onchange="renderClientes()" class="cd-select" style="min-width:190px">
+          <option value="todas">Todas las especies</option>
+        </select>
       </div>
     </div>
 
@@ -3536,7 +3375,7 @@
         </table>
         <div class="empty-state" id="clientes-empty">
           <div class="icon">👥</div>
-          <p>No hay clientes registrados.<br>Agrega el primero arriba.</p>
+          <p>No hay clientes registrados.<br>Usa el botón ➕ para agregar el primero.</p>
         </div>
       </div>
       <!-- Paginación -->
@@ -3549,6 +3388,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Botón flotante: agregar cliente -->
+    <button class="fab-add" id="cli-fab-add" onclick="abrirModalAgregarCliente()" title="Agregar cliente" aria-label="Agregar cliente">➕</button>
 
   </div><!-- /clientes -->
 
@@ -3825,9 +3667,6 @@
     <!-- Especies con precio negociado -->
     <div class="card section">
       <div class="card-title">📦 Especies y Precio Negociado</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-        Ingresa la cantidad en libras y el precio negociado por libra para cada especie. Activa el checkbox 🔪 para cobrar eviscerado (+$500/lb).
-      </p>
       <div class="species-grid" id="may-species-grid">
         <!-- generado por JS -->
       </div>
@@ -3878,6 +3717,12 @@
       </div>
     </div>
 
+    <!-- Nota interna -->
+    <div class="card section" style="padding-top:14px;padding-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block">📝 Nota interna (opcional)</label>
+      <input type="text" id="may-nota-input" placeholder="Ej: paga contraentrega, entrega en bodega norte…" autocomplete="off" style="width:100%">
+    </div>
+
     <!-- Historial mayorista -->
     <div class="card section">
       <div class="card-title">📋 Historial de Ventas Mayoristas
@@ -3906,7 +3751,7 @@
 
       <!-- Búsqueda de texto -->
       <div class="search-row" style="margin-bottom:16px">
-        <input type="text" id="may-search" placeholder="Buscar por nombre, celular o CC…" oninput="renderMayorista()">
+        <input type="text" id="may-search" placeholder="Buscar por nombre, celular, CC o nota…" oninput="renderMayorista()">
       </div>
 
       <div class="table-wrapper">
@@ -3923,6 +3768,7 @@
               <th>Eviscerado</th>
               <th>Total</th>
               <th>Pago</th>
+              <th>Nota</th>
               <th></th>
             </tr>
           </thead>
@@ -4391,6 +4237,37 @@
   </div>
 </div>
 
+<!-- ══════════════ MODAL: AGREGAR CLIENTE ══════════════ -->
+<div class="modal-overlay" id="cli-add-modal-overlay" onclick="closeCliAddModalOutside(event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>➕ Agregar Cliente</h3>
+      <button class="modal-close" onclick="closeCliAddModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2" style="gap:14px">
+        <div class="form-group" style="margin:0;grid-column:1/-1">
+          <label>Nombre completo</label>
+          <input type="text" id="cli-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Celular</label>
+          <input type="tel" id="cli-tel" placeholder="Ej: 3165266913" autocomplete="off"
+            maxlength="10" inputmode="numeric" pattern="[0-9]{10}" oninput="soloDigitosTel(this)">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>CC / NIT</label>
+          <input type="text" id="cli-cc" placeholder="Ej: 66656526" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCliAddModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="agregarCliente()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ MODAL: EDITAR VENTA MAYORISTA ══════════════ -->
 <div class="modal-overlay" id="may-modal-overlay" onclick="if(event.target===this)closeMayModal()">
   <div class="modal" style="max-width:640px">
@@ -4461,6 +4338,12 @@
       <div class="form-group" style="margin-top:14px;margin-bottom:0">
         <label>📅 Fecha de la venta</label>
         <input type="datetime-local" id="may-edit-fecha" style="width:100%;max-width:280px">
+      </div>
+
+      <!-- Nota interna -->
+      <div class="form-group" style="margin-top:14px;margin-bottom:0">
+        <label>📝 Nota interna (opcional)</label>
+        <input type="text" id="may-edit-nota" placeholder="Ej: paga contraentrega, entrega en bodega norte…" style="width:100%">
       </div>
     </div>
     <div class="modal-footer">
@@ -4822,18 +4705,20 @@ function guardarVentaMayorista() {
 
   if (items.length === 0) { toast('Agrega al menos una especie', true); return; }
 
+  const nota = (document.getElementById('may-nota-input')?.value || '').trim();
+
   const faltantes = [];
   if (!tel) faltantes.push('celular');
   if (!cc)  faltantes.push('documento de identidad');
   if (faltantes.length > 0) {
     const focusId = !tel ? 'may-tel' : 'may-cc';
-    mostrarSugerenciaDatos(faltantes, focusId, () => _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado));
+    mostrarSugerenciaDatos(faltantes, focusId, () => _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado, nota));
     return;
   }
-  _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado);
+  _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado, nota);
 }
 
-function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado) {
+function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado, nota) {
   const now = new Date();
 
   // Recalcular método/monto de pago desde los campos del formulario mayorista
@@ -4859,6 +4744,7 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
     fechaObj:    now.toISOString(),
     lastUpdated: now.toISOString(),
     nombre, tel, cc, items, totalLibras, total, totalEviscerado,
+    nota: nota || undefined,
     metodoPago: pagoVal > 0 ? _metodoPagoMay : null,
     pagoEfectivo: pagoEfectivo || null,
     pagoNequi: pagoNequi || null,
@@ -4881,6 +4767,8 @@ function resetMayorista(silent = false) {
   document.getElementById('may-nombre').value = '';
   document.getElementById('may-tel').value    = '';
   document.getElementById('may-cc').value     = '';
+  const notaEl = document.getElementById('may-nota-input');
+  if (notaEl) notaEl.value = '';
   ESPECIES.forEach(e => {
     const qtyEl    = document.getElementById(`may-qty-${e.id}`);
     const precioEl = document.getElementById(`may-precio-${e.id}`);
@@ -5008,7 +4896,8 @@ function renderMayorista() {
   if (q) lista = lista.filter(v =>
     v.nombre.toLowerCase().includes(q) ||
     (v.tel || '').includes(q) ||
-    (v.cc  || '').toLowerCase().includes(q)
+    (v.cc  || '').toLowerCase().includes(q) ||
+    (v.nota || '').toLowerCase().includes(q)
   );
 
   document.getElementById('badge-may-hist').textContent = mayorista.length;
@@ -5032,6 +4921,9 @@ function renderMayorista() {
       <td>${(v.totalEviscerado || 0) > 0 ? `<span class="badge badge-gold">${fmt(v.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px">${v.pagoCon ? (v.metodoPago === 'nequi' ? '📱 ' : v.metodoPago === 'mixto' ? '🔀 ' : v.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(v.pagoCon) : '—'}</td>
+      <td style="font-size:12px;color:var(--text-secondary);max-width:140px;white-space:normal">${
+        v.nota ? `<span title="${escHtml(v.nota)}">📝 ${escHtml(v.nota.length > 30 ? v.nota.slice(0,30)+'…' : v.nota)}</span>` : '—'
+      }</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" onclick="abrirHistorialPrecios('${escHtml(v.nombre)}')" title="Historial de precios">📊</button>
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
@@ -5057,6 +4949,8 @@ function abrirEdicionMayorista(id) {
   document.getElementById('may-edit-nombre').value = toTitleCase(venta.nombre);
   document.getElementById('may-edit-tel').value    = venta.tel || '';
   document.getElementById('may-edit-cc').value     = venta.cc  || '';
+  const mayEditNotaEl = document.getElementById('may-edit-nota');
+  if (mayEditNotaEl) mayEditNotaEl.value = venta.nota || '';
   // Cargar fecha actual
   const mayFechaEl = document.getElementById('may-edit-fecha');
   if (mayFechaEl && venta.fechaObj) {
@@ -5184,6 +5078,7 @@ function guardarEdicionMayorista() {
   if (!telEsValido(tel)) { toast('El celular debe tener exactamente 10 dígitos', true); return; }
   const cc       = document.getElementById('may-edit-cc').value.trim();
   const fechaVal = document.getElementById('may-edit-fecha')?.value;
+  const nota     = (document.getElementById('may-edit-nota')?.value || '').trim();
 
   const items = [];
   let totalLibras = 0, total = 0, totalEviscerado = 0;
@@ -5231,6 +5126,7 @@ function guardarEdicionMayorista() {
   mayorista[idx] = {
     ...mayorista[idx],
     nombre, tel, cc, items, totalLibras, total, totalEviscerado,
+    nota: nota || undefined,
     metodoPago: pagoVal > 0 ? _metodoPagoMayEdit : null,
     pagoEfectivo: pagoEfectivo || null,
     pagoNequi: pagoNequi || null,
@@ -7244,6 +7140,7 @@ function getTodosClientes() {
       comprasDetal:  0,
       comprasMay:    0,
       ultimaCompra:  null,
+      especies:      new Set(),
       origen:        'directorio'
     });
   });
@@ -7265,6 +7162,8 @@ function getTodosClientes() {
       if (o.fechaObj && (!entry.ultimaCompra || new Date(o.fechaObj) > new Date(entry.ultimaCompra))) {
         entry.ultimaCompra = o.fechaObj;
       }
+      if (!entry.especies) entry.especies = new Set();
+      (o.items || []).forEach(it => { if (it.especie) entry.especies.add(it.especie); });
     };
 
     if (histKeysAbsorbidos.has(histKey)) {
@@ -7311,6 +7210,7 @@ function getTodosClientes() {
           comprasDetal:  canal === 'mayorista' ? 0 : 1,
           comprasMay:    canal === 'mayorista' ? 1 : 0,
           ultimaCompra:  o.fechaObj,
+          especies:      new Set((o.items || []).map(it => it.especie).filter(Boolean)),
           origen:        'historial'
         });
       }
@@ -7324,6 +7224,7 @@ function getTodosClientes() {
   return Array.from(map.values())
     .map(c => ({
       ...c,
+      especies: Array.from(c.especies || []),
       // 'mayorista': solo ha comprado por mayorista · 'detal': solo al detal · 'ambos': por los dos canales · 'ninguno': sin compras aún
       segmento: (c.comprasDetal > 0 && c.comprasMay > 0) ? 'ambos'
               : c.comprasMay > 0                          ? 'mayorista'
@@ -7379,6 +7280,7 @@ function agregarCliente() {
   document.getElementById('cli-tel').value    = '';
   document.getElementById('cli-cc').value     = '';
 
+  closeCliAddModal();
   updateClientesBadge();
   renderClientes();
   scheduleDriveSync();
@@ -7460,6 +7362,25 @@ function closeCliModal() {
 
 function closeCLiModalOutside(e) {
   if (e.target === document.getElementById('cli-modal-overlay')) closeCliModal();
+}
+
+// ── Modal: Agregar Cliente ──────────────
+function abrirModalAgregarCliente() {
+  document.getElementById('cli-nombre').value = '';
+  document.getElementById('cli-tel').value    = '';
+  document.getElementById('cli-cc').value     = '';
+  document.getElementById('cli-add-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('cli-nombre').focus();
+}
+
+function closeCliAddModal() {
+  document.getElementById('cli-add-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeCliAddModalOutside(e) {
+  if (e.target === document.getElementById('cli-add-modal-overlay')) closeCliAddModal();
 }
 
 function guardarEdicionCliente() {
@@ -7600,14 +7521,37 @@ function cliPageNext() {
 }
 function cliGoPage(p) { cliCurrentPage = p; _renderCliPage(); }
 
+// Rellena el <select> de filtro de especie en Clientes con las especies del catálogo,
+// preservando la selección actual del usuario.
+let _cliFiltroEspeciePoblado = false;
+function _poblarFiltroEspecieClientes() {
+  const sel = document.getElementById('cli-filtro-especie');
+  if (!sel || _cliFiltroEspeciePoblado) return;
+  const actual = sel.value;
+  const opciones = ESPECIES_REASIGNABLES.map(e =>
+    `<option value="${escHtml(e.nombre)}">${e.emoji} ${escHtml(e.nombre)}</option>`
+  ).join('');
+  sel.innerHTML = `<option value="todas">Todas las especies</option>${opciones}`;
+  sel.value = actual || 'todas';
+  _cliFiltroEspeciePoblado = true;
+}
+
 function renderClientes() {
   const q      = (document.getElementById('cli-search')?.value || '').toLowerCase().trim();
   const empty  = document.getElementById('clientes-empty');
+
+  // Poblar el select de especies una sola vez (o si cambia el set de especies)
+  _poblarFiltroEspecieClientes();
 
   let lista = getTodosClientes();
 
   if (_cliFiltroCanal !== 'todos') {
     lista = lista.filter(c => c.segmento === _cliFiltroCanal);
+  }
+
+  const especieSel = document.getElementById('cli-filtro-especie')?.value || 'todas';
+  if (especieSel !== 'todas') {
+    lista = lista.filter(c => (c.especies || []).includes(especieSel));
   }
 
   if (q) {
@@ -8861,8 +8805,8 @@ function guardarEdicion() {
 //    escáneres automáticos que encuentren la URL puedan leer/escribir el archivo.
 //    La confidencialidad real la da la contraseña de sincronización (SYNC_PASS_KEY),
 //    que el usuario escribe una vez por dispositivo y NUNCA queda en este archivo.
-const SYNC_ENDPOINT   = 'https://script.google.com/macros/s/AKfycby3NG8Tsva-j34gmLZQz988qQPaT1QW3qe9PtklBOl1a2AUhxh7G_mumamnab3pagjI8w/exec';
-const AUTH_SYNC_TOKEN = '457d62b3c17b\nada740a38-5181-4951-a259isa8384*[pÑlk]';
+const SYNC_ENDPOINT   = 'https://script.google.com/macros/s/PEGA_AQUI_TU_ID_DE_DESPLIEGUE/exec';
+const AUTH_SYNC_TOKEN = 'PEGA_AQUI_EL_MISMO_TOKEN_QUE_PUSISTE_EN_CODE_GS';
 const SYNC_PASS_KEY   = 'aquacot_sync_pass';
 const DRIVE_TOKEN_KEY = 'aquacot_drive_token'; // legado, se limpia si existe
 const DELETED_IDS_KEY      = 'aquacot_deleted_ids';
@@ -10993,10 +10937,8 @@ function renderChart15dias() {
     return isToday ? `Hoy` : label;
   });
 
-  // Detectar modo claro para colores del eje
-  const isLight   = document.body.classList.contains('light');
-  const textColor = isLight ? 'rgba(10,40,80,0.6)' : 'rgba(200,230,240,0.5)';
-  const gridColor = isLight ? 'rgba(0,140,200,0.08)' : 'rgba(0,180,216,0.08)';
+  const textColor = 'rgba(200,230,240,0.5)';
+  const gridColor = 'rgba(0,180,216,0.08)';
 
   if (chart15Instance) { chart15Instance.destroy(); chart15Instance = null; }
 
@@ -11093,7 +11035,7 @@ function renderChart15dias() {
     const total = vDet + vMay;
     if (total > 0) {
       const hTotal = hDet + hMay;
-      ctx.fillStyle = isLight ? 'rgba(0,50,100,0.7)' : 'rgba(200,240,255,0.7)';
+      ctx.fillStyle = 'rgba(200,240,255,0.7)';
       ctx.font = '9px Roboto Mono, monospace';
       ctx.textAlign = 'center';
       const shortVal = total >= 1000000 ? `${(total/1000000).toFixed(1)}M`
@@ -11208,6 +11150,9 @@ document.addEventListener('keydown', e => {
   }
   if (document.getElementById('cli-modal-overlay')?.classList.contains('open')) {
     closeCliModal(); return;
+  }
+  if (document.getElementById('cli-add-modal-overlay')?.classList.contains('open')) {
+    closeCliAddModal(); return;
   }
   if (document.getElementById('modal-overlay')?.classList.contains('open')) {
     closeModal(); return;
@@ -11351,31 +11296,7 @@ function calcularEstimadorEvEn(elId, iconId, horaId, countId, basisId, _interval
 const _origToggleEvDone = toggleEvDone;
 
 // ─────────────────────────────────────────────
-//  TEMA CLARO / OSCURO
 // ─────────────────────────────────────────────
-function toggleTheme() {
-  const isLight = document.body.classList.toggle('light');
-  const btn = document.getElementById('theme-toggle');
-  btn.textContent = isLight ? '🌙' : '☀️';
-  btn.title = isLight ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
-  safeStorage.setItem('aquacot_theme', isLight ? 'light' : 'dark');
-  // Redibujar chart con colores del tema correcto
-  requestAnimationFrame(() => renderChart15dias());
-}
-
-function initTheme() {
-  const saved = safeStorage.getItem('aquacot_theme');
-  const btn   = document.getElementById('theme-toggle');
-  if (saved === 'light') {
-    document.body.classList.add('light');
-    btn.textContent = '🌙';
-    btn.title = 'Cambiar a modo oscuro';
-  } else {
-    btn.textContent = '☀️';
-    btn.title = 'Cambiar a modo claro';
-  }
-}
-
 // ─────────────────────────────────────────────
 //  FISH CONFETTI 🐟
 // ─────────────────────────────────────────────
@@ -12050,16 +11971,13 @@ function _cdChartEviscerado(clts) {
   ctx.clearRect(0,0,W,H);
   if (detalClts.length === 0) return;
 
-  const isLight = document.body.classList.contains('light');
-
   const cx=W/2, cy=H/2, ro=Math.min(W,H)/2-12, ri=ro*0.55;
 
-  // Colores adaptativos según tema
   const colorConEv  = '#06d6a0';
-  const colorSinEv  = isLight ? 'rgba(0,100,160,0.2)' : 'rgba(120,160,200,0.28)';
-  const holeColor   = isLight ? '#ffffff' : (getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#0d2240');
-  const textPct     = isLight ? '#0d4a6a' : 'rgba(232,244,248,0.95)';
-  const textLabel   = isLight ? '#4a7a9b' : 'rgba(180,200,220,0.7)';
+  const colorSinEv  = 'rgba(120,160,200,0.28)';
+  const holeColor   = getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#0d2240';
+  const textPct     = 'rgba(232,244,248,0.95)';
+  const textLabel   = 'rgba(180,200,220,0.7)';
 
   const segments = [
     { val: conEv, color: colorConEv  },
@@ -12092,7 +12010,7 @@ function _cdChartEviscerado(clts) {
 
   // Anillo interior sutil para profundidad
   ctx.beginPath(); ctx.arc(cx,cy,ri,0,Math.PI*2);
-  ctx.strokeStyle = isLight ? 'rgba(0,120,180,0.08)' : 'rgba(255,255,255,0.06)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth   = 2;
   ctx.stroke();
 
@@ -12741,7 +12659,6 @@ function syncBlockReconnect() {
 }
 
 
-initTheme();
 buildSpeciesGrid();
 buildMaySpeciesGrid();
 updateBadge();
@@ -12852,9 +12769,6 @@ _restaurarFormularioDesdeSesion();
       /* Botón flotante sube sobre la barra de navegación */
       #ev-float-btn {
         bottom: calc(24px + env(safe-area-inset-bottom));
-      }
-      #theme-toggle {
-        bottom: calc(20px + env(safe-area-inset-bottom));
       }
     }
   `;
