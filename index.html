@@ -3422,7 +3422,7 @@
             <div class="fs-row" id="fs-pago-sinespecificar-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar">$0</span></div>
           </div>
           <!-- Cuentas por cobrar: saldo pendiente de órdenes fiadas/parciales (se oculta si no hay pendientes) -->
-          <div class="fs-group" id="fs-pendiente-group" style="display:none;border-color:rgba(239,71,111,0.3);background:rgba(239,71,111,0.05)">
+          <div class="fs-group" id="fs-pendiente-group" onclick="abrirResumenPendientes()" style="display:none;border-color:rgba(239,71,111,0.3);background:rgba(239,71,111,0.05);cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='rgba(239,71,111,0.09)'" onmouseout="this.style.background='rgba(239,71,111,0.05)'" title="Ver quiénes deben">
             <div class="fs-group-title" style="color:var(--coral)">⏳ Cuentas por cobrar</div>
             <div class="fs-row"><span>Órdenes con saldo pendiente</span><span id="fs-pendiente-count">0</span></div>
             <div class="fs-row fs-subtotal"><span>Total pendiente por cobrar</span><span id="fs-pendiente-total" style="color:var(--coral)">$0</span></div>
@@ -6913,6 +6913,10 @@ function getPeriodLabel() {
 }
 
 let _dashCache = { serial: null };
+// Detalle de las órdenes/ventas con saldo pendiente del período actualmente
+// mostrado en el dashboard — poblado en renderDashboard(), usado por la
+// tarjeta "⏳ Cuentas por cobrar" al abrir su resumen de deudores.
+let _pendientesActuales = [];
 
 function renderDashboard() {
   // Cache: si los datos no cambiaron y el período/canal es el mismo, saltar
@@ -7039,8 +7043,21 @@ function renderDashboard() {
   // Total general); esto solo informa cuánto de ese total aún no ha entrado
   // en efectivo/Nequi porque quedó fiado o con abono parcial.
   let totalPendiente = 0, countPendiente = 0;
-  lista.forEach(c => { const s = _saldoPendienteOrden(c); if (s > 0) { totalPendiente += s; countPendiente++; } });
-  listaMay.forEach(v => { const s = _saldoPendienteOrden(v); if (s > 0) { totalPendiente += s; countPendiente++; } });
+  _pendientesActuales = [];
+  lista.forEach(c => {
+    const s = _saldoPendienteOrden(c);
+    if (s > 0) {
+      totalPendiente += s; countPendiente++;
+      _pendientesActuales.push({ id: c.id, canal: 'detal', nombre: c.nombre, saldo: s, fecha: c.fecha, fechaObj: c.fechaObj });
+    }
+  });
+  listaMay.forEach(v => {
+    const s = _saldoPendienteOrden(v);
+    if (s > 0) {
+      totalPendiente += s; countPendiente++;
+      _pendientesActuales.push({ id: v.id, canal: 'mayorista', nombre: v.nombre, saldo: s, fecha: v.fecha, fechaObj: v.fechaObj });
+    }
+  });
   const fsPendienteEl = document.getElementById('fs-pendiente-group');
   if (fsPendienteEl) {
     fsPendienteEl.style.display = countPendiente > 0 ? '' : 'none';
@@ -7192,10 +7209,56 @@ function saldarPendiente(id, tipo) {
   _dashCache.serial = null; // forzar recálculo del resumen financiero (el registro editado puede no ser el más reciente)
   renderDashboard();
   if (tipo === 'mayorista') renderMayorista(); else renderHistorial();
+  if (document.getElementById('pendientes-overlay')?.style.display === 'flex') renderPendientesModalList();
   scheduleDriveSync();
   toast(o.saldoPendiente <= 0
     ? '✅ Saldo completado — orden pagada en su totalidad'
     : `💵 Abono de ${fmt(abonoFinal)} registrado — quedan ${fmt(o.saldoPendiente)} pendientes`);
+}
+
+// Resumen de deudores: se abre al hacer clic en la tarjeta "Cuentas por
+// cobrar" del Resumen Financiero. Lista a quién se le cobra, cuánto, y
+// permite abonar/saldar directamente desde ahí.
+function abrirResumenPendientes() {
+  if (!_pendientesActuales.length) return;
+  renderPendientesModalList();
+  document.getElementById('pendientes-overlay').style.display = 'flex';
+}
+
+function cerrarResumenPendientes() {
+  const ov = document.getElementById('pendientes-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function renderPendientesModalList() {
+  const cont = document.getElementById('pendientes-modal-lista');
+  const sub  = document.getElementById('pendientes-modal-sub');
+  if (!cont) return;
+
+  if (!_pendientesActuales.length) {
+    cerrarResumenPendientes();
+    return;
+  }
+
+  const total = _pendientesActuales.reduce((s, p) => s + p.saldo, 0);
+  if (sub) {
+    const n = _pendientesActuales.length;
+    sub.textContent = `${n} ${n === 1 ? 'orden' : 'órdenes'} con saldo pendiente — ${fmt(total)} en total`;
+  }
+
+  cont.innerHTML = _pendientesActuales
+    .slice()
+    .sort((a, b) => new Date(b.fechaObj || b.fecha) - new Date(a.fechaObj || a.fecha))
+    .map(p => `
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:rgba(239,71,111,0.06);border:1px solid rgba(239,71,111,0.2);border-radius:10px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:var(--text-primary);font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre || '(sin nombre)')}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${p.canal === 'mayorista' ? '🏢 Mayorista' : '🛒 Detal'} · ${escHtml(p.fecha || '')}</div>
+        </div>
+        <div style="font-family:'Roboto Mono',monospace;font-weight:700;color:var(--coral);font-size:14px;white-space:nowrap;flex-shrink:0">${fmt(p.saldo)}</div>
+        <button class="btn btn-success btn-sm" onclick='saldarPendiente("${p.id}","${p.canal}")' style="flex-shrink:0" title="Registrar abono o saldar deuda">💰</button>
+      </div>
+    `).join('');
 }
 
 function _pagoNetoPorMetodo(o) {
@@ -13373,6 +13436,16 @@ setInterval(() => {
         Confirmar borrado
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: RESUMEN DE CUENTAS POR COBRAR ══════ -->
+<div id="pendientes-overlay" class="app-modal-overlay" style="display:none;--mo-border:rgba(239,71,111,0.35)">
+  <div class="app-modal-panel" style="max-width:480px;text-align:left;position:relative">
+    <button class="app-modal-close" onclick="cerrarResumenPendientes()" aria-label="Cerrar">×</button>
+    <h3 class="app-modal-title" style="color:var(--coral);text-align:left">⏳ Cuentas por cobrar</h3>
+    <p class="app-modal-msg" style="text-align:left" id="pendientes-modal-sub">Sin pendientes.</p>
+    <div id="pendientes-modal-lista" style="max-height:52vh;overflow-y:auto;margin:0 -4px 4px;padding:0 4px 2px"></div>
   </div>
 </div>
 
