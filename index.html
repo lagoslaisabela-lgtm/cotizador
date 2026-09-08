@@ -3198,6 +3198,10 @@
                 <span class="devuelta-amount pending" id="devuelta-display">—</span>
               </div>
             </div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none">
+              <input type="checkbox" id="pendiente-chk" onchange="calcDevuelta()" style="width:16px;height:16px;accent-color:var(--coral);cursor:pointer;flex-shrink:0">
+              🕐 Dejar saldo pendiente (fiado) — se cobrará después
+            </label>
           </div>
         </div>
         <div class="btn-group">
@@ -3416,6 +3420,12 @@
             <div class="fs-row"><span>💵 Efectivo</span><span id="fs-pago-efectivo">$0</span></div>
             <div class="fs-row"><span>📱 Nequi</span><span id="fs-pago-nequi">$0</span></div>
             <div class="fs-row" id="fs-pago-sinespecificar-row" style="display:none"><span>❔ Sin especificar</span><span id="fs-pago-sinespecificar">$0</span></div>
+          </div>
+          <!-- Cuentas por cobrar: saldo pendiente de órdenes fiadas/parciales (se oculta si no hay pendientes) -->
+          <div class="fs-group" id="fs-pendiente-group" style="display:none;border-color:rgba(239,71,111,0.3);background:rgba(239,71,111,0.05)">
+            <div class="fs-group-title" style="color:var(--coral)">⏳ Cuentas por cobrar</div>
+            <div class="fs-row"><span>Órdenes con saldo pendiente</span><span id="fs-pendiente-count">0</span></div>
+            <div class="fs-row fs-subtotal"><span>Total pendiente por cobrar</span><span id="fs-pendiente-total" style="color:var(--coral)">$0</span></div>
           </div>
           <!-- Total general combinado -->
           <div class="fs-total-box" id="fs-total-combinado" style="display:none">
@@ -3805,6 +3815,16 @@
   <!-- ══════════════ PÁGINA: MAYORISTA ══════════════ -->
   <div class="page" id="page-mayorista">
 
+    <!-- ══ VENTAS EN ESPERA ══ -->
+    <div class="card section" id="may-espera-card" style="display:none;border-color:rgba(0,180,216,0.35);background:rgba(0,180,216,0.04)">
+      <div class="card-title" style="display:flex;align-items:center;gap:10px">
+        <span>⏸ Ventas en espera</span>
+        <span id="may-espera-badge" style="background:rgba(0,180,216,0.18);color:var(--teal);border:1px solid rgba(0,180,216,0.35);border-radius:20px;font-size:11px;font-weight:800;padding:1px 9px">0</span>
+        <span style="font-size:12px;color:var(--text-muted);font-weight:400;margin-left:4px">— Haz clic en ▶ para recuperar y continuar</span>
+      </div>
+      <div id="may-espera-lista"></div>
+    </div>
+
     <!-- Datos del comprador -->
     <div class="card section">
       <div class="card-title">🏢 Datos del Comprador</div>
@@ -3879,10 +3899,15 @@
                 <span class="devuelta-amount pending" id="may-devuelta-display">—</span>
               </div>
             </div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none">
+              <input type="checkbox" id="may-pendiente-chk" onchange="calcDevueltaMay()" style="width:16px;height:16px;accent-color:var(--coral);cursor:pointer;flex-shrink:0">
+              🕐 Dejar saldo pendiente (fiado) — se cobrará después
+            </label>
           </div>
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetMayorista()">✨ Limpiar</button>
+          <button class="btn btn-ghost" onclick="ponerEnEsperaMay()" title="Guardar temporalmente para registrar otra venta" style="border-color:rgba(0,180,216,0.4);color:var(--teal)">⏸ En espera</button>
           <button class="btn btn-success" onclick="guardarVentaMayorista()">💾 Registrar Venta</button>
         </div>
       </div>
@@ -4290,6 +4315,10 @@
           <span class="devuelta-amount pending" id="edit-devuelta-display">—</span>
         </div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none">
+        <input type="checkbox" id="edit-pendiente-chk" onchange="calcDevueltaEdit()" style="width:16px;height:16px;accent-color:var(--coral);cursor:pointer;flex-shrink:0">
+        🕐 Dejar saldo pendiente (fiado) — se cobrará después
+      </label>
 
       <!-- Nota -->
       <div class="form-group" style="margin-top:16px;margin-bottom:0">
@@ -4523,6 +4552,10 @@
           <span class="devuelta-amount pending" id="may-edit-devuelta-display">—</span>
         </div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none">
+        <input type="checkbox" id="may-edit-pendiente-chk" onchange="calcDevueltaMayEdit()" style="width:16px;height:16px;accent-color:var(--coral);cursor:pointer;flex-shrink:0">
+        🕐 Dejar saldo pendiente (fiado) — se cobrará después
+      </label>
 
       <!-- Fecha -->
       <div class="form-group" style="margin-top:14px;margin-bottom:0">
@@ -4720,7 +4753,7 @@ let mayorista = _safeLoad(MAYORISTA_KEY,  []);
 // ─────────────────────────────────────────────
 //  RELOJ
 // ─────────────────────────────────────────────
-const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 function updateClock() {
   const now = new Date();
@@ -4728,7 +4761,7 @@ function updateClock() {
   const m = String(now.getMinutes()).padStart(2,'0');
   const s = String(now.getSeconds()).padStart(2,'0');
   document.getElementById('clock-time').textContent = `${h}:${m}:${s}`;
-  document.getElementById('clock-date').textContent = `${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  document.getElementById('clock-date').textContent = `${now.getDate()} de ${MESES_CORTOS[now.getMonth()]} de ${now.getFullYear()}`;
 }
 let _clockInterval = setInterval(updateClock, 1000);
 updateClock();
@@ -4930,6 +4963,7 @@ function guardarVentaMayorista() {
 
 function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado, nota) {
   const now = new Date();
+  const esPendiente = document.getElementById('may-pendiente-chk')?.checked || false;
 
   // Recalcular método/monto de pago desde los campos del formulario mayorista
   let pagoEfectivo = 0, pagoNequi = 0;
@@ -4943,7 +4977,8 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
   let pagoVal = pagoEfectivo + pagoNequi;
   // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
   // se asume que el pago fue exacto (pagó el total), igual que en órdenes al detal.
-  if (pagoVal === 0 && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi') && total > 0) {
+  // Excepción: con "Dejar saldo pendiente (fiado)" marcado, no se asume nada.
+  if (pagoVal === 0 && !esPendiente && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi') && total > 0) {
     if (_metodoPagoMay === 'nequi') pagoNequi = total; else pagoEfectivo = total;
     pagoVal = total;
   }
@@ -4959,7 +4994,9 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
     pagoEfectivo: pagoEfectivo || null,
     pagoNequi: pagoNequi || null,
     pagoCon: pagoVal || null,
-    devuelta: pagoVal > 0 ? pagoVal - total : null
+    devuelta: pagoVal > 0 ? pagoVal - total : null,
+    // Saldo pendiente por cobrar (ver nota en _guardarOrdenReal)
+    saldoPendiente: Math.max(0, total - pagoVal)
   };
 
   mayorista.unshift(venta);
@@ -5006,6 +5043,8 @@ function resetMayorista(silent = false) {
     if (el) el.value = '';
   });
   setMetodoPagoMay('efectivo');
+  const mayPendienteChk = document.getElementById('may-pendiente-chk');
+  if (mayPendienteChk) mayPendienteChk.checked = false;
   if (!silent) toast('Formulario limpiado');
 }
 
@@ -5130,11 +5169,14 @@ function renderMayorista() {
       <td>${v.totalLibras.toFixed(1)} lb</td>
       <td>${(v.totalEviscerado || 0) > 0 ? `<span class="badge badge-gold">${fmt(v.totalEviscerado)}</span>` : '—'}</td>
       <td><strong style="color:var(--green);font-family:'Roboto Mono',monospace">${fmt(v.total)}</strong></td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${v.pagoCon ? (v.metodoPago === 'nequi' ? '📱 ' : v.metodoPago === 'mixto' ? '🔀 ' : v.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(v.pagoCon) : '—'}</td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:12px">${
+        v.pagoCon ? (v.metodoPago === 'nequi' ? '📱 ' : v.metodoPago === 'mixto' ? '🔀 ' : v.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(v.pagoCon) : '—'
+      }${_saldoPendienteOrden(v) > 0 ? `<br><span style="color:var(--coral);font-weight:600">🕐 Pendiente ${fmt(_saldoPendienteOrden(v))}</span>` : ''}</td>
       <td style="font-size:12px;color:var(--text-secondary);max-width:140px;white-space:normal">${
         v.nota ? `<span title="${escHtml(v.nota)}">📝 ${escHtml(v.nota.length > 30 ? v.nota.slice(0,30)+'…' : v.nota)}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
+        ${_saldoPendienteOrden(v) > 0 ? `<button class="btn btn-success btn-sm" onclick='saldarPendiente("${v.id}","mayorista")' title="Registrar abono o saldar deuda">💰</button>` : ''}
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick='eliminarVentaMayorista("${v.id}")' title="Eliminar">🗑</button>
       </td>
@@ -5232,6 +5274,8 @@ function abrirEdicionMayorista(id) {
     document.getElementById('may-edit-pago-input-efectivo').value = '';
     document.getElementById('may-edit-pago-input-nequi').value    = '';
   }
+  const mayEditPendienteChk = document.getElementById('may-edit-pendiente-chk');
+  if (mayEditPendienteChk) mayEditPendienteChk.checked = _saldoPendienteOrden(venta) > 0;
   calcDevueltaMayEdit();
 
   document.getElementById('may-modal-overlay').classList.add('open');
@@ -5314,6 +5358,7 @@ function guardarEdicionMayorista() {
   if (idx === -1) return;
 
   const nombreOriginal = mayorista[idx].nombre || '';
+  const esPendiente = document.getElementById('may-edit-pendiente-chk')?.checked || false;
 
   // Recalcular método/monto de pago desde los campos del modal de edición
   let pagoEfectivo = 0, pagoNequi = 0;
@@ -5327,7 +5372,8 @@ function guardarEdicionMayorista() {
   let pagoVal = pagoEfectivo + pagoNequi;
   // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
   // se asume que el pago fue exacto (pagó el total).
-  if (pagoVal === 0 && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi') && total > 0) {
+  // Excepción: con "Dejar saldo pendiente (fiado)" marcado, no se asume nada.
+  if (pagoVal === 0 && !esPendiente && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi') && total > 0) {
     if (_metodoPagoMayEdit === 'nequi') pagoNequi = total; else pagoEfectivo = total;
     pagoVal = total;
   }
@@ -5341,6 +5387,7 @@ function guardarEdicionMayorista() {
     pagoNequi: pagoNequi || null,
     pagoCon: pagoVal || null,
     devuelta: pagoVal > 0 ? pagoVal - total : null,
+    saldoPendiente: Math.max(0, total - pagoVal),
     lastUpdated: new Date().toISOString(),
     ...(fechaVal ? (() => {
       const d = new Date(fechaVal);
@@ -5542,9 +5589,13 @@ function calcDevueltaEdit() {
     : _pagoRaw(document.getElementById('edit-pago-input'));
   const devEl = document.getElementById('edit-devuelta-display');
   if (!devEl) return;
+  const esPendiente = document.getElementById('edit-pendiente-chk')?.checked;
 
   if (pago === 0 || total === 0) {
-    if (total > 0 && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi')) {
+    if (esPendiente && total > 0) {
+      devEl.textContent = `Pendiente ${fmt(total)}`;
+      devEl.className   = 'devuelta-amount falta';
+    } else if (total > 0 && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi')) {
       devEl.textContent = 'Exacto (asumido)';
       devEl.className   = 'devuelta-amount exact';
     } else {
@@ -5557,7 +5608,7 @@ function calcDevueltaEdit() {
   const diff = pago - total;
   if (diff > 0)       { devEl.textContent = fmt(diff);              devEl.className = 'devuelta-amount ok'; }
   else if (diff === 0) { devEl.textContent = 'Exacto';               devEl.className = 'devuelta-amount exact'; }
-  else                 { devEl.textContent = `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
+  else                 { devEl.textContent = esPendiente ? `Pendiente ${fmt(Math.abs(diff))}` : `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
 }
 
 function _pagoRaw(el) {
@@ -5606,9 +5657,13 @@ function calcDevueltaMay() {
     : _pagoRaw(document.getElementById('may-pago-input'));
   const devEl = document.getElementById('may-devuelta-display');
   if (!devEl) return;
+  const esPendiente = document.getElementById('may-pendiente-chk')?.checked;
 
   if (pago === 0 || total === 0) {
-    if (total > 0 && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi')) {
+    if (esPendiente && total > 0) {
+      devEl.textContent = `Pendiente ${fmt(total)}`;
+      devEl.className   = 'devuelta-amount falta';
+    } else if (total > 0 && (_metodoPagoMay === 'efectivo' || _metodoPagoMay === 'nequi')) {
       devEl.textContent = '¡Exacto! (asumido)';
       devEl.className   = 'devuelta-amount exact';
     } else {
@@ -5621,7 +5676,7 @@ function calcDevueltaMay() {
   const diff = pago - total;
   if (diff > 0)        { devEl.textContent = fmt(diff);                     devEl.className = 'devuelta-amount ok'; }
   else if (diff === 0) { devEl.textContent = '¡Exacto!';                    devEl.className = 'devuelta-amount exact'; }
-  else                  { devEl.textContent = `Falta ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
+  else                  { devEl.textContent = esPendiente ? `Pendiente ${fmt(Math.abs(diff))}` : `Falta ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
 }
 
 // ─── Método de pago: edición de venta mayorista (desde el historial) ───
@@ -5666,9 +5721,13 @@ function calcDevueltaMayEdit() {
     : _pagoRaw(document.getElementById('may-edit-pago-input'));
   const devEl = document.getElementById('may-edit-devuelta-display');
   if (!devEl) return;
+  const esPendiente = document.getElementById('may-edit-pendiente-chk')?.checked;
 
   if (pago === 0 || total === 0) {
-    if (total > 0 && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi')) {
+    if (esPendiente && total > 0) {
+      devEl.textContent = `Pendiente ${fmt(total)}`;
+      devEl.className   = 'devuelta-amount falta';
+    } else if (total > 0 && (_metodoPagoMayEdit === 'efectivo' || _metodoPagoMayEdit === 'nequi')) {
       devEl.textContent = 'Exacto (asumido)';
       devEl.className   = 'devuelta-amount exact';
     } else {
@@ -5681,7 +5740,7 @@ function calcDevueltaMayEdit() {
   const diff = pago - total;
   if (diff > 0)        { devEl.textContent = fmt(diff);                     devEl.className = 'devuelta-amount ok'; }
   else if (diff === 0) { devEl.textContent = 'Exacto';                      devEl.className = 'devuelta-amount exact'; }
-  else                  { devEl.textContent = `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
+  else                  { devEl.textContent = esPendiente ? `Pendiente ${fmt(Math.abs(diff))}` : `Faltó ${fmt(Math.abs(diff))}`; devEl.className = 'devuelta-amount falta'; }
 }
 function pagoInput(el) {
   const n = _pagoRaw(el);
@@ -5704,9 +5763,13 @@ function calcDevuelta() {
     ? _pagoRaw(document.getElementById('pago-input-efectivo')) + _pagoRaw(document.getElementById('pago-input-nequi'))
     : _pagoRaw(document.getElementById('pago-input'));
   const devEl   = document.getElementById('devuelta-display');
+  const esPendiente = document.getElementById('pendiente-chk')?.checked;
 
   if (pago === 0 || total === 0) {
-    if (total > 0 && (_metodoPago === 'efectivo' || _metodoPago === 'nequi')) {
+    if (esPendiente && total > 0) {
+      devEl.textContent = `Pendiente ${fmt(total)}`;
+      devEl.className   = 'devuelta-amount falta';
+    } else if (total > 0 && (_metodoPago === 'efectivo' || _metodoPago === 'nequi')) {
       devEl.textContent = '¡Exacto! (asumido)';
       devEl.className   = 'devuelta-amount exact';
     } else {
@@ -5725,7 +5788,7 @@ function calcDevuelta() {
     devEl.textContent = '¡Exacto!';
     devEl.className   = 'devuelta-amount exact';
   } else {
-    devEl.textContent = `Falta ${fmt(Math.abs(diff))}`;
+    devEl.textContent = esPendiente ? `Pendiente ${fmt(Math.abs(diff))}` : `Falta ${fmt(Math.abs(diff))}`;
     devEl.className   = 'devuelta-amount falta';
   }
 }
@@ -5862,6 +5925,7 @@ function _guardarOrdenReal() {
   const data = getFormData();
   const now = new Date();
   const totalOrden = data.totalPescado + data.totalEviscerado;
+  const esPendiente = document.getElementById('pendiente-chk')?.checked || false;
   let pagoEfectivo = 0, pagoNequi = 0;
   if (_metodoPago === 'mixto') {
     pagoEfectivo = _pagoRaw(document.getElementById('pago-input-efectivo'));
@@ -5874,7 +5938,9 @@ function _guardarOrdenReal() {
   // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
   // se asume que el pago fue exacto (pagó el total) para que quede reflejado
   // correctamente en el Resumen Financiero del dashboard.
-  if (pagoVal === 0 && (_metodoPago === 'efectivo' || _metodoPago === 'nequi') && totalOrden > 0) {
+  // Excepción: si se marcó "Dejar saldo pendiente (fiado)", no se asume nada —
+  // el monto ingresado (o $0 si se dejó en blanco) se toma tal cual.
+  if (pagoVal === 0 && !esPendiente && (_metodoPago === 'efectivo' || _metodoPago === 'nequi') && totalOrden > 0) {
     if (_metodoPago === 'nequi') pagoNequi = totalOrden; else pagoEfectivo = totalOrden;
     pagoVal = totalOrden;
   }
@@ -5892,6 +5958,11 @@ function _guardarOrdenReal() {
     pagoNequi: pagoNequi || null,
     pagoCon: pagoVal || null,
     devuelta: pagoVal > 0 ? pagoVal - totalOrden : null,
+    // Saldo que aún debe el cliente (cuenta por cobrar) — el total de la
+    // venta ya cuenta de inmediato en las ventas del período, pero este
+    // monto se resta como pendiente en el Resumen Financiero hasta que
+    // se salde con saldarPendiente().
+    saldoPendiente: Math.max(0, totalOrden - pagoVal),
     ...data
   };
 
@@ -6067,6 +6138,118 @@ function renderOrdenesEnEspera() {
   // Actualizar badge del botón
   const badge = document.getElementById('espera-badge');
   if (badge) badge.textContent = ordenesEnEspera.length;
+}
+
+// ─────────────────────────────────────────────
+//  VENTAS MAYORISTAS EN ESPERA (misma lógica que "Órdenes en espera")
+// ─────────────────────────────────────────────
+const MAY_ESPERA_KEY = 'aquacot_may_espera_v1';
+let ventasMayoristaEnEspera = _safeLoad(MAY_ESPERA_KEY, []);
+
+function _capturarEstadoFormularioMay() {
+  const nombre = document.getElementById('may-nombre').value;
+  const tel    = document.getElementById('may-tel').value;
+  const cc     = document.getElementById('may-cc').value;
+  const nota   = document.getElementById('may-nota-input')?.value || '';
+  const pago   = document.getElementById('may-pago-input').value;
+  const pagoEfectivo = document.getElementById('may-pago-input-efectivo').value;
+  const pagoNequi    = document.getElementById('may-pago-input-nequi').value;
+  const metodoPago   = _metodoPagoMay;
+  const especiesData = {};
+  ESPECIES.forEach(e => {
+    const qty    = document.getElementById(`may-qty-${e.id}`)?.value    || '';
+    const precio = document.getElementById(`may-precio-${e.id}`)?.value || '';
+    const ev     = document.getElementById(`may-ev-${e.id}`)?.checked   || false;
+    const especieOtro = e.id === 'otro' ? (document.getElementById('may-especie-otro')?.value || '') : null;
+    if (qty || ev) especiesData[e.id] = { qty, precio, ev, especieOtro };
+  });
+  return { nombre, tel, cc, nota, pago, pagoEfectivo, pagoNequi, metodoPago, especiesData };
+}
+
+function ponerEnEsperaMay() {
+  const estado = _capturarEstadoFormularioMay();
+  const tieneContenido = estado.nombre ||
+    Object.values(estado.especiesData).some(d => parseFloat(d.qty) > 0);
+  if (!tieneContenido) { toast('No hay nada en el formulario para poner en espera', true); return; }
+
+  ventasMayoristaEnEspera.push({ id: _genId(), timestamp: new Date().toISOString(), ...estado });
+  safeStorage.setItem(MAY_ESPERA_KEY, JSON.stringify(ventasMayoristaEnEspera));
+  resetMayorista(true);
+  renderVentasEnEsperaMay();
+  toast('⏸ Venta puesta en espera — puedes registrar la siguiente');
+}
+
+function recuperarVentaEsperaMay(id) {
+  const idx = ventasMayoristaEnEspera.findIndex(o => String(o.id) === String(id));
+  if (idx === -1) return;
+  const venta = ventasMayoristaEnEspera[idx];
+
+  document.getElementById('may-nombre').value = venta.nombre || '';
+  document.getElementById('may-tel').value    = venta.tel    || '';
+  document.getElementById('may-cc').value     = venta.cc     || '';
+  const notaEl = document.getElementById('may-nota-input');
+  if (notaEl) notaEl.value = venta.nota || '';
+  document.getElementById('may-pago-input').value = venta.pago || '';
+  document.getElementById('may-pago-input-efectivo').value = venta.pagoEfectivo || '';
+  document.getElementById('may-pago-input-nequi').value    = venta.pagoNequi || '';
+  setMetodoPagoMay(venta.metodoPago || 'efectivo');
+
+  ESPECIES.forEach(e => {
+    const d = venta.especiesData?.[e.id];
+    const qtyEl    = document.getElementById(`may-qty-${e.id}`);
+    const precioEl = document.getElementById(`may-precio-${e.id}`);
+    const evEl     = document.getElementById(`may-ev-${e.id}`);
+    if (qtyEl)    qtyEl.value    = d?.qty    || '';
+    if (precioEl) precioEl.value = (d?.precio !== '' && d?.precio != null) ? d.precio : (e.precio || '');
+    if (evEl)     evEl.checked   = d?.ev     || false;
+    if (e.id === 'otro') {
+      const selEl = document.getElementById('may-especie-otro');
+      if (selEl) selEl.value = d?.especieOtro || '';
+    }
+  });
+
+  ventasMayoristaEnEspera.splice(idx, 1);
+  safeStorage.setItem(MAY_ESPERA_KEY, JSON.stringify(ventasMayoristaEnEspera));
+  calcularMayorista();
+  renderVentasEnEsperaMay();
+  toast('▶ Venta recuperada');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function eliminarVentaEsperaMay(id) {
+  if (!confirm('¿Descartar esta venta en espera?')) return;
+  ventasMayoristaEnEspera = ventasMayoristaEnEspera.filter(o => String(o.id) !== String(id));
+  safeStorage.setItem(MAY_ESPERA_KEY, JSON.stringify(ventasMayoristaEnEspera));
+  renderVentasEnEsperaMay();
+  toast('Venta descartada');
+}
+
+function renderVentasEnEsperaMay() {
+  const cont = document.getElementById('may-espera-lista');
+  const card = document.getElementById('may-espera-card');
+  if (!cont || !card) return;
+  if (ventasMayoristaEnEspera.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  cont.innerHTML = ventasMayoristaEnEspera.map(o => {
+    const hora  = new Date(o.timestamp).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    const fecha = new Date(o.timestamp).toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+    const espec = ESPECIES.filter(e => {
+      const d = o.especiesData?.[e.id];
+      return d && parseFloat(d.qty) > 0;
+    }).map(e => `${e.emoji}${e.nombre.split(' ')[0]} ${o.especiesData[e.id].qty}lb`).join(' · ');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.2);border-radius:10px;margin-bottom:8px">
+      <div style="font-size:22px;flex-shrink:0">⏸</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:var(--text-primary);font-size:14px;margin-bottom:3px">${escHtml(o.nombre || '(sin nombre)')}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${hora} · ${fecha}${espec ? ' &nbsp;·&nbsp; ' + escHtml(espec) : ''}</div>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="recuperarVentaEsperaMay(${o.id})" style="flex-shrink:0">▶ Recuperar</button>
+      <button class="btn btn-ghost btn-sm" onclick="eliminarVentaEsperaMay(${o.id})" style="flex-shrink:0;color:var(--coral);border-color:rgba(239,71,111,0.3)" title="Descartar">✕</button>
+    </div>`;
+  }).join('');
+  // Actualizar badge del botón
+  const badgeMay = document.getElementById('may-espera-badge');
+  if (badgeMay) badgeMay.textContent = ventasMayoristaEnEspera.length;
 }
 
 // ─────────────────────────────────────────────
@@ -6328,15 +6511,16 @@ function _renderHistPage() {
       <td><strong style="color:var(--teal-bright);font-family:'Roboto Mono',monospace">${fmt(c.total)}</strong></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px">${c.pagoCon ? (c.metodoPago === 'nequi' ? '📱 ' : c.metodoPago === 'mixto' ? '🔀 ' : c.metodoPago === 'efectivo' ? '💵 ' : '') + fmt(c.pagoCon) : '—'}</td>
       <td style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:600">${
-        c.devuelta == null ? '—'
+        _saldoPendienteOrden(c) > 0 ? `<span style="color:var(--coral)">🕐 Pendiente ${fmt(_saldoPendienteOrden(c))}</span>`
+        : c.devuelta == null ? '—'
         : c.devuelta > 0  ? `<span style="color:var(--green)">${fmt(c.devuelta)}</span>`
-        : c.devuelta === 0 ? `<span style="color:var(--teal-bright)">Exacto</span>`
-        : `<span style="color:var(--coral)">Faltó ${fmt(Math.abs(c.devuelta))}</span>`
+        : `<span style="color:var(--teal-bright)">Exacto</span>`
       }</td>
       <td style="font-size:12px;color:var(--text-secondary);max-width:140px;white-space:normal">${
         c.nota ? `<span title="${escHtml(c.nota)}">📝 ${escHtml(c.nota.length > 30 ? c.nota.slice(0,30)+'…' : c.nota)}</span>` : '—'
       }</td>
       <td style="white-space:nowrap">
+        ${_saldoPendienteOrden(c) > 0 ? `<button class="btn btn-success btn-sm" onclick='saldarPendiente("${c.id}","detal")' title="Registrar abono o saldar deuda">💰</button>` : ''}
         <button class="btn btn-primary btn-sm" onclick='generarPDF("${c.id}")' title="PDF">📄</button>
         <button class="btn btn-whatsapp btn-sm" onclick='enviarWhatsApp("${c.id}")' title="WhatsApp">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -6850,6 +7034,20 @@ function renderDashboard() {
     }
   }
 
+  // Cuentas por cobrar: suma de saldoPendiente de todas las órdenes del período.
+  // El total de cada venta ya se contó de inmediato arriba (Total ventas /
+  // Total general); esto solo informa cuánto de ese total aún no ha entrado
+  // en efectivo/Nequi porque quedó fiado o con abono parcial.
+  let totalPendiente = 0, countPendiente = 0;
+  lista.forEach(c => { const s = _saldoPendienteOrden(c); if (s > 0) { totalPendiente += s; countPendiente++; } });
+  listaMay.forEach(v => { const s = _saldoPendienteOrden(v); if (s > 0) { totalPendiente += s; countPendiente++; } });
+  const fsPendienteEl = document.getElementById('fs-pendiente-group');
+  if (fsPendienteEl) {
+    fsPendienteEl.style.display = countPendiente > 0 ? '' : 'none';
+    document.getElementById('fs-pendiente-count').textContent = countPendiente;
+    document.getElementById('fs-pendiente-total').textContent = fmt(totalPendiente);
+  }
+
   const fsTotalCombEl = document.getElementById('fs-total-combinado');
   if (fsTotalCombEl) {
     fsTotalCombEl.style.display = listaMay.length > 0 ? '' : 'none';
@@ -6947,6 +7145,59 @@ function _librasEviscerado(c) {
 // Se usa para las métricas del Dashboard — el registro original de la
 // orden (pagoCon, pagoEfectivo, pagoNequi) NO se modifica, solo se ajusta
 // aquí, al momento de sumar los totales del negocio.
+// Saldo que aún debe el cliente por una orden/venta (cuenta por cobrar).
+// Usa el campo saldoPendiente si existe; para registros antiguos (previos
+// a esta función) lo deduce de una devuelta negativa como respaldo.
+function _saldoPendienteOrden(o) {
+  if (typeof o.saldoPendiente === 'number') return o.saldoPendiente;
+  if (o.devuelta != null && o.devuelta < 0) return Math.abs(o.devuelta);
+  return 0;
+}
+
+// Registra un abono (o el pago total) sobre el saldo pendiente de una orden
+// detal o venta mayorista, sin necesidad de abrir el modal completo de edición.
+// tipo: 'detal' | 'mayorista'
+function saldarPendiente(id, tipo) {
+  const arr = tipo === 'mayorista' ? mayorista : ordenes;
+  const o = arr.find(x => String(x.id) === String(id));
+  if (!o) return;
+  const pendienteActual = _saldoPendienteOrden(o);
+  if (pendienteActual <= 0) { toast('Esta orden no tiene saldo pendiente', true); return; }
+
+  const input = prompt(
+    `Saldo pendiente: ${fmt(pendienteActual)}\n\n¿Cuánto abona el cliente ahora?\n(deja este valor para saldar todo)`,
+    String(Math.round(pendienteActual))
+  );
+  if (input === null) return; // cancelado
+  const abono = parseFloat(String(input).replace(/[^\d.]/g, ''));
+  if (!abono || abono <= 0) { toast('Monto inválido', true); return; }
+  const abonoFinal = Math.min(abono, pendienteActual);
+
+  // El abono se suma al método de pago que ya tenía la orden (o efectivo si no tenía ninguno)
+  if (o.metodoPago === 'mixto') {
+    o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
+  } else if (o.metodoPago === 'nequi') {
+    o.pagoNequi = (o.pagoNequi || 0) + abonoFinal;
+  } else {
+    o.metodoPago   = o.metodoPago || 'efectivo';
+    o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
+  }
+  o.pagoCon        = (o.pagoEfectivo || 0) + (o.pagoNequi || 0);
+  o.devuelta       = o.pagoCon - o.total;
+  o.saldoPendiente = Math.max(0, o.total - o.pagoCon);
+  o.lastUpdated    = new Date().toISOString();
+
+  safeStorage.setItem(tipo === 'mayorista' ? MAYORISTA_KEY : STORAGE_KEY, JSON.stringify(arr));
+  updateBadge();
+  _dashCache.serial = null; // forzar recálculo del resumen financiero (el registro editado puede no ser el más reciente)
+  renderDashboard();
+  if (tipo === 'mayorista') renderMayorista(); else renderHistorial();
+  scheduleDriveSync();
+  toast(o.saldoPendiente <= 0
+    ? '✅ Saldo completado — orden pagada en su totalidad'
+    : `💵 Abono de ${fmt(abonoFinal)} registrado — quedan ${fmt(o.saldoPendiente)} pendientes`);
+}
+
 function _pagoNetoPorMetodo(o) {
   let efectivo = 0, nequi = 0, sinEspecificar = 0;
   if (o.metodoPago === 'nequi') {
@@ -7031,6 +7282,8 @@ function resetForm(silent = false) {
   const dev = document.getElementById('devuelta-display');
   dev.textContent = '—';
   dev.className = 'devuelta-amount pending';
+  const pendienteChk = document.getElementById('pendiente-chk');
+  if (pendienteChk) pendienteChk.checked = false;
   if (!silent) toast('Formulario limpiado');
 }
 
@@ -8567,6 +8820,8 @@ function abrirEdicion(id) {
     document.getElementById('edit-pago-input-efectivo').value = '';
     document.getElementById('edit-pago-input-nequi').value    = '';
   }
+  const editPendienteChk = document.getElementById('edit-pendiente-chk');
+  if (editPendienteChk) editPendienteChk.checked = _saldoPendienteOrden(cot) > 0;
   calcDevueltaEdit();
 
   document.getElementById('modal-overlay').classList.add('open');
@@ -8750,6 +9005,7 @@ function guardarEdicion() {
   if (!hasEv) evStartedAt = undefined;
 
   const totalOrden = totalPescado + totalEviscerado;
+  const esPendiente = document.getElementById('edit-pendiente-chk')?.checked || false;
 
   // Recalcular método/monto de pago desde los campos del modal de edición
   let pagoEfectivo = 0, pagoNequi = 0;
@@ -8764,7 +9020,8 @@ function guardarEdicion() {
   let pagoValFinal = pagoVal, pagoEfectivoFinal = pagoEfectivo, pagoNequiFinal = pagoNequi;
   // Si se seleccionó un método (efectivo/nequi) pero no se especificó el monto,
   // se asume que el pago fue exacto (pagó el total), igual que al crear la orden.
-  if (pagoVal === 0 && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi') && totalOrden > 0) {
+  // Excepción: con "Dejar saldo pendiente (fiado)" marcado, no se asume nada.
+  if (pagoVal === 0 && !esPendiente && (_metodoPagoEdit === 'efectivo' || _metodoPagoEdit === 'nequi') && totalOrden > 0) {
     if (_metodoPagoEdit === 'nequi') pagoNequiFinal = totalOrden; else pagoEfectivoFinal = totalOrden;
     pagoValFinal = totalOrden;
   }
@@ -8786,6 +9043,7 @@ function guardarEdicion() {
     pagoNequi: pagoNequiFinal || null,
     pagoCon: pagoValFinal || null,
     devuelta: pagoValFinal > 0 ? pagoValFinal - totalOrden : null,
+    saldoPendiente: Math.max(0, totalOrden - pagoValFinal),
     editadoEn: new Date().toLocaleString('es-CO'),
     lastUpdated: new Date().toISOString(),
     ...(fechaVal ? (() => {
@@ -12645,6 +12903,7 @@ updateEvBadge();
 iniciarFloatBtnInterval();
 restoreDriveSession();
 renderOrdenesEnEspera();
+renderVentasEnEsperaMay();
 _evaluarGeneroCliente();
 
 // Pestañas protegidas — declaradas aquí para evitar TDZ en restoreLastTab()
