@@ -217,12 +217,23 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* color-scheme:dark asegura que TODO lo que renderiza el navegador de forma
+     nativa (scrollbars, el menú desplegable de los <select>, autocompletado,
+     etc.) también use tema oscuro y no se vea un recuadro claro encima del
+     fondo oscuro de la app. html también lleva el fondo oscuro para que no
+     se vea un destello blanco al hacer "rebote" de scroll en iOS/Android. */
+  html {
+    background: var(--ocean-deep);
+    color-scheme: dark;
+  }
+
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--ocean-deep);
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+    color-scheme: dark;
     transition: background 0.35s, color 0.35s;
   }
 
@@ -806,7 +817,7 @@
   .species-inputs {
     display: flex;
     gap: 10px;
-    align-items: center;
+    align-items: stretch; /* el checkbox "pelada" (eviscerado) iguala el alto del campo de libras */
   }
 
   .species-inputs input {
@@ -840,6 +851,10 @@
     flex-shrink: 0;
     font-size: 14px;
   }
+
+  /* En la fila precio/libras/pelada de las tarjetas de especie, el checkbox
+     ocupa exactamente el mismo alto que el campo de libras junto a él. */
+  .species-inputs .custom-check { height: 100%; }
 
   .eviscera-label:has(input:checked) .custom-check {
     background: rgba(6,214,160,0.2);
@@ -1287,6 +1302,35 @@
 
   /* ──────────────── SECTION SPACING ──────────────── */
   .section { margin-bottom: 24px; }
+
+  /* ──────────────── TOGGLE: HISTORIAL DETAL vs MAYORISTA ──────────────── */
+  .hist-canal-toggle {
+    display: flex;
+    gap: 8px;
+  }
+  .hist-canal-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0,180,216,0.2);
+    background: var(--input-bg);
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .hist-canal-btn:hover { border-color: rgba(0,180,216,0.5); color: var(--teal-pale); }
+  .hist-canal-btn.active {
+    background: rgba(0,180,216,0.15);
+    border-color: var(--teal);
+    color: var(--teal-bright);
+  }
 
   /* ──────────────── TOAST ──────────────── */
   #toast {
@@ -3045,7 +3089,7 @@
       <a class="logo" href="#">
         <span aria-hidden="true" style="font-size:22px;line-height:1;flex-shrink:0">🐟</span>
         <span class="logo-text">LAGOS LA ISABELA</span>
-        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.5.0</span>
+        <span id="app-version-badge" style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:0.4px;align-self:flex-end;margin-bottom:2px;margin-left:4px">v6.6.0</span>
       </a>
       <div style="display:flex;align-items:center;gap:6px">
         <button class="drive-status-bar" id="drive-status-btn" onclick="openSetupModal()">
@@ -3239,6 +3283,19 @@
       </div>
     </div>
 
+    <!-- Toggle: alterna entre el historial de Detal y el de Mayoristas —
+         se muestra únicamente el que esté seleccionado. -->
+    <div class="card section" id="hist-canal-toggle-card">
+      <div class="card-title" style="margin-bottom:12px">🔀 Mostrar historial de</div>
+      <div class="hist-canal-toggle">
+        <button type="button" class="hist-canal-btn active" data-canal="detal" onclick="setHistCanal('detal')">🛒 Detal</button>
+        <button type="button" class="hist-canal-btn" data-canal="mayorista" onclick="setHistCanal('mayorista')">🏢 Mayorista</button>
+      </div>
+    </div>
+
+    <!-- ══ HISTORIAL DETAL ══ -->
+    <div id="hist-detal-block">
+
     <!-- Botón flotante de exportar a Excel — solo visible en la sección Historial -->
     <button class="fab-add fab-glass" id="hist-fab-export" onclick="exportarExcel()" title="Exportar historial a Excel" aria-label="Exportar historial a Excel">📥</button>
 
@@ -3302,6 +3359,65 @@
         </div>
       </div>
     </div>
+
+    </div><!-- /hist-detal-block -->
+
+    <!-- ══ HISTORIAL MAYORISTA (independiente del historial de Detal) ══ -->
+    <div id="hist-mayorista-block" style="display:none">
+
+    <div class="card section">
+      <div class="card-title">📋 Historial de Ventas Mayoristas
+        <span class="tab-badge" id="badge-may-hist" style="margin-left:8px">0</span>
+      </div>
+
+      <!-- Filtros de período -->
+      <div class="filter-bar">
+        <span class="filter-bar-label">📅 Período</span>
+        <div class="period-btns">
+          <button class="period-btn active" onclick="setMayPeriod('today')"  data-mayperiod="today">Hoy</button>
+          <button class="period-btn"        onclick="setMayPeriod('week')"   data-mayperiod="week">Esta semana</button>
+          <button class="period-btn"        onclick="setMayPeriod('month')"  data-mayperiod="month">Este mes</button>
+          <button class="period-btn"        onclick="setMayPeriod('all')"    data-mayperiod="all">Todo</button>
+          <button class="period-btn"        onclick="setMayPeriod('custom')" data-mayperiod="custom">Rango…</button>
+        </div>
+        <div class="date-range-inputs" id="may-custom-range" style="display:none">
+          <input type="date" id="may-date-desde" onchange="applyMayCustomRange()">
+          <span class="sep">→</span>
+          <input type="date" id="may-date-hasta" onchange="applyMayCustomRange()">
+        </div>
+        <div class="filter-period-indicator">
+          <span class="period-pill" id="may-period-pill">Hoy</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Comprador</th>
+              <th>CC / NIT</th>
+              <th>Celular</th>
+              <th>Especies</th>
+              <th>Libras</th>
+              <th>Eviscerado</th>
+              <th>Total</th>
+              <th>Pago</th>
+              <th>Nota</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="may-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="may-empty">
+          <div class="icon">📦</div>
+          <p>No hay ventas mayoristas registradas.<br>¡Regístralas en la pestaña Mayoristas!</p>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /hist-mayorista-block -->
 
   </div><!-- /historial -->
 
@@ -3919,64 +4035,6 @@
       <input type="text" id="may-nota-input" placeholder="Ej: paga contraentrega, entrega en bodega norte…" autocomplete="off" style="width:100%">
     </div>
 
-    <!-- Historial mayorista -->
-    <div class="card section">
-      <div class="card-title">📋 Historial de Ventas Mayoristas
-        <span class="tab-badge" id="badge-may-hist" style="margin-left:8px">0</span>
-      </div>
-
-      <!-- Filtros de período -->
-      <div class="filter-bar">
-        <span class="filter-bar-label">📅 Período</span>
-        <div class="period-btns">
-          <button class="period-btn active" onclick="setMayPeriod('today')"  data-mayperiod="today">Hoy</button>
-          <button class="period-btn"        onclick="setMayPeriod('week')"   data-mayperiod="week">Esta semana</button>
-          <button class="period-btn"        onclick="setMayPeriod('month')"  data-mayperiod="month">Este mes</button>
-          <button class="period-btn"        onclick="setMayPeriod('all')"    data-mayperiod="all">Todo</button>
-          <button class="period-btn"        onclick="setMayPeriod('custom')" data-mayperiod="custom">Rango…</button>
-        </div>
-        <div class="date-range-inputs" id="may-custom-range" style="display:none">
-          <input type="date" id="may-date-desde" onchange="applyMayCustomRange()">
-          <span class="sep">→</span>
-          <input type="date" id="may-date-hasta" onchange="applyMayCustomRange()">
-        </div>
-        <div class="filter-period-indicator">
-          <span class="period-pill" id="may-period-pill">Hoy</span>
-        </div>
-      </div>
-
-      <!-- Búsqueda de texto -->
-      <div class="search-row" style="margin-bottom:16px">
-        <input type="text" id="may-search" placeholder="Buscar por nombre, celular, CC o nota…" oninput="renderMayorista()">
-      </div>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Fecha</th>
-              <th>Comprador</th>
-              <th>CC / NIT</th>
-              <th>Celular</th>
-              <th>Especies</th>
-              <th>Libras</th>
-              <th>Eviscerado</th>
-              <th>Total</th>
-              <th>Pago</th>
-              <th>Nota</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="may-tbody"></tbody>
-        </table>
-        <div class="empty-state" id="may-empty">
-          <div class="icon">📦</div>
-          <p>No hay ventas mayoristas registradas.<br>¡Registra la primera arriba!</p>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /mayorista -->
 
 </main>
@@ -3996,7 +4054,7 @@
         <span id="ev-fs-sync-text">—</span>
       </div>
     </div>
-    <button class="ev-fs-close" onclick="toggleEvFullscreen()">✕ Salir de pantalla completa</button>
+    <button class="ev-fs-close" onclick="solicitarPasswordSalirFullscreen()">✕ Salir de pantalla completa</button>
   </div>
 
   <!-- Zona scrollable: estimador + pendientes -->
@@ -4596,7 +4654,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.5.0';
+const APP_VERSION = '6.6.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -4689,6 +4747,7 @@ const EVISCERA_COSTO = 500; // mantener por compatibilidad — usar getEviscerad
 const STORAGE_KEY    = 'aquacot_v1';
 const CLIENTES_KEY   = 'aquacot_clientes_v1';
 const MAYORISTA_KEY  = 'aquacot_mayorista_v1';
+const MAY_PRECIOS_KEY = 'aquacot_may_precios_v1';
 
 // ── Safe storage: fallback a memoria si localStorage está bloqueado ──
 const safeStorage = (() => {
@@ -4722,6 +4781,25 @@ const safeSessionStorage = (() => {
 // La colisión exacta requeriría dos guardados en el mismo milisegundo con mismo random (1/1000).
 function _genId() {
   return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+}
+
+// Memoria de los últimos precios/lb que el usuario puso manualmente por
+// especie en el formulario de Mayoristas — se conservan entre ventas y
+// recargas de página hasta que el usuario los cambie de nuevo a mano.
+let mayPreciosMemoria = _safeLoad(MAY_PRECIOS_KEY, {});
+
+// Guarda en memoria persistente los precios actualmente escritos en el
+// formulario de Mayoristas (solo los campos con algo escrito).
+function _actualizarMemoriaPreciosMayorista() {
+  let cambiado = false;
+  ESPECIES.forEach(e => {
+    const val = document.getElementById(`may-precio-${e.id}`)?.value;
+    if (val !== undefined && val !== '' && mayPreciosMemoria[e.id] !== val) {
+      mayPreciosMemoria[e.id] = val;
+      cambiado = true;
+    }
+  });
+  if (cambiado) safeStorage.setItem(MAY_PRECIOS_KEY, JSON.stringify(mayPreciosMemoria));
 }
 
 // ── Carga segura de datos: maneja corrupción de localStorage ──
@@ -4786,11 +4864,10 @@ function showTab(tab) {
   // (Clientes, Eviscerado). Lo dejamos para el siguiente frame para que el
   // navegador ya haya pintado el cambio de pestaña y no se sienta "pegado".
   requestAnimationFrame(() => {
-    if (tab === 'historial')     renderHistorial();
+    if (tab === 'historial')     { renderHistorial(); renderMayorista(); }
     if (tab === 'dashboard')     renderDashboard();
     if (tab === 'eviscerado')    renderEviscerado();
     if (tab === 'clientes')      renderClientes();
-    if (tab === 'mayorista')     renderMayorista();
     if (tab === 'clientes-dash') renderClientesDash();
     if (tab === 'asistencia')    renderAsistencia();
   });
@@ -4838,7 +4915,12 @@ function buildSpeciesGrid() {
 function buildMaySpeciesGrid() {
   const grid = document.getElementById('may-species-grid');
   if (!grid) return;
-  grid.innerHTML = ESPECIES.map(e => `
+  grid.innerHTML = ESPECIES.map(e => {
+    // Precio inicial: el último que el usuario haya puesto manualmente para
+    // esta especie en Mayoristas, o el precio de referencia si nunca lo cambió.
+    const precioInicial = (mayPreciosMemoria[e.id] !== undefined && mayPreciosMemoria[e.id] !== '')
+      ? mayPreciosMemoria[e.id] : (e.precio || '');
+    return `
     <div class="species-card" id="may-sc-${e.id}" style="--sc:${e.color||'var(--teal)'}">
       <div class="species-accent"></div>
       <div class="species-header">
@@ -4852,8 +4934,10 @@ function buildMaySpeciesGrid() {
         <input type="text" inputmode="decimal"
           placeholder="${e.precio ? e.precio : 'Precio/lb'}"
           id="may-precio-${e.id}"
-          value="${e.precio || ''}"
-          oninput="calcularMayorista()" autocomplete="off" style="max-width:100px">
+          value="${precioInicial}"
+          oninput="calcularMayorista()"
+          onblur="_actualizarMemoriaPreciosMayorista()"
+          autocomplete="off" style="max-width:100px">
         <input type="text" inputmode="decimal" placeholder="0.0 lb" id="may-qty-${e.id}" oninput="calcularMayorista()" autocomplete="off">
         <label class="eviscera-label">
           <input type="checkbox" id="may-ev-${e.id}" onchange="calcularMayorista()">
@@ -4869,7 +4953,8 @@ function buildMaySpeciesGrid() {
         <span id="may-sub-${e.id}">$0</span>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function calcularMayorista() {
@@ -4963,6 +5048,7 @@ function guardarVentaMayorista() {
 
 function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, totalEviscerado, nota) {
   const now = new Date();
+  _actualizarMemoriaPreciosMayorista();
   const esPendiente = document.getElementById('may-pendiente-chk')?.checked || false;
 
   // Recalcular método/monto de pago desde los campos del formulario mayorista
@@ -5021,8 +5107,10 @@ function resetMayorista(silent = false) {
     const precioEl = document.getElementById(`may-precio-${e.id}`);
     const evEl     = document.getElementById(`may-ev-${e.id}`);
     if (qtyEl) qtyEl.value = '';
-    // Restaurar precio estándar como placeholder/valor por defecto
-    if (precioEl) precioEl.value = e.precio || '';
+    // Conservar el último precio que el usuario haya puesto manualmente para
+    // esta especie (memoria persistente); si nunca lo cambió, usar el de referencia.
+    if (precioEl) precioEl.value = (mayPreciosMemoria[e.id] !== undefined && mayPreciosMemoria[e.id] !== '')
+      ? mayPreciosMemoria[e.id] : (e.precio || '');
     if (evEl) evEl.checked = false;
     const card = document.getElementById(`may-sc-${e.id}`);
     if (card) card.classList.remove('has-value');
@@ -5061,6 +5149,20 @@ function eliminarVentaMayorista(id) {
   renderMayorista();
   scheduleDriveSync();
   toast('Venta eliminada');
+}
+
+// ── Toggle: qué historial se muestra en la pestaña Historial (detal o mayorista) ──
+let histCanalActivo = safeStorage.getItem('aquacot_hist_canal') === 'mayorista' ? 'mayorista' : 'detal';
+
+function setHistCanal(canal) {
+  histCanalActivo = canal;
+  document.querySelectorAll('.hist-canal-btn').forEach(b => b.classList.toggle('active', b.dataset.canal === canal));
+  const detalBlock = document.getElementById('hist-detal-block');
+  const mayBlock   = document.getElementById('hist-mayorista-block');
+  if (detalBlock) detalBlock.style.display = canal === 'detal'     ? '' : 'none';
+  if (mayBlock)   mayBlock.style.display   = canal === 'mayorista' ? '' : 'none';
+  safeStorage.setItem('aquacot_hist_canal', canal);
+  if (canal === 'mayorista') renderMayorista(); else renderHistorial();
 }
 
 // ── Filtros de período para historial mayorista ──
@@ -5133,7 +5235,6 @@ function getMayPeriodLabel() {
 }
 
 function renderMayorista() {
-  const q     = (document.getElementById('may-search')?.value || '').toLowerCase().trim();
   const tbody = document.getElementById('may-tbody');
   const empty = document.getElementById('may-empty');
 
@@ -5142,12 +5243,6 @@ function renderMayorista() {
   if (pillEl) pillEl.textContent = getMayPeriodLabel();
 
   let lista = getMayFiltered();
-  if (q) lista = lista.filter(v =>
-    v.nombre.toLowerCase().includes(q) ||
-    (v.tel || '').includes(q) ||
-    (v.cc  || '').toLowerCase().includes(q) ||
-    (v.nota || '').toLowerCase().includes(q)
-  );
 
   document.getElementById('badge-may-hist').textContent = mayorista.length;
 
@@ -6167,6 +6262,7 @@ function _capturarEstadoFormularioMay() {
 }
 
 function ponerEnEsperaMay() {
+  _actualizarMemoriaPreciosMayorista();
   const estado = _capturarEstadoFormularioMay();
   const tieneContenido = estado.nombre ||
     Object.values(estado.especiesData).some(d => parseFloat(d.qty) > 0);
@@ -12969,6 +13065,17 @@ renderOrdenesEnEspera();
 renderVentasEnEsperaMay();
 _evaluarGeneroCliente();
 
+// Sincronizar visualmente el toggle Detal/Mayorista del Historial con la
+// preferencia guardada (el render real de cada tabla ocurre al entrar a
+// la pestaña Historial, vía showTab()).
+document.querySelectorAll('.hist-canal-btn').forEach(b => b.classList.toggle('active', b.dataset.canal === histCanalActivo));
+{
+  const _hd = document.getElementById('hist-detal-block');
+  const _hm = document.getElementById('hist-mayorista-block');
+  if (_hd) _hd.style.display = histCanalActivo === 'detal'     ? '' : 'none';
+  if (_hm) _hm.style.display = histCanalActivo === 'mayorista' ? '' : 'none';
+}
+
 // Pestañas protegidas — declaradas aquí para evitar TDZ en restoreLastTab()
 const _TABS_PROTEGIDAS   = ['dashboard', 'clientes-dash', 'asistencia'];
 let   _tabsDesbloqueadas = false;
@@ -13089,6 +13196,27 @@ function _formTieneDatos() {
 // Advertir al cambiar de pestaña si hay datos sin guardar
 
 // ══════════════════════════════════════════════════════════
+//  CONTRASEÑA PARA SALIR DEL FULLSCREEN DE EVISCERADO
+// ══════════════════════════════════════════════════════════
+function solicitarPasswordSalirFullscreen() {
+  // Reutilizamos el modal de bloqueo de pestañas pero con texto diferente
+  _tabPendiente = '__exit_ev_fullscreen__';
+  const overlay = document.getElementById('tab-lock-overlay');
+  if (!overlay) { toggleEvFullscreen(); return; }
+  // Cambiar el mensaje del modal
+  const h3 = overlay.querySelector('h3');
+  const p  = overlay.querySelector('p');
+  if (h3) h3.textContent = 'Salir de pantalla completa';
+  if (p)  p.textContent  = 'Ingresa la contraseña de administrador para salir.';
+  const inp = document.getElementById('tab-pwd-input');
+  const err = document.getElementById('tab-pwd-error');
+  if (inp) inp.value = '';
+  if (err) { err.textContent = ''; err.style.display = 'none'; }
+  overlay.style.display = 'flex';
+  setTimeout(() => inp?.focus(), 80);
+}
+
+// ══════════════════════════════════════════════════════════
 //  CONTRASEÑA PARA PESTAÑAS PROTEGIDAS (Dashboard y Perfiles)
 //  Mismo hash SHA-256 que el panel de precios
 // ══════════════════════════════════════════════════════════
@@ -13135,8 +13263,12 @@ async function _verificarPasswordTab() {
       if (h3) h3.textContent = 'Sección protegida';
       if (p)  p.textContent  = 'Esta sección requiere contraseña de administrador.';
     }
-    _tabsDesbloqueadas = true;
-    if (dest) _origShowTab(dest);
+    if (dest === '__exit_ev_fullscreen__') {
+      toggleEvFullscreen();
+    } else {
+      _tabsDesbloqueadas = true;
+      if (dest) _origShowTab(dest);
+    }
   } else {
     if (err) { err.textContent = '❌ Contraseña incorrecta'; err.style.display = 'block'; }
     if (inp) { inp.value = ''; inp.focus(); }
