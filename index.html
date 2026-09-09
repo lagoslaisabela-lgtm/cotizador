@@ -196,6 +196,7 @@
     --green:         #2d6ce0;
     --nequi:         #ff2f92;
     --nequi-purple:  #a855f7;
+    --efectivo-green:#22c55e;
 
     /* Semánticas oscuras */
     --surface:       #050505;
@@ -912,22 +913,37 @@
     border: 2px solid rgba(77,151,255,0.3);
     border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
+    position: relative;
     transition: all 0.15s;
     flex-shrink: 0;
     font-size: 14px;
   }
+
+  /* El cuchillo vive dentro de la propia casilla (representa "eviscerado");
+     al marcarla, el cuchillo se desvanece y aparece el chulito en su lugar
+     con un pequeño "pop", en vez de mostrar ambos símbolos a la vez. */
+  .custom-check .ic-knife,
+  .custom-check .ic-check {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s ease, transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .custom-check .ic-knife { opacity: 1; transform: scale(1); }
+  .custom-check .ic-check { opacity: 0; transform: scale(0.4); color: var(--efectivo-green); font-weight: 700; }
 
   /* En la fila precio/libras/pelada de las tarjetas de especie, el checkbox
      ocupa exactamente el mismo alto que el campo de libras junto a él. */
   .species-inputs .custom-check { height: 100%; }
 
   .eviscera-label:has(input:checked) .custom-check {
-    background: rgba(45,108,224,0.2);
-    border-color: var(--green);
-    color: var(--green);
+    background: rgba(34,197,94,0.18);
+    border-color: var(--efectivo-green);
   }
-
-  .eviscera-label:not(:has(input:checked)) .custom-check { color: transparent; }
+  .eviscera-label:has(input:checked) .custom-check .ic-knife { opacity: 0; transform: scale(0.4) rotate(-25deg); }
+  .eviscera-label:has(input:checked) .custom-check .ic-check { opacity: 1; transform: scale(1); }
 
   .species-subtotal {
     margin-top: 8px;
@@ -993,16 +1009,32 @@
     border-top: none;
   }
 
-  /* Cuando Nequi está seleccionado, la tarjeta de pago completa (o el
-     selector, en los formularios de edición que no tienen tarjeta propia)
-     toma un acento morado para distinguir visualmente el método elegido. */
+  /* Cada método de pago le da a la tarjeta (o al selector, en los
+     formularios de edición sin tarjeta propia) su propio acento:
+     efectivo = verde, nequi = morado, mixto = amarillo/dorado. */
+  .payment-panel:has(.metodo-btn.active[data-metodo="efectivo"]) {
+    background: rgba(34,197,94,0.06);
+    border-color: rgba(34,197,94,0.4);
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.12), 0 0 28px -10px rgba(34,197,94,0.45);
+  }
   .payment-panel:has(.metodo-btn.active[data-metodo="nequi"]) {
     background: rgba(168,85,247,0.06);
     border-color: rgba(168,85,247,0.4);
     box-shadow: 0 0 0 1px rgba(168,85,247,0.12), 0 0 28px -10px rgba(168,85,247,0.45);
   }
+  .payment-panel:has(.metodo-btn.active[data-metodo="mixto"]) {
+    background: rgba(77,151,255,0.06);
+    border-color: rgba(77,151,255,0.4);
+    box-shadow: 0 0 0 1px rgba(77,151,255,0.12), 0 0 28px -10px rgba(77,151,255,0.45);
+  }
+  .metodo-pago-selector:has(.metodo-btn.active[data-metodo="efectivo"]) {
+    border-top-color: rgba(34,197,94,0.4);
+  }
   .metodo-pago-selector:has(.metodo-btn.active[data-metodo="nequi"]) {
     border-top-color: rgba(168,85,247,0.4);
+  }
+  .metodo-pago-selector:has(.metodo-btn.active[data-metodo="mixto"]) {
+    border-top-color: rgba(77,151,255,0.4);
   }
 
   /* Columna de acciones: separada por un divisor y centrada verticalmente
@@ -1172,43 +1204,36 @@
   .devuelta-amount.falta   { color: var(--coral); }
   .devuelta-amount.pending { color: var(--text-muted); }
 
-  /* ──────────────── BUTTONS ──────────────── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
+  /* ──────────────── BUTTONS ────────────────
+     Limpiar / En espera / Cobrar comparten el mismo tratamiento de vidrio
+     esmerilado (blur + saturación + brillo interior) que el resto de la
+     app (nav, modales), solo cambia el tinte de color de cada uno. */
   .btn-primary {
-    background: linear-gradient(135deg, var(--teal), #007ea7);
+    background: linear-gradient(135deg, rgba(77,151,255,0.35), rgba(0,126,167,0.35));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(77,151,255,0.4);
     color: white;
-    box-shadow: 0 4px 16px rgba(77,151,255,0.3);
+    box-shadow: 0 4px 16px rgba(77,151,255,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
   }
 
   .btn-primary:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 24px rgba(77,151,255,0.4);
+    box-shadow: 0 6px 24px rgba(77,151,255,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
   }
 
   .btn-success {
-    background: linear-gradient(135deg, var(--green), #05a87e);
+    background: linear-gradient(135deg, rgba(34,197,94,0.35), rgba(5,168,126,0.35));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(34,197,94,0.4);
     color: var(--text-primary);
-    box-shadow: 0 4px 16px rgba(45,108,224,0.25);
+    box-shadow: 0 4px 16px rgba(34,197,94,0.2), inset 0 1px 0 rgba(255,255,255,0.25);
   }
 
   .btn-success:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 24px rgba(45,108,224,0.35);
+    box-shadow: 0 6px 24px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
   }
 
   .btn-danger {
@@ -1235,12 +1260,15 @@
   }
 
   .btn-ghost {
-    background: rgba(77,151,255,0.08);
+    background: rgba(77,151,255,0.1);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     color: var(--teal);
-    border: 1px solid rgba(77,151,255,0.2);
+    border: 1px solid rgba(77,151,255,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
-  .btn-ghost:hover { background: rgba(77,151,255,0.15); }
+  .btn-ghost:hover { background: rgba(77,151,255,0.18); }
 
   .btn-sm { padding: 8px 14px; font-size: 13px; }
 
@@ -1462,7 +1490,10 @@
   .empty-state p { font-size: 14px; }
 
   /* ──────────────── MOBILE FIXES ──────────────── */
-  @media (max-width: 380px) {
+  /* En celular (hasta 768px de ancho) una sola columna: las tarjetas de
+     libras/precio/eviscerado quedan más grandes y fáciles de tocar/leer
+     en vez de competir por espacio en 2 columnas apretadas. */
+  @media (max-width: 768px) {
     .species-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 480px) {
@@ -3043,11 +3074,12 @@
     100% { transform: translate(var(--dx,0px),var(--dy,-200px)) scale(1.1) rotate(var(--rot1,360deg)); opacity:0; }
   }
   @keyframes cobrarpulse {
-    0%   { box-shadow: 0 0 0 0 rgba(45,108,224,.8); }
-    70%  { box-shadow: 0 0 0 20px rgba(45,108,224,0); }
-    100% { box-shadow: 0 0 0 0 rgba(45,108,224,0); }
+    0%   { transform: scale(1);    box-shadow: 0 4px 16px rgba(45,108,224,0.25); }
+    35%  { transform: scale(0.93); box-shadow: 0 2px 10px rgba(45,108,224,0.2); }
+    65%  { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(34,197,94,0.22), 0 10px 30px rgba(34,197,94,0.5); }
+    100% { transform: scale(1);    box-shadow: 0 4px 16px rgba(45,108,224,0.25); }
   }
-  .cobrar-success { animation: cobrarpulse 0.65s ease-out; }
+  .cobrar-success { animation: cobrarpulse 0.6s cubic-bezier(.34,1.56,.64,1); }
 
   /* Keyframes compartidos por los modales de la app (ver .app-modal-overlay /
      .app-modal-panel / .modal-icon-badge.pulse más abajo) */
@@ -3334,7 +3366,7 @@
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetForm()">✨ Limpiar</button>
-          <button class="btn btn-ghost" onclick="ponerEnEspera()" title="Guardar temporalmente para registrar otra orden" style="border-color:rgba(77,151,255,0.4);color:var(--teal)">⏸️ En espera</button>
+          <button class="btn btn-ghost" onclick="ponerEnEspera()" title="Guardar temporalmente para registrar otra orden">⏸️ En espera</button>
           <button class="btn btn-success" id="btn-cobrar" onclick="guardarOrden()">💵 Cobrar</button>
         </div>
       </div>
@@ -4107,7 +4139,7 @@
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="resetMayorista()">✨ Limpiar</button>
-          <button class="btn btn-ghost" onclick="ponerEnEsperaMay()" title="Guardar temporalmente para registrar otra venta" style="border-color:rgba(77,151,255,0.4);color:var(--teal)">⏸ En espera</button>
+          <button class="btn btn-ghost" onclick="ponerEnEsperaMay()" title="Guardar temporalmente para registrar otra venta">⏸ En espera</button>
           <button class="btn btn-success" onclick="guardarVentaMayorista()">💾 Registrar Venta</button>
         </div>
       </div>
@@ -4977,8 +5009,7 @@ function buildSpeciesGrid() {
         <input type="text" inputmode="decimal" placeholder="0.0 lb" id="qty-${e.id}" oninput="calcular()" autocomplete="off">
         <label class="eviscera-label">
           <input type="checkbox" id="ev-${e.id}" onchange="onEvCheckboxChange('${e.id}')">
-          <div class="custom-check">✓</div>
-          🔪
+          <div class="custom-check"><span class="ic-knife">🔪</span><span class="ic-check">✓</span></div>
         </label>
         <button type="button" class="ev-gratis-chip" id="ev-gratis-chip-${e.id}" onclick="toggleEvGratisItem('${e.id}')" style="display:none" title="Marcar la pelada de esta especie como gratis">🎁</button>
       </div>
@@ -5025,8 +5056,7 @@ function buildMaySpeciesGrid() {
         <input type="text" inputmode="decimal" placeholder="0.0 lb" id="may-qty-${e.id}" oninput="calcularMayorista()" autocomplete="off">
         <label class="eviscera-label">
           <input type="checkbox" id="may-ev-${e.id}" onchange="calcularMayorista()">
-          <div class="custom-check">✓</div>
-          🔪
+          <div class="custom-check"><span class="ic-knife">🔪</span><span class="ic-check">✓</span></div>
         </label>
       </div>
       <div class="species-subtotal">
@@ -5423,8 +5453,8 @@ function abrirEdicionMayorista(id) {
         <div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px">
           <label class="eviscera-label" style="font-size:10px">
             <input type="checkbox" id="may-edit-ev-${e.id}" ${ev ? 'checked' : ''} onchange="calcularMayEdit()">
-            <div class="custom-check">✓</div>
-            🔪 Eviscerado
+            <div class="custom-check"><span class="ic-knife">🔪</span><span class="ic-check">✓</span></div>
+            Eviscerado
           </label>
           <div class="may-subtotal" style="border:none;padding:0;margin:0">
             <div style="display:flex;flex-direction:column;gap:2px">
