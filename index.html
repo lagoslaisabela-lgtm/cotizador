@@ -12286,12 +12286,22 @@ function _cdRenderKPIs(clts) {
 function _cdCtx(id) {
   const el = document.getElementById(id);
   if (!el) return null;
+  // Guardamos la altura "lógica" (CSS) original UNA sola vez, antes de
+  // escalar por devicePixelRatio. El atributo height de un <canvas> es
+  // un atributo reflejado: al hacer el.height = alto*dpr, el navegador
+  // también sobreescribe el atributo original. Si en el próximo render
+  // volviéramos a leerlo con getAttribute('height'), estaríamos leyendo
+  // el valor YA escalado y lo multiplicaríamos otra vez por dpr — la
+  // altura crecía sin control en cada re-render hasta producir tamaños
+  // inválidos (y radios negativos en los donuts).
+  if (!el.dataset.cssH) {
+    el.dataset.cssH = el.getAttribute('height') || '220';
+  }
   // Use the parent card's width for full-width canvas
   const parent = el.closest('.cd-card') || el.parentElement;
   const w = (parent ? parent.clientWidth - 40 : 400); // subtract padding
-  const h = parseInt(el.getAttribute('height')) || 220;
   const cssW = Math.max(w, 100);
-  const cssH = h;
+  const cssH = parseInt(el.dataset.cssH, 10) || 220;
   // Renderizar a resolución nativa de pantalla (evita texto borroso en HiDPI/retina):
   // el canvas dibuja en píxeles CSS, pero el buffer real es cssW/H * devicePixelRatio.
   const dpr = window.devicePixelRatio || 1;
@@ -12718,7 +12728,7 @@ function _cdChartEviscerado(clts) {
   ctx.clearRect(0,0,W,H);
   if (detalClts.length === 0) return;
 
-  const cx=W/2, cy=H/2, ro=Math.min(W,H)/2-12, ri=ro*0.55;
+  const cx=W/2, cy=H/2, ro=Math.max(Math.min(W,H)/2-12, 4), ri=ro*0.55;
 
   const colorConEv  = '#2d6ce0';
   const colorSinEv  = 'rgba(120,160,200,0.28)';
