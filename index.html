@@ -528,9 +528,22 @@
 
   .tab-btn.active {
     color: var(--text-primary);
-    background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 0 0 1px rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, rgba(77,151,255,0.18), rgba(255,255,255,0.05));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 0 0 1px rgba(77,151,255,0.4), 0 3px 12px -4px rgba(77,151,255,0.4);
     font-weight: 700;
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #4d97ff, #82bbff);
+    box-shadow: 0 0 8px rgba(77,151,255,0.75);
   }
 
   .tab-btn.active .tab-badge {
@@ -3642,7 +3655,7 @@
           <div class="chart-legend-dot" style="background:var(--teal)"></div><span>Detal</span>
         </div>
         <div class="chart-legend-item">
-          <div class="chart-legend-dot" style="background:var(--green)"></div><span>Mayorista</span>
+          <div class="chart-legend-dot" style="background:#2ee881"></div><span>Mayorista</span>
         </div>
       </div>
       <div class="chart-wrap"><canvas id="chart-15dias"></canvas></div>
@@ -11588,23 +11601,35 @@ function renderChart15dias() {
     return isToday ? `Hoy` : label;
   });
 
-  const textColor = 'rgba(200,230,240,0.5)';
-  const gridColor = 'rgba(77,151,255,0.08)';
+  const textColor  = 'rgba(210,228,245,0.72)';
+  const textMuted  = 'rgba(210,228,245,0.42)';
+  const gridColor  = 'rgba(148,178,255,0.10)';
+  const axisColor  = 'rgba(148,178,255,0.18)';
+  const FONT       = "'DM Sans', sans-serif";
+  const FONT_MONO  = "'Roboto Mono', monospace";
 
   if (chart15Instance) { chart15Instance.destroy(); chart15Instance = null; }
 
-  // Ajustar canvas al contenedor
-  const wrap = canvas.parentElement;
-  canvas.width  = wrap.clientWidth  || 600;
-  canvas.height = wrap.clientHeight || 220;
+  // Ajustar canvas a la resolución nativa de la pantalla (devicePixelRatio),
+  // para que el texto y las líneas se vean nítidos en pantallas HiDPI/retina
+  // en vez de escalados y borrosos.
+  const wrap  = canvas.parentElement;
+  const cssW  = wrap.clientWidth  || 600;
+  const cssH  = wrap.clientHeight || 220;
+  const dpr   = window.devicePixelRatio || 1;
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Dibujar gráfico de barras apiladas manualmente (sin dependencias externas)
-  const W = canvas.width, H = canvas.height;
-  const PAD_L = 72, PAD_R = 16, PAD_T = 16, PAD_B = 48;
+  // A partir de aquí trabajamos siempre en píxeles CSS (W/H "lógicos")
+  const W = cssW, H = cssH;
+  const PAD_L = 54, PAD_R = 12, PAD_T = 20, PAD_B = 34;
   const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
   const n = dias.length;
-  const barW  = Math.floor(chartW / n * 0.65);
+  const barW  = Math.max(6, Math.floor(chartW / n * 0.58));
   const barGap = chartW / n;
 
   const maxVal = Math.max(...dias.map((_, i) => detalPorDia[i] + mayPorDia[i]), 1);
@@ -11612,16 +11637,16 @@ function renderChart15dias() {
 
   ctx.clearRect(0, 0, W, H);
 
-  // Grid horizontal
+  // Grid horizontal — líneas discretas, solo la base tiene un poco más de peso
   const gridLines = 4;
-  ctx.textAlign = 'right';
-  ctx.font = '10px Roboto Mono, monospace';
-  ctx.fillStyle = textColor;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = `500 11px ${FONT_MONO}`;
   for (let g = 0; g <= gridLines; g++) {
     const y = PAD_T + chartH - (g / gridLines) * chartH;
     const val = (g / gridLines) * niceMax;
     ctx.beginPath();
-    ctx.strokeStyle = gridColor;
+    ctx.strokeStyle = g === 0 ? axisColor : gridColor;
     ctx.lineWidth = 1;
     ctx.moveTo(PAD_L, y);
     ctx.lineTo(PAD_L + chartW, y);
@@ -11629,8 +11654,10 @@ function renderChart15dias() {
     const label = val >= 1000000 ? `$${(val/1000000).toFixed(1)}M`
                 : val >= 1000    ? `$${(val/1000).toFixed(0)}K`
                 : `$${val}`;
-    ctx.fillText(label, PAD_L - 6, y + 4);
+    ctx.fillStyle = textMuted;
+    ctx.fillText(label, 2, y);
   }
+  ctx.textBaseline = 'alphabetic';
 
   // Barras
   for (let i = 0; i < n; i++) {
@@ -11639,61 +11666,81 @@ function renderChart15dias() {
     const vMay = mayPorDia[i];
     const hDet = (vDet / niceMax) * chartH;
     const hMay = (vMay / niceMax) * chartH;
+    const isToday = i === n - 1;
 
-    // Barra detal (abajo, teal)
-    if (hDet > 0) {
-      const grd = ctx.createLinearGradient(0, PAD_T + chartH - hDet, 0, PAD_T + chartH);
-      grd.addColorStop(0, 'rgba(77,151,255,0.9)');
-      grd.addColorStop(1, 'rgba(0,100,160,0.7)');
-      ctx.fillStyle = grd;
-      const r = Math.min(4, barW / 2, hDet);
+    // Resalte sutil de la columna de "Hoy"
+    if (isToday) {
+      ctx.fillStyle = 'rgba(148,178,255,0.06)';
       ctx.beginPath();
-      const yBot = PAD_T + chartH;
-      const yTop = yBot - hDet;
-      if (hMay > 0) {
-        // Esquinas redondeadas solo abajo
-        ctx.roundRect(x, yTop, barW, hDet, [0, 0, r, r]);
-      } else {
-        ctx.roundRect(x, yTop, barW, hDet, r);
-      }
+      ctx.roundRect(x - (barGap - barW) / 2 + 1, PAD_T, barGap - 2, chartH, 6);
       ctx.fill();
     }
 
-    // Barra mayorista (encima, verde)
+    // Riel de fondo (para que el ojo ubique la barra aunque el valor sea bajo)
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    ctx.beginPath();
+    ctx.roundRect(x, PAD_T, barW, chartH, 4);
+    ctx.fill();
+
+    // Barra Detal (abajo, teal — igual que el punto de la leyenda)
+    if (hDet > 0) {
+      const grd = ctx.createLinearGradient(0, PAD_T + chartH - hDet, 0, PAD_T + chartH);
+      grd.addColorStop(0, '#7ab4ff');
+      grd.addColorStop(1, '#2d6ce0');
+      ctx.fillStyle = grd;
+      const r = Math.min(4, barW / 2, hDet);
+      const yBot = PAD_T + chartH;
+      const yTop = yBot - hDet;
+      ctx.beginPath();
+      ctx.roundRect(x, yTop, barW, hDet, hMay > 0 ? [0, 0, r, r] : r);
+      ctx.fill();
+    }
+
+    // Barra Mayorista (encima, verde — igual que el punto de la leyenda)
     if (hMay > 0) {
       const grd = ctx.createLinearGradient(0, PAD_T + chartH - hDet - hMay, 0, PAD_T + chartH - hDet);
-      grd.addColorStop(0, 'rgba(45,108,224,0.9)');
-      grd.addColorStop(1, 'rgba(6,160,110,0.7)');
+      grd.addColorStop(0, '#5cf0a3');
+      grd.addColorStop(1, '#0dbf8f');
       ctx.fillStyle = grd;
       const r = Math.min(4, barW / 2, hMay);
       const yBot = PAD_T + chartH - hDet;
       const yTop = yBot - hMay;
       ctx.beginPath();
-      ctx.roundRect(x, yTop, barW, hMay, [r, r, 0, 0]);
+      ctx.roundRect(x, yTop, barW, hMay, [r, r, hDet > 0 ? 0 : r, hDet > 0 ? 0 : r]);
       ctx.fill();
     }
 
-    // Etiqueta eje X
-    ctx.fillStyle = textColor;
-    ctx.font = i === n - 1 ? 'bold 10px DM Sans, sans-serif' : '10px DM Sans, sans-serif';
+    // Etiqueta eje X — "Hoy" resaltado en un chip para que no se pierda
     ctx.textAlign = 'center';
-    // Mostrar solo días alternos + hoy para no saturar
-    if (i % 2 === 0 || i === n - 1) {
-      ctx.fillText(labels[i], x + barW / 2, H - PAD_B + 16);
+    if (i % 2 === 0 || isToday) {
+      if (isToday) {
+        ctx.font = `700 11px ${FONT}`;
+        const tw = ctx.measureText(labels[i]).width;
+        ctx.fillStyle = 'rgba(77,151,255,0.22)';
+        ctx.beginPath();
+        ctx.roundRect(x + barW / 2 - tw / 2 - 7, H - PAD_B + 8, tw + 14, 18, 9);
+        ctx.fill();
+        ctx.fillStyle = '#bcdcff';
+        ctx.fillText(labels[i], x + barW / 2, H - PAD_B + 21);
+      } else {
+        ctx.font = `500 11px ${FONT}`;
+        ctx.fillStyle = textColor;
+        ctx.fillText(labels[i], x + barW / 2, H - PAD_B + 20);
+      }
     }
 
-    // Tooltip: total encima de la barra si hay datos
+    // Total encima de la barra, con leve fondo para que resalte sobre cualquier color
     const total = vDet + vMay;
     if (total > 0) {
       const hTotal = hDet + hMay;
-      ctx.fillStyle = 'rgba(200,240,255,0.7)';
-      ctx.font = '9px Roboto Mono, monospace';
-      ctx.textAlign = 'center';
       const shortVal = total >= 1000000 ? `${(total/1000000).toFixed(1)}M`
                      : total >= 1000    ? `${(total/1000).toFixed(0)}K`
                      : `${total}`;
-      if (hTotal > 18) {
-        ctx.fillText(`$${shortVal}`, x + barW / 2, PAD_T + chartH - hTotal - 4);
+      const label = `$${shortVal}`;
+      if (hTotal > 20) {
+        ctx.font = `700 10.5px ${FONT_MONO}`;
+        ctx.fillStyle = '#eaf6ff';
+        ctx.fillText(label, x + barW / 2, PAD_T + chartH - hTotal - 6);
       }
     }
   }
@@ -12243,9 +12290,19 @@ function _cdCtx(id) {
   const parent = el.closest('.cd-card') || el.parentElement;
   const w = (parent ? parent.clientWidth - 40 : 400); // subtract padding
   const h = parseInt(el.getAttribute('height')) || 220;
-  el.width  = Math.max(w, 100);
-  el.height = h;
-  return { ctx: el.getContext('2d'), W: el.width, H: el.height };
+  const cssW = Math.max(w, 100);
+  const cssH = h;
+  // Renderizar a resolución nativa de pantalla (evita texto borroso en HiDPI/retina):
+  // el canvas dibuja en píxeles CSS, pero el buffer real es cssW/H * devicePixelRatio.
+  const dpr = window.devicePixelRatio || 1;
+  el.style.width  = cssW + 'px';
+  el.style.height = cssH + 'px';
+  el.width  = Math.round(cssW * dpr);
+  el.height = Math.round(cssH * dpr);
+  const ctx = el.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.textRendering = 'optimizeLegibility';
+  return { ctx, W: cssW, H: cssH };
 }
 
 const _cdFont = "'Outfit', 'Roboto Mono', sans-serif";
