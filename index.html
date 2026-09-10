@@ -122,7 +122,7 @@
   .setup-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(5,12,25,0.92);
+    background: rgba(3,5,9,0.92);
     backdrop-filter: blur(8px);
     z-index: 600;
     display: flex;
@@ -135,21 +135,21 @@
   }
   .setup-modal-overlay.open { opacity: 1; pointer-events: all; }
 
-  /* Mismo "vidrio esmerilado" que la píldora de navegación (.nav-inner):
-     blur más intenso + saturación + highlight interior pronunciado, en
-     vez del blur más plano que tenía antes este modal. */
+  /* Fondo negro sólido, como el resto de tarjetas/modales de la app — antes
+     este modal tenía un blur muy fuerte + saturate(180%) que amplificaba
+     el tono azul del fondo detrás, dándole ese aspecto "no negro". */
   .setup-modal {
-    background: rgba(255,255,255,0.055);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(8,11,17,0.97);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius);
     width: 100%;
     max-width: 460px;
     max-height: 82vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 16px 40px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.18);
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
     transform: translateY(16px);
     transition: transform 0.25s;
     overflow: hidden;
@@ -157,7 +157,7 @@
   .setup-modal-overlay.open .setup-modal { transform: translateY(0); }
 
   .setup-header {
-    background: linear-gradient(135deg, rgba(77,151,255,0.15), rgba(45,108,224,0.08));
+    background: linear-gradient(135deg, rgba(77,151,255,0.1), rgba(45,108,224,0.04));
     border-bottom: 1px solid var(--card-border);
     padding: 16px 20px;
     display: flex;
@@ -1342,6 +1342,20 @@
 
   .btn-sm { padding: 9px 15px; font-size: 12.5px; border-radius: 8px; }
 
+  /* Spinner genérico para botones en estado de carga (reemplaza el ícono
+     mientras dura una acción async como generar PDF o sincronizar). */
+  .btn-spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255,255,255,0.28);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: btnSpin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes btnSpin { to { transform: rotate(360deg); } }
+
   .btn-group {
     display: flex;
     gap: 12px;
@@ -1416,74 +1430,6 @@
     overflow-x: auto;
     border-radius: var(--radius-sm);
   }
-
-  /* ──────────────── PAGINACIÓN (historial detal / mayorista) ────────────────
-     Barra minimalista compartida: sin píldoras grandes, solo números
-     discretos con la página activa resaltada y flechas sutiles. */
-  .pg-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px 2px 4px;
-  }
-  .pg-info {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-  .pg-nav {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .pg-arrow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .pg-arrow:hover:not(:disabled) { background: rgba(255,255,255,0.07); color: var(--text-primary); }
-  .pg-arrow:disabled { opacity: 0.28; cursor: not-allowed; }
-  .pg-nums {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin: 0 2px;
-  }
-  .pg-num {
-    min-width: 24px;
-    height: 24px;
-    padding: 0 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 11.5px;
-    font-weight: 600;
-    font-family: 'Roboto Mono', monospace;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .pg-num:hover { background: rgba(255,255,255,0.07); color: var(--text-secondary); }
-  .pg-num.active {
-    background: rgba(77,151,255,0.16);
-    color: var(--teal-bright);
-    font-weight: 700;
-  }
-  .pg-ellipsis { color: var(--text-muted); font-size: 12px; padding: 0 2px; }
 
   table {
     width: 100%;
@@ -2729,46 +2675,54 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 0 14px;
+    gap: 7px;
+    padding: 0 16px;
     font-family: 'Roboto Mono', monospace;
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.3px;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     transition: all 0.3s cubic-bezier(.4,0,.2,1);
     user-select: none;
     white-space: nowrap;
   }
+  #ev-float-btn .ev-float-icon { font-size: 15px; line-height: 1; }
+  .ev-float-icon-done { display: none; }
+  #ev-float-btn.done .ev-float-icon-pending { display: none; }
+  #ev-float-btn.done .ev-float-icon-done { display: inline; }
+
   /* Estado: hay pendientes */
   #ev-float-btn.pending {
-    background: rgba(0,0,0,0.92);
-    border: 1px solid rgba(231,181,99,0.45);
+    background: linear-gradient(140deg, rgba(231,181,99,0.18), rgba(6,6,4,0.88));
+    border: 1px solid rgba(231,181,99,0.5);
     color: var(--gold);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 14px rgba(231,181,99,0.18);
+    box-shadow: 0 6px 22px -6px rgba(0,0,0,0.55), 0 0 16px rgba(231,181,99,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   /* Estado: urgente (>30 min pendientes) */
   #ev-float-btn.urgent {
-    background: rgba(80,10,20,0.92);
-    border: 1px solid rgba(255,109,92,0.6);
+    background: linear-gradient(140deg, rgba(255,109,92,0.25), rgba(35,4,7,0.9));
+    border: 1px solid rgba(255,109,92,0.65);
     color: var(--coral);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 0 14px rgba(255,109,92,0.25);
+    box-shadow: 0 6px 22px -6px rgba(0,0,0,0.55), 0 0 18px rgba(255,109,92,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
     animation: floatPulse 2s infinite;
   }
-  /* Estado: todo listo */
+  /* Estado: todo listo — verde real (antes usaba --green, que en realidad
+     es un azul, así que "listo" se veía del mismo tono que "pendiente"). */
   #ev-float-btn.done {
-    background: rgba(6,40,30,0.88);
-    border: 1px solid rgba(45,108,224,0.45);
-    color: var(--green);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 14px rgba(45,108,224,0.18);
+    background: linear-gradient(140deg, rgba(46,232,129,0.2), rgba(4,18,12,0.9));
+    border: 1px solid rgba(46,232,129,0.55);
+    color: #5cf0a3;
+    box-shadow: 0 6px 22px -6px rgba(0,0,0,0.5), 0 0 18px rgba(46,232,129,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   }
   /* Estado oculto cuando no hay órdenes de eviscerado */
   #ev-float-btn.hidden { opacity: 0; pointer-events: none; transform: scale(0.7); }
 
-  #ev-float-btn:hover:not(.hidden) { transform: scale(1.06) translateY(-2px); }
+  #ev-float-btn:hover:not(.hidden) { transform: scale(1.06) translateY(-3px); }
 
   @keyframes floatPulse {
-    0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 0 14px rgba(255,109,92,0.25); }
-    50%       { box-shadow: 0 4px 24px rgba(0,0,0,0.5),  0 0 22px rgba(255,109,92,0.45); }
+    0%, 100% { box-shadow: 0 6px 22px -6px rgba(0,0,0,0.55), 0 0 18px rgba(255,109,92,0.3), inset 0 1px 0 rgba(255,255,255,0.08); }
+    50%       { box-shadow: 0 6px 26px -6px rgba(0,0,0,0.6),  0 0 26px rgba(255,109,92,0.5), inset 0 1px 0 rgba(255,255,255,0.12); }
   }
 
   /* ──────────────── BOTÓN FLOTANTE: PANTALLA COMPLETA EVISCERADO ──────────────── */
@@ -3293,6 +3247,23 @@
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .app-modal-confirm-input:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(255,109,92,0.15); }
+  .app-modal-confirm-input--teal { border-color: rgba(77,151,255,0.4); }
+  .app-modal-confirm-input--teal:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(77,151,255,0.15); }
+  .app-modal-confirm-input.input-error,
+  .app-modal-pwd-input.input-error {
+    border-color: var(--coral) !important;
+    box-shadow: 0 0 0 3px rgba(255,109,92,0.15) !important;
+    animation: inputShake 0.3s;
+  }
+  input.input-error {
+    border-color: var(--coral) !important;
+    box-shadow: 0 0 0 3px rgba(255,109,92,0.15) !important;
+    animation: inputShake 0.3s;
+  }
+  @keyframes inputShake {
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
   .app-modal-actions { display: flex; gap: 10px; }
   .app-modal-actions .btn { flex: 1; min-width: 0; white-space: normal; justify-content: center; }
   .app-modal-close {
@@ -3325,7 +3296,7 @@
 
 <!-- Botón flotante countdown eviscerado -->
 <button id="ev-float-btn" class="pending" onclick="showTab('eviscerado')" title="Ver órdenes de eviscerado">
-  🔪 <span id="ev-float-text">—</span>
+  <span class="ev-float-icon ev-float-icon-pending">🔪</span><span class="ev-float-icon ev-float-icon-done">✅</span> <span id="ev-float-text">—</span>
 </button>
 
 <!-- Botón flotante: pantalla completa de eviscerado (solo visible en esa pestaña) -->
@@ -3346,7 +3317,7 @@
           <span id="drive-status-text">CONECTAR</span>
           <span id="drive-pending-badge" style="display:none;background:rgba(231,181,99,0.25);color:#e7b563;border:1px solid rgba(231,181,99,0.4);border-radius:10px;font-size:9px;font-weight:800;padding:1px 6px;margin-left:4px;letter-spacing:0.4px">PENDIENTE</span>
         </button>
-        <button id="stale-sync-badge" class="stale-sync-badge" style="display:none" onclick="syncNow()" title="Hace más de 30 min sin sincronizar — clic para sincronizar ahora">⚠ SYNC</button>
+        <button id="stale-sync-badge" class="stale-sync-badge" style="display:none" onclick="syncNow(this)" title="Hace más de 30 min sin sincronizar — clic para sincronizar ahora">⚠ SYNC</button>
       </div>
     </div>
     <div class="header-time" style="position:relative;z-index:1;margin-left:auto;text-align:right">
@@ -3601,13 +3572,10 @@
         </div>
       </div>
       <!-- Paginación -->
-      <div id="hist-pagination" class="pg-bar" style="display:none">
-        <span id="hist-page-info" class="pg-info"></span>
-        <div class="pg-nav">
-          <button class="pg-arrow" id="hist-prev-btn" onclick="histPagePrev()" aria-label="Página anterior">‹</button>
-          <span id="hist-page-nums" class="pg-nums"></span>
-          <button class="pg-arrow" id="hist-next-btn" onclick="histPageNext()" aria-label="Página siguiente">›</button>
-        </div>
+      <div id="hist-pagination" class="ev-pagination" style="display:none">
+        <button class="ev-page-btn" id="hist-prev-btn" onclick="histPagePrev()">‹ Anterior</button>
+        <span id="hist-page-info" class="ev-page-info"></span>
+        <button class="ev-page-btn" id="hist-next-btn" onclick="histPageNext()">Siguiente ›</button>
       </div>
     </div>
 
@@ -3667,13 +3635,10 @@
         </div>
       </div>
       <!-- Paginación -->
-      <div id="may-pagination" class="pg-bar" style="display:none">
-        <span id="may-page-info" class="pg-info"></span>
-        <div class="pg-nav">
-          <button class="pg-arrow" id="may-prev-btn" onclick="mayPagePrev()" aria-label="Página anterior">‹</button>
-          <span id="may-page-nums" class="pg-nums"></span>
-          <button class="pg-arrow" id="may-next-btn" onclick="mayPageNext()" aria-label="Página siguiente">›</button>
-        </div>
+      <div id="may-pagination" class="ev-pagination" style="display:none">
+        <button class="ev-page-btn" id="may-prev-btn" onclick="mayPagePrev()">‹ Anterior</button>
+        <span id="may-page-info" class="ev-page-info"></span>
+        <button class="ev-page-btn" id="may-next-btn" onclick="mayPageNext()">Siguiente ›</button>
       </div>
     </div>
 
@@ -3935,13 +3900,10 @@
         </div>
       </div>
       <!-- Paginación -->
-      <div id="cli-pagination" style="display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 0 4px">
-        <span id="cli-page-info" style="font-size:12px;color:var(--text-muted)"></span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-ghost btn-sm" id="cli-prev-btn" onclick="cliPagePrev()">← Anterior</button>
-          <span id="cli-page-nums" style="display:flex;gap:4px"></span>
-          <button class="btn btn-ghost btn-sm" id="cli-next-btn" onclick="cliPageNext()">Siguiente →</button>
-        </div>
+      <div id="cli-pagination" class="ev-pagination" style="display:none">
+        <button class="ev-page-btn" id="cli-prev-btn" onclick="cliPagePrev()">‹ Anterior</button>
+        <span id="cli-page-info" class="ev-page-info"></span>
+        <button class="ev-page-btn" id="cli-next-btn" onclick="cliPageNext()">Siguiente ›</button>
       </div>
     </div>
 
@@ -5354,59 +5316,63 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
 }
 
 function resetMayorista(silent = false) {
-  if (!silent && !confirm('¿Limpiar el formulario? Se perderán los datos no guardados.')) return;
-  document.getElementById('may-nombre').value = '';
-  document.getElementById('may-tel').value    = '';
-  document.getElementById('may-cc').value     = '';
-  const notaEl = document.getElementById('may-nota-input');
-  if (notaEl) notaEl.value = '';
-  ESPECIES.forEach(e => {
-    const qtyEl    = document.getElementById(`may-qty-${e.id}`);
-    const precioEl = document.getElementById(`may-precio-${e.id}`);
-    const evEl     = document.getElementById(`may-ev-${e.id}`);
-    if (qtyEl) qtyEl.value = '';
-    // Conservar el último precio que el usuario haya puesto manualmente para
-    // esta especie (memoria persistente); si nunca lo cambió, usar el de referencia.
-    if (precioEl) precioEl.value = (mayPreciosMemoria[e.id] !== undefined && mayPreciosMemoria[e.id] !== '')
-      ? mayPreciosMemoria[e.id] : (e.precio || '');
-    if (evEl) evEl.checked = false;
-    const card = document.getElementById(`may-sc-${e.id}`);
-    if (card) card.classList.remove('has-value');
-    const subEl = document.getElementById(`may-sub-${e.id}`);
-    const lblEl = document.getElementById(`may-sub-label-${e.id}`);
-    const exprEl = document.getElementById(`may-sub-expr-${e.id}`);
-    if (subEl) subEl.textContent = '$0';
-    if (lblEl) lblEl.textContent = '— lb';
-    if (exprEl) exprEl.style.display = 'none';
-  });
-  const totalEl  = document.getElementById('may-total-display');
-  const detailEl = document.getElementById('may-total-details');
-  if (totalEl)  totalEl.textContent  = '$0';
-  if (detailEl) detailEl.textContent = '— libras';
-  // Reiniciar método de pago
-  ['may-pago-input','may-pago-input-efectivo','may-pago-input-nequi'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  setMetodoPagoMay('efectivo');
-  const mayPendienteChk = document.getElementById('may-pendiente-chk');
-  if (mayPendienteChk) mayPendienteChk.checked = false;
-  if (!silent) toast('Formulario limpiado');
+  const doReset = () => {
+    document.getElementById('may-nombre').value = '';
+    document.getElementById('may-tel').value    = '';
+    document.getElementById('may-cc').value     = '';
+    const notaEl = document.getElementById('may-nota-input');
+    if (notaEl) notaEl.value = '';
+    ESPECIES.forEach(e => {
+      const qtyEl    = document.getElementById(`may-qty-${e.id}`);
+      const precioEl = document.getElementById(`may-precio-${e.id}`);
+      const evEl     = document.getElementById(`may-ev-${e.id}`);
+      if (qtyEl) qtyEl.value = '';
+      // Conservar el último precio que el usuario haya puesto manualmente para
+      // esta especie (memoria persistente); si nunca lo cambió, usar el de referencia.
+      if (precioEl) precioEl.value = (mayPreciosMemoria[e.id] !== undefined && mayPreciosMemoria[e.id] !== '')
+        ? mayPreciosMemoria[e.id] : (e.precio || '');
+      if (evEl) evEl.checked = false;
+      const card = document.getElementById(`may-sc-${e.id}`);
+      if (card) card.classList.remove('has-value');
+      const subEl = document.getElementById(`may-sub-${e.id}`);
+      const lblEl = document.getElementById(`may-sub-label-${e.id}`);
+      const exprEl = document.getElementById(`may-sub-expr-${e.id}`);
+      if (subEl) subEl.textContent = '$0';
+      if (lblEl) lblEl.textContent = '— lb';
+      if (exprEl) exprEl.style.display = 'none';
+    });
+    const totalEl  = document.getElementById('may-total-display');
+    const detailEl = document.getElementById('may-total-details');
+    if (totalEl)  totalEl.textContent  = '$0';
+    if (detailEl) detailEl.textContent = '— libras';
+    // Reiniciar método de pago
+    ['may-pago-input','may-pago-input-efectivo','may-pago-input-nequi'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    setMetodoPagoMay('efectivo');
+    const mayPendienteChk = document.getElementById('may-pendiente-chk');
+    if (mayPendienteChk) mayPendienteChk.checked = false;
+    if (!silent) toast('Formulario limpiado');
+  };
+  if (silent) { doReset(); return; }
+  showConfirm('Se perderán los datos no guardados.', doReset, { title: '¿Limpiar el formulario?', confirmText: 'Limpiar' });
 }
 
 function eliminarVentaMayorista(id) {
-  if (!confirm('¿Eliminar esta venta mayorista?')) return;
-  mayorista = mayorista.filter(v => String(v.id) !== String(id));
-  safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
-  // Registrar eliminación para sync bilateral
-  const del = getDeletedMay();
-  del[id] = new Date().toISOString();
-  saveDeletedMay(del);
-  updateBadge();
-  renderDashboard();
-  renderMayorista();
-  scheduleDriveSync();
-  toast('Venta eliminada');
+  showConfirm('¿Eliminar esta venta mayorista?', () => {
+    mayorista = mayorista.filter(v => String(v.id) !== String(id));
+    safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
+    // Registrar eliminación para sync bilateral
+    const del = getDeletedMay();
+    del[id] = new Date().toISOString();
+    saveDeletedMay(del);
+    updateBadge();
+    renderDashboard();
+    renderMayorista();
+    scheduleDriveSync();
+    toast('Venta eliminada');
+  }, { title: 'Eliminar venta', confirmText: 'Eliminar', danger: true });
 }
 
 // ── Toggle: qué historial se muestra en la pestaña Historial (detal o mayorista) ──
@@ -5541,7 +5507,6 @@ function _renderMayPage() {
   const tbody  = document.getElementById('may-tbody');
   const pgDiv  = document.getElementById('may-pagination');
   const infoEl = document.getElementById('may-page-info');
-  const numsEl = document.getElementById('may-page-nums');
   const prevBtn= document.getElementById('may-prev-btn');
   const nextBtn= document.getElementById('may-next-btn');
 
@@ -5557,19 +5522,9 @@ function _renderMayPage() {
     pgDiv.style.display = 'none';
   } else {
     pgDiv.style.display = 'flex';
-    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+MAY_PER_PAGE,total)} de ${total} ventas`;
+    infoEl.textContent = `Página ${mayCurrentPage} de ${pages}`;
     prevBtn.disabled = mayCurrentPage === 1;
     nextBtn.disabled = mayCurrentPage === pages;
-    const range = [];
-    for (let p = 1; p <= pages; p++) {
-      if (p === 1 || p === pages || Math.abs(p - mayCurrentPage) <= 2) range.push(p);
-    }
-    let last = 0;
-    numsEl.innerHTML = range.map(p => {
-      const ellipsis = last && p - last > 1 ? `<span class="pg-ellipsis">…</span>` : '';
-      last = p;
-      return `${ellipsis}<button onclick="mayGoPage(${p})" class="pg-num ${p===mayCurrentPage?'active':''}">${p}</button>`;
-    }).join('');
   }
 }
 
@@ -6523,11 +6478,12 @@ function recuperarOrdenEspera(id) {
 }
 
 function eliminarOrdenEspera(id) {
-  if (!confirm('¿Descartar esta orden en espera?')) return;
-  ordenesEnEspera = ordenesEnEspera.filter(o => String(o.id) !== String(id));
-  safeStorage.setItem(ESPERA_KEY, JSON.stringify(ordenesEnEspera));
-  renderOrdenesEnEspera();
-  toast('Orden descartada');
+  showConfirm('¿Descartar esta orden en espera?', () => {
+    ordenesEnEspera = ordenesEnEspera.filter(o => String(o.id) !== String(id));
+    safeStorage.setItem(ESPERA_KEY, JSON.stringify(ordenesEnEspera));
+    renderOrdenesEnEspera();
+    toast('Orden descartada');
+  }, { title: 'Descartar orden', confirmText: 'Descartar', danger: true });
 }
 
 function renderOrdenesEnEspera() {
@@ -6636,11 +6592,12 @@ function recuperarVentaEsperaMay(id) {
 }
 
 function eliminarVentaEsperaMay(id) {
-  if (!confirm('¿Descartar esta venta en espera?')) return;
-  ventasMayoristaEnEspera = ventasMayoristaEnEspera.filter(o => String(o.id) !== String(id));
-  safeStorage.setItem(MAY_ESPERA_KEY, JSON.stringify(ventasMayoristaEnEspera));
-  renderVentasEnEsperaMay();
-  toast('Venta descartada');
+  showConfirm('¿Descartar esta venta en espera?', () => {
+    ventasMayoristaEnEspera = ventasMayoristaEnEspera.filter(o => String(o.id) !== String(id));
+    safeStorage.setItem(MAY_ESPERA_KEY, JSON.stringify(ventasMayoristaEnEspera));
+    renderVentasEnEsperaMay();
+    toast('Venta descartada');
+  }, { title: 'Descartar venta', confirmText: 'Descartar', danger: true });
 }
 
 function renderVentasEnEsperaMay() {
@@ -6674,7 +6631,7 @@ function renderVentasEnEsperaMay() {
 // ─────────────────────────────────────────────
 //  GENERAR PDF
 // ─────────────────────────────────────────────
-async function generarPDF(cotId) {
+async function generarPDF(cotId, btnEl) {
   // Si se pasa un ID, genera PDF desde el historial; si no, desde el formulario activo
   let data;
   if (cotId !== undefined) {
@@ -6688,10 +6645,12 @@ async function generarPDF(cotId) {
     if (data.items.length === 0) { toast('Agrega al menos una especie', true); return; }
   }
 
+  _setBtnLoading(btnEl, true);
   try {
     await cargarJsPDF();
   } catch (e) {
     toast('No se pudo cargar el generador de PDF. Revisa tu conexión.', true);
+    _setBtnLoading(btnEl, false);
     return;
   }
   const { jsPDF } = window.jspdf;
@@ -6806,6 +6765,7 @@ async function generarPDF(cotId) {
 
   doc.save(`orden_${data.nombre.replace(/\s/g,'_')}_${Date.now()}.pdf`);
   toast('📄 PDF generado correctamente');
+  _setBtnLoading(btnEl, false);
 }
 
 // ─────────────────────────────────────────────
@@ -6907,7 +6867,6 @@ function _renderHistPage() {
   const tbody  = document.getElementById('historial-tbody');
   const pgDiv  = document.getElementById('hist-pagination');
   const infoEl = document.getElementById('hist-page-info');
-  const numsEl = document.getElementById('hist-page-nums');
   const prevBtn= document.getElementById('hist-prev-btn');
   const nextBtn= document.getElementById('hist-next-btn');
 
@@ -6940,7 +6899,7 @@ function _renderHistPage() {
       }</td>
       <td style="white-space:nowrap">
         ${_saldoPendienteOrden(c) > 0 ? `<button class="btn btn-success btn-sm" onclick='saldarPendiente("${c.id}","detal")' title="Registrar abono o saldar deuda">💰</button>` : ''}
-        <button class="btn btn-primary btn-sm" onclick='generarPDF("${c.id}")' title="PDF">📄</button>
+        <button class="btn btn-primary btn-sm" onclick='generarPDF("${c.id}", this)' title="PDF">📄</button>
         <button class="btn btn-whatsapp btn-sm" onclick='enviarWhatsApp("${c.id}")' title="WhatsApp">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         </button>
@@ -6955,20 +6914,9 @@ function _renderHistPage() {
     pgDiv.style.display = 'none';
   } else {
     pgDiv.style.display = 'flex';
-    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+HIST_PER_PAGE,total)} de ${total} órdenes`;
+    infoEl.textContent = `Página ${histCurrentPage} de ${pages}`;
     prevBtn.disabled = histCurrentPage === 1;
     nextBtn.disabled = histCurrentPage === pages;
-    // Números de página (máx 7 botones)
-    const range = [];
-    for (let p = 1; p <= pages; p++) {
-      if (p === 1 || p === pages || Math.abs(p - histCurrentPage) <= 2) range.push(p);
-    }
-    let last = 0;
-    numsEl.innerHTML = range.map(p => {
-      const ellipsis = last && p - last > 1 ? `<span class="pg-ellipsis">…</span>` : '';
-      last = p;
-      return `${ellipsis}<button onclick="histGoPage(${p})" class="pg-num ${p===histCurrentPage?'active':''}">${p}</button>`;
-    }).join('');
   }
 }
 
@@ -7038,22 +6986,23 @@ function renderHistorial(filter = '') {
 function filtrarHistorial() { renderHistorial(); }
 
 function eliminarCot(id) {
-  if (!confirm('¿Eliminar esta orden?')) return;
-  ordenes = ordenes.filter(c => String(c.id) !== String(id));
-  // Registrar eliminación para sync bilateral
-  const deleted = getDeletedIds();
-  deleted[id] = new Date().toISOString();
-  saveDeletedIds(deleted);
-  safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
-  // Limpiar evDone y evTimes para esta orden
-  const evDone = getEvDone(); evDone.delete(String(id)); setEvDone(evDone);
-  const evTimes = getEvTimes(); delete evTimes[String(id)]; setEvTimes(evTimes);
-  updateBadge();
-  updateEvBadge();
-  renderHistorial();
-  renderEviscerado();
-  toast('Orden eliminada');
-  scheduleDriveSync();
+  showConfirm('¿Eliminar esta orden?', () => {
+    ordenes = ordenes.filter(c => String(c.id) !== String(id));
+    // Registrar eliminación para sync bilateral
+    const deleted = getDeletedIds();
+    deleted[id] = new Date().toISOString();
+    saveDeletedIds(deleted);
+    safeStorage.setItem(STORAGE_KEY, JSON.stringify(ordenes));
+    // Limpiar evDone y evTimes para esta orden
+    const evDone = getEvDone(); evDone.delete(String(id)); setEvDone(evDone);
+    const evTimes = getEvTimes(); delete evTimes[String(id)]; setEvTimes(evTimes);
+    updateBadge();
+    updateEvBadge();
+    renderHistorial();
+    renderEviscerado();
+    toast('Orden eliminada');
+    scheduleDriveSync();
+  }, { title: 'Eliminar orden', confirmText: 'Eliminar', danger: true });
 }
 
 // ─────────────────────────────────────────────
@@ -7600,39 +7549,41 @@ function saldarPendiente(id, tipo) {
   const pendienteActual = _saldoPendienteOrden(o);
   if (pendienteActual <= 0) { toast('Esta orden no tiene saldo pendiente', true); return; }
 
-  const input = prompt(
-    `Saldo pendiente: ${fmt(pendienteActual)}\n\n¿Cuánto abona el cliente ahora?\n(deja este valor para saldar todo)`,
-    String(Math.round(pendienteActual))
+  showPrompt(
+    `Saldo pendiente: ${fmt(pendienteActual)}. Deja este valor para saldar todo.`,
+    Math.round(pendienteActual),
+    (input) => {
+      const abono = parseFloat(String(input).replace(/[^\d.]/g, ''));
+      if (!abono || abono <= 0) { toast('Monto inválido', true); return; }
+      const abonoFinal = Math.min(abono, pendienteActual);
+
+      // El abono se suma al método de pago que ya tenía la orden (o efectivo si no tenía ninguno)
+      if (o.metodoPago === 'mixto') {
+        o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
+      } else if (o.metodoPago === 'nequi') {
+        o.pagoNequi = (o.pagoNequi || 0) + abonoFinal;
+      } else {
+        o.metodoPago   = o.metodoPago || 'efectivo';
+        o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
+      }
+      o.pagoCon        = (o.pagoEfectivo || 0) + (o.pagoNequi || 0);
+      o.devuelta       = o.pagoCon - o.total;
+      o.saldoPendiente = Math.max(0, o.total - o.pagoCon);
+      o.lastUpdated    = new Date().toISOString();
+
+      safeStorage.setItem(tipo === 'mayorista' ? MAYORISTA_KEY : STORAGE_KEY, JSON.stringify(arr));
+      updateBadge();
+      _dashCache.serial = null; // forzar recálculo del resumen financiero (el registro editado puede no ser el más reciente)
+      renderDashboard();
+      if (tipo === 'mayorista') renderMayorista(); else renderHistorial();
+      if (document.getElementById('pendientes-overlay')?.style.display === 'flex') renderPendientesModalList();
+      scheduleDriveSync();
+      toast(o.saldoPendiente <= 0
+        ? '✅ Saldo completado — orden pagada en su totalidad'
+        : `💵 Abono de ${fmt(abonoFinal)} registrado — quedan ${fmt(o.saldoPendiente)} pendientes`);
+    },
+    { title: '¿Cuánto abona el cliente?', confirmText: 'Registrar abono' }
   );
-  if (input === null) return; // cancelado
-  const abono = parseFloat(String(input).replace(/[^\d.]/g, ''));
-  if (!abono || abono <= 0) { toast('Monto inválido', true); return; }
-  const abonoFinal = Math.min(abono, pendienteActual);
-
-  // El abono se suma al método de pago que ya tenía la orden (o efectivo si no tenía ninguno)
-  if (o.metodoPago === 'mixto') {
-    o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
-  } else if (o.metodoPago === 'nequi') {
-    o.pagoNequi = (o.pagoNequi || 0) + abonoFinal;
-  } else {
-    o.metodoPago   = o.metodoPago || 'efectivo';
-    o.pagoEfectivo = (o.pagoEfectivo || 0) + abonoFinal;
-  }
-  o.pagoCon        = (o.pagoEfectivo || 0) + (o.pagoNequi || 0);
-  o.devuelta       = o.pagoCon - o.total;
-  o.saldoPendiente = Math.max(0, o.total - o.pagoCon);
-  o.lastUpdated    = new Date().toISOString();
-
-  safeStorage.setItem(tipo === 'mayorista' ? MAYORISTA_KEY : STORAGE_KEY, JSON.stringify(arr));
-  updateBadge();
-  _dashCache.serial = null; // forzar recálculo del resumen financiero (el registro editado puede no ser el más reciente)
-  renderDashboard();
-  if (tipo === 'mayorista') renderMayorista(); else renderHistorial();
-  if (document.getElementById('pendientes-overlay')?.style.display === 'flex') renderPendientesModalList();
-  scheduleDriveSync();
-  toast(o.saldoPendiente <= 0
-    ? '✅ Saldo completado — orden pagada en su totalidad'
-    : `💵 Abono de ${fmt(abonoFinal)} registrado — quedan ${fmt(o.saldoPendiente)} pendientes`);
 }
 
 // Resumen de deudores: se abre al hacer clic en la tarjeta "Cuentas por
@@ -7733,40 +7684,43 @@ function fmtShort(n) {
 }
 
 function resetForm(silent = false) {
-  if (!silent && !confirm('¿Limpiar el formulario? Se perderán los datos no guardados.')) return;
-  document.getElementById('cliente-nombre').value = '';
-  document.getElementById('cliente-tel').value = '';
-  document.getElementById('cliente-cc').value = '';
-  _ordenGeneroSeleccionado = null;
-  _evaluarGeneroCliente();
-  _evGratisItems.clear();
-  ESPECIES.forEach(e => {
-    document.getElementById(`qty-${e.id}`).value = '';
-    document.getElementById(`ev-${e.id}`).checked = false;
-    if (e.precio === null) document.getElementById(`precio-${e.id}`).value = '';
-    if (e.id === 'otro') { const selEl = document.getElementById('especie-otro'); if (selEl) selEl.value = ''; }
-    document.getElementById(`sc-${e.id}`).classList.remove('has-value');
-    document.getElementById(`sub-${e.id}`).textContent = '$0';
-    document.getElementById(`sub-label-${e.id}`).textContent = '— lb';
-    const exprEl2 = document.getElementById(`sub-expr-${e.id}`);
-    if (exprEl2) { exprEl2.textContent = ''; exprEl2.style.display = 'none'; }
-    const chipEl = document.getElementById(`ev-gratis-chip-${e.id}`);
-    if (chipEl) { chipEl.style.display = 'none'; chipEl.classList.remove('active'); }
-  });
-  document.getElementById('total-display').textContent = '$0';
-  document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
-  document.getElementById('pago-input').value = '';
-  document.getElementById('pago-input-efectivo').value = '';
-  document.getElementById('pago-input-nequi').value = '';
-  setMetodoPago('efectivo');
-  const notaEl = document.getElementById('nota-input');
-  if (notaEl) notaEl.value = '';
-  const dev = document.getElementById('devuelta-display');
-  dev.textContent = '—';
-  dev.className = 'devuelta-amount pending';
-  const pendienteChk = document.getElementById('pendiente-chk');
-  if (pendienteChk) pendienteChk.checked = false;
-  if (!silent) toast('Formulario limpiado');
+  const doReset = () => {
+    document.getElementById('cliente-nombre').value = '';
+    document.getElementById('cliente-tel').value = '';
+    document.getElementById('cliente-cc').value = '';
+    _ordenGeneroSeleccionado = null;
+    _evaluarGeneroCliente();
+    _evGratisItems.clear();
+    ESPECIES.forEach(e => {
+      document.getElementById(`qty-${e.id}`).value = '';
+      document.getElementById(`ev-${e.id}`).checked = false;
+      if (e.precio === null) document.getElementById(`precio-${e.id}`).value = '';
+      if (e.id === 'otro') { const selEl = document.getElementById('especie-otro'); if (selEl) selEl.value = ''; }
+      document.getElementById(`sc-${e.id}`).classList.remove('has-value');
+      document.getElementById(`sub-${e.id}`).textContent = '$0';
+      document.getElementById(`sub-label-${e.id}`).textContent = '— lb';
+      const exprEl2 = document.getElementById(`sub-expr-${e.id}`);
+      if (exprEl2) { exprEl2.textContent = ''; exprEl2.style.display = 'none'; }
+      const chipEl = document.getElementById(`ev-gratis-chip-${e.id}`);
+      if (chipEl) { chipEl.style.display = 'none'; chipEl.classList.remove('active'); }
+    });
+    document.getElementById('total-display').textContent = '$0';
+    document.getElementById('total-details').textContent = '— libras · Eviscerado: $0';
+    document.getElementById('pago-input').value = '';
+    document.getElementById('pago-input-efectivo').value = '';
+    document.getElementById('pago-input-nequi').value = '';
+    setMetodoPago('efectivo');
+    const notaEl = document.getElementById('nota-input');
+    if (notaEl) notaEl.value = '';
+    const dev = document.getElementById('devuelta-display');
+    dev.textContent = '—';
+    dev.className = 'devuelta-amount pending';
+    const pendienteChk = document.getElementById('pendiente-chk');
+    if (pendienteChk) pendienteChk.checked = false;
+    if (!silent) toast('Formulario limpiado');
+  };
+  if (silent) { doReset(); return; }
+  showConfirm('Se perderán los datos no guardados.', doReset, { title: '¿Limpiar el formulario?', confirmText: 'Limpiar' });
 }
 
 function updateBadge() {
@@ -7994,44 +7948,46 @@ function agregarCliente() {
 }
 
 function eliminarCliente(id) {
-  if (!confirm('¿Eliminar este cliente del directorio?')) return;
-  const cli = clientes.find(c => c.id === id);
-  clientes = clientes.filter(c => c.id !== id);
-  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
-  // Registrar eliminación para sync bilateral
-  const del = getDeletedCli();
-  del[id] = new Date().toISOString();
-  // También marcar como eliminadas todas las claves de historial (hist_nombre)
-  // asociadas a este cliente, para que sus órdenes pasadas no lo resuciten
-  // en el autocompletar de Nueva Orden ni en el directorio de clientes.
-  if (cli) {
-    const nowIso = new Date().toISOString();
-    const marcarHist = (nombre) => {
-      if (!nombre) return;
-      del['hist_' + nombre.trim().toLowerCase()] = nowIso;
-    };
-    marcarHist(cli.nombre);
-    if (cli._histKey)    del[cli._histKey] = nowIso;
-    if (cli._histNombre) marcarHist(cli._histNombre);
-    if (Array.isArray(cli._histNombres)) cli._histNombres.forEach(marcarHist);
-  }
-  saveDeletedCli(del);
-  updateClientesBadge();
-  renderClientes();
-  scheduleDriveSync();
-  toast('Cliente eliminado');
+  showConfirm('¿Eliminar este cliente del directorio?', () => {
+    const cli = clientes.find(c => c.id === id);
+    clientes = clientes.filter(c => c.id !== id);
+    safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+    // Registrar eliminación para sync bilateral
+    const del = getDeletedCli();
+    del[id] = new Date().toISOString();
+    // También marcar como eliminadas todas las claves de historial (hist_nombre)
+    // asociadas a este cliente, para que sus órdenes pasadas no lo resuciten
+    // en el autocompletar de Nueva Orden ni en el directorio de clientes.
+    if (cli) {
+      const nowIso = new Date().toISOString();
+      const marcarHist = (nombre) => {
+        if (!nombre) return;
+        del['hist_' + nombre.trim().toLowerCase()] = nowIso;
+      };
+      marcarHist(cli.nombre);
+      if (cli._histKey)    del[cli._histKey] = nowIso;
+      if (cli._histNombre) marcarHist(cli._histNombre);
+      if (Array.isArray(cli._histNombres)) cli._histNombres.forEach(marcarHist);
+    }
+    saveDeletedCli(del);
+    updateClientesBadge();
+    renderClientes();
+    scheduleDriveSync();
+    toast('Cliente eliminado');
+  }, { title: 'Eliminar cliente', confirmText: 'Eliminar', danger: true });
 }
 
 function eliminarClienteHistorial(histId) {
   const histKey = String(histId); // 'hist_xxx'
-  if (!confirm('¿Ocultar este cliente del historial?\nSus órdenes no se eliminarán, solo dejará de aparecer en el listado.')) return;
-  const del = getDeletedCli();
-  del[histKey] = new Date().toISOString();
-  saveDeletedCli(del);
-  updateClientesBadge();
-  renderClientes();
-  scheduleDriveSync();
-  toast('Cliente del historial ocultado');
+  showConfirm('Sus órdenes no se eliminarán, solo dejará de aparecer en el listado.', () => {
+    const del = getDeletedCli();
+    del[histKey] = new Date().toISOString();
+    saveDeletedCli(del);
+    updateClientesBadge();
+    renderClientes();
+    scheduleDriveSync();
+    toast('Cliente del historial ocultado');
+  }, { title: '¿Ocultar este cliente del historial?', confirmText: 'Ocultar' });
 }
 
 
@@ -8301,7 +8257,6 @@ function _renderCliPage() {
   const tbody  = document.getElementById('clientes-tbody');
   const pgDiv  = document.getElementById('cli-pagination');
   const infoEl = document.getElementById('cli-page-info');
-  const numsEl = document.getElementById('cli-page-nums');
   const prevBtn= document.getElementById('cli-prev-btn');
   const nextBtn= document.getElementById('cli-next-btn');
 
@@ -8397,20 +8352,9 @@ function _renderCliPage() {
     pgDiv.style.display = 'none';
   } else {
     pgDiv.style.display = 'flex';
-    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+CLI_PER_PAGE,total)} de ${total} clientes`;
+    infoEl.textContent = `Página ${cliCurrentPage} de ${pages}`;
     prevBtn.disabled = cliCurrentPage === 1;
     nextBtn.disabled = cliCurrentPage === pages;
-    // Números de página (máx 7 botones)
-    const range = [];
-    for (let p = 1; p <= pages; p++) {
-      if (p === 1 || p === pages || Math.abs(p - cliCurrentPage) <= 2) range.push(p);
-    }
-    let last = 0;
-    numsEl.innerHTML = range.map(p => {
-      const ellipsis = last && p - last > 1 ? `<span style="color:var(--text-muted);padding:0 4px">…</span>` : '';
-      last = p;
-      return `${ellipsis}<button onclick="cliGoPage(${p})" class="btn btn-sm ${p===cliCurrentPage?'btn-primary':'btn-ghost'}" style="min-width:32px;padding:4px 8px">${p}</button>`;
-    }).join('');
   }
 }
 
@@ -8603,15 +8547,15 @@ function toggleEstadoCliente() {
   const actual  = dirEntry.perfil?.estado || 'activo';
   const nuevo   = actual === 'vetado' ? 'activo' : 'vetado';
   const accion  = nuevo === 'vetado' ? 'vetar' : 'reactivar';
-  if (!confirm(`¿Deseas ${accion} a ${dirEntry.nombre}?`)) return;
-
-  dirEntry.perfil = { ...(dirEntry.perfil || {}), estado: nuevo, lastUpdated: new Date().toISOString() };
-  dirEntry.lastUpdated = new Date().toISOString();
-  safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
-  actualizarBotonesEstado(nuevo);
-  renderClientes();
-  scheduleDriveSync();
-  toast(nuevo === 'vetado' ? '🚫 Cliente vetado' : '✅ Cliente reactivado');
+  showConfirm(`¿Deseas ${accion} a ${dirEntry.nombre}?`, () => {
+    dirEntry.perfil = { ...(dirEntry.perfil || {}), estado: nuevo, lastUpdated: new Date().toISOString() };
+    dirEntry.lastUpdated = new Date().toISOString();
+    safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+    actualizarBotonesEstado(nuevo);
+    renderClientes();
+    scheduleDriveSync();
+    toast(nuevo === 'vetado' ? '🚫 Cliente vetado' : '✅ Cliente reactivado');
+  }, { title: `¿${accion.charAt(0).toUpperCase()+accion.slice(1)} cliente?`, confirmText: accion.charAt(0).toUpperCase()+accion.slice(1), danger: nuevo === 'vetado' });
 }
 
 function marcarCambio() {
@@ -8871,14 +8815,20 @@ function guardarPerfilCliente() {
 }
 
 function cerrarPerfil() {
-  if (perfilDirtyFlag && !confirm('¿Cerrar sin guardar los cambios?')) return;
-  document.getElementById('cli-profile-overlay').classList.remove('open');
-  document.getElementById('cli-profile-panel').classList.remove('open');
-  document.body.style.overflow = '';
-  if (edadInterval) { clearInterval(edadInterval); edadInterval = null; }
-  perfilClienteId  = null;
-  perfilClienteKey = null;
-  perfilDirtyFlag  = false;
+  const doClose = () => {
+    document.getElementById('cli-profile-overlay').classList.remove('open');
+    document.getElementById('cli-profile-panel').classList.remove('open');
+    document.body.style.overflow = '';
+    if (edadInterval) { clearInterval(edadInterval); edadInterval = null; }
+    perfilClienteId  = null;
+    perfilClienteKey = null;
+    perfilDirtyFlag  = false;
+  };
+  if (perfilDirtyFlag) {
+    showConfirm('¿Cerrar sin guardar los cambios?', doClose, { title: 'Cambios sin guardar', confirmText: 'Cerrar sin guardar', danger: true });
+    return;
+  }
+  doClose();
 }
 
 // Fix: Celular — solo dígitos, máximo 10 caracteres
@@ -8932,6 +8882,26 @@ function toast(msg, isError = false) {
   setTimeout(() => el.className = '', 3000);
 }
 
+// Muestra/oculta un spinner dentro de un botón mientras dura una acción
+// async (generar PDF, sincronizar, etc.), deshabilitándolo para evitar
+// doble clic y dando una señal visual de que algo está pasando.
+function _setBtnLoading(btn, loading) {
+  if (!btn) return;
+  if (loading) {
+    if (btn.dataset.loading === '1') return; // ya está en loading
+    btn.dataset.loading  = '1';
+    btn.dataset.origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+  } else {
+    if (btn.dataset.loading !== '1') return;
+    btn.innerHTML = btn.dataset.origHtml ?? btn.innerHTML;
+    delete btn.dataset.origHtml;
+    delete btn.dataset.loading;
+    btn.disabled = false;
+  }
+}
+
 // Fix 6: Modal de confirmación tipada para acciones destructivas
 let _dangerConfirmCallback = null;
 
@@ -8953,6 +8923,61 @@ function closeDangerConfirm() {
   document.getElementById('danger-confirm-overlay').style.display = 'none';
   document.getElementById('danger-confirm-input').value = '';
   _dangerConfirmCallback = null;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL GENÉRICO DE CONFIRMACIÓN — reemplaza confirm() nativo
+//  del navegador (que se ve como una alerta blanca del sistema,
+//  fuera de lugar en esta interfaz). Uso: showConfirm(mensaje, onSi, opts)
+// ══════════════════════════════════════════════════════════
+let _simpleConfirmCallback = null;
+
+function showConfirm(msg, onYes, opts = {}) {
+  const {
+    title       = '¿Estás seguro?',
+    confirmText = 'Confirmar',
+    cancelText  = 'Cancelar',
+    danger      = false,
+  } = opts;
+  document.getElementById('simple-confirm-title').textContent = title;
+  document.getElementById('simple-confirm-msg').textContent   = msg;
+  const okBtn = document.getElementById('simple-confirm-ok');
+  okBtn.textContent = confirmText;
+  okBtn.className   = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+  document.getElementById('simple-confirm-cancel').textContent = cancelText;
+  document.getElementById('simple-confirm-icon').style.setProperty('--ic', danger ? 'var(--coral)' : 'var(--teal)');
+  _simpleConfirmCallback = () => { closeSimpleConfirm(); onYes(); };
+  document.getElementById('simple-confirm-overlay').style.display = 'flex';
+}
+function closeSimpleConfirm() {
+  document.getElementById('simple-confirm-overlay').style.display = 'none';
+  _simpleConfirmCallback = null;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL GENÉRICO DE INGRESO DE VALOR — reemplaza prompt() nativo.
+//  Uso: showPrompt(mensaje, valorInicial, onAceptar, opts)
+// ══════════════════════════════════════════════════════════
+let _simplePromptCallback = null;
+
+function showPrompt(msg, defaultVal, onOk, opts = {}) {
+  const { title = 'Ingresa un valor', confirmText = 'Aceptar' } = opts;
+  document.getElementById('simple-prompt-title').textContent = title;
+  document.getElementById('simple-prompt-msg').textContent   = msg;
+  const input = document.getElementById('simple-prompt-input');
+  input.value = defaultVal != null ? String(defaultVal) : '';
+  document.getElementById('simple-prompt-ok').textContent = confirmText;
+  _simplePromptCallback = () => {
+    const val = input.value;
+    closeSimplePrompt();
+    onOk(val);
+  };
+  document.getElementById('simple-prompt-overlay').style.display = 'flex';
+  setTimeout(() => { input.focus(); input.select(); }, 80);
+}
+function closeSimplePrompt() {
+  document.getElementById('simple-prompt-overlay').style.display = 'none';
+  _simplePromptCallback = null;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -8983,13 +9008,19 @@ async function _verificarPasswordPrecios() {
     document.getElementById('prices-lock-overlay').style.display = 'none';
     document.getElementById('prices-panel-content').style.display = 'block';
     _initPreciosPanel();
-    if (input) input.value = '';
+    if (input) { input.value = ''; input.classList.remove('input-error'); }
   } else {
     if (errEl) {
       errEl.textContent = '❌ Contraseña incorrecta';
       errEl.style.display = 'block';
     }
-    if (input) { input.value = ''; input.focus(); }
+    if (input) {
+      input.value = '';
+      input.classList.remove('input-error');
+      void input.offsetWidth; // reiniciar la animación de sacudida si ya estaba aplicada
+      input.classList.add('input-error');
+      input.focus();
+    }
     // Vibrar en móvil
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
   }
@@ -9004,6 +9035,7 @@ function _lockPreciosOnClose() {
   if (panelContent) panelContent.style.display = 'none';
   const errEl = document.getElementById('prices-pwd-error');
   if (errEl) errEl.style.display = 'none';
+  document.getElementById('prices-pwd-input')?.classList.remove('input-error');
 }
 
 // Misma contraseña de administrador, para la zona de peligro (borrar historial)
@@ -9017,13 +9049,19 @@ async function _verificarPasswordDanger() {
   if (hash === _PRICES_HASH) {
     document.getElementById('danger-lock-overlay').style.display  = 'none';
     document.getElementById('danger-panel-content').style.display = 'block';
-    if (input) input.value = '';
+    if (input) { input.value = ''; input.classList.remove('input-error'); }
   } else {
     if (errEl) {
       errEl.textContent = '❌ Contraseña incorrecta';
       errEl.style.display = 'block';
     }
-    if (input) { input.value = ''; input.focus(); }
+    if (input) {
+      input.value = '';
+      input.classList.remove('input-error');
+      void input.offsetWidth;
+      input.classList.add('input-error');
+      input.focus();
+    }
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
   }
 }
@@ -9037,7 +9075,7 @@ function _lockDangerOnClose() {
   const errEl = document.getElementById('danger-pwd-error');
   if (errEl) errEl.style.display = 'none';
   const input = document.getElementById('danger-pwd-input');
-  if (input) input.value = '';
+  if (input) { input.value = ''; input.classList.remove('input-error'); }
 }
 
 function _initPreciosPanel() {
@@ -9089,14 +9127,15 @@ function _guardarPrecioEviscera(val) {
 }
 
 function _resetPrecios() {
-  if (!confirm('¿Restablecer todos los precios a los valores originales?')) return;
-  _precios = { ..._PRECIOS_DEFAULT };
-  _savePreciosWithTs();
-  _aplicarPrecios();
-  _initPreciosPanel();
-  buildSpeciesGrid();
-  buildMaySpeciesGrid();
-  toast('Precios restablecidos a valores originales');
+  showConfirm('¿Restablecer todos los precios a los valores originales?', () => {
+    _precios = { ..._PRECIOS_DEFAULT };
+    _savePreciosWithTs();
+    _aplicarPrecios();
+    _initPreciosPanel();
+    buildSpeciesGrid();
+    buildMaySpeciesGrid();
+    toast('Precios restablecidos a valores originales');
+  }, { title: 'Restablecer precios', confirmText: 'Restablecer', danger: true });
 }
 
 // Merge de precios: gana el más reciente entre local y remoto
@@ -10230,10 +10269,11 @@ async function autoSync() {
 }
 
 // ── Sincronizar ahora (botón manual) ────────
-async function syncNow() {
+async function syncNow(btnEl) {
   if (!driveToken) { toast('No estás conectado a Drive', true); return; }
   closeSetupModal();
   setDriveStatus('syncing', 'Sincronizando…');
+  _setBtnLoading(btnEl, true);
   try {
     const uiState    = captureUIState();
     const remoteData = await downloadDriveFile();
@@ -10262,6 +10302,8 @@ async function syncNow() {
   } catch(e) {
     setDriveStatus('error', 'Error al sincronizar');
     toast('No se pudo sincronizar con Drive. Revisa tu conexión e intenta de nuevo.', true);
+  } finally {
+    _setBtnLoading(btnEl, false);
   }
 }
 
@@ -12051,6 +12093,12 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('tab-lock-overlay')?.style.display !== 'none') {
     closeLockTab(); return;
   }
+  if (document.getElementById('simple-confirm-overlay')?.style.display !== 'none') {
+    closeSimpleConfirm(); return;
+  }
+  if (document.getElementById('simple-prompt-overlay')?.style.display !== 'none') {
+    closeSimplePrompt(); return;
+  }
   if (document.getElementById('danger-confirm-overlay')?.style.display !== 'none') {
     closeDangerConfirm(); return;
   }
@@ -13628,7 +13676,7 @@ function solicitarPasswordSalirFullscreen() {
   if (p)  p.textContent  = 'Ingresa la contraseña de administrador para salir.';
   const inp = document.getElementById('tab-pwd-input');
   const err = document.getElementById('tab-pwd-error');
-  if (inp) inp.value = '';
+  if (inp) { inp.value = ''; inp.classList.remove('input-error'); }
   if (err) { err.textContent = ''; err.style.display = 'none'; }
   overlay.style.display = 'flex';
   setTimeout(() => inp?.focus(), 80);
@@ -13647,7 +13695,7 @@ function _mostrarLockTab(tab) {
   // Limpiar estado
   const inp = document.getElementById('tab-pwd-input');
   const err = document.getElementById('tab-pwd-error');
-  if (inp) inp.value = '';
+  if (inp) { inp.value = ''; inp.classList.remove('input-error'); }
   if (err) { err.textContent = ''; err.style.display = 'none'; }
   overlay.style.display = 'flex';
   setTimeout(() => inp?.focus(), 80);
@@ -13659,7 +13707,7 @@ function closeLockTab() {
   _tabPendiente = null;
   const inp = document.getElementById('tab-pwd-input');
   const err = document.getElementById('tab-pwd-error');
-  if (inp) inp.value = '';
+  if (inp) { inp.value = ''; inp.classList.remove('input-error'); }
   if (err) err.style.display = 'none';
 }
 
@@ -13689,22 +13737,32 @@ async function _verificarPasswordTab() {
     }
   } else {
     if (err) { err.textContent = '❌ Contraseña incorrecta'; err.style.display = 'block'; }
-    if (inp) { inp.value = ''; inp.focus(); }
+    if (inp) {
+      inp.value = '';
+      inp.classList.remove('input-error');
+      void inp.offsetWidth;
+      inp.classList.add('input-error');
+      inp.focus();
+    }
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
   }
 }
 
 window.showTab = function(tab) {
+  const proceed = () => {
+    // Check tab password
+    if (_TABS_PROTEGIDAS.includes(tab) && !_tabsDesbloqueadas) {
+      _mostrarLockTab(tab);
+      return;
+    }
+    _origShowTab(tab);
+  };
   // Check dirty form
   if (tab !== 'cotizar' && activeTab === 'cotizar' && _formTieneDatos()) {
-    if (!confirm('Tienes una orden sin cobrar. ¿Cambiar de pestaña y perder los datos?')) return;
-  }
-  // Check tab password
-  if (_TABS_PROTEGIDAS.includes(tab) && !_tabsDesbloqueadas) {
-    _mostrarLockTab(tab);
+    showConfirm('¿Cambiar de pestaña y perder los datos?', proceed, { title: 'Tienes una orden sin cobrar', confirmText: 'Cambiar de todas formas', danger: true });
     return;
   }
-  _origShowTab(tab);
+  proceed();
 };
 
 // Advertir al cerrar/recargar la página si hay datos sin guardar
@@ -13985,6 +14043,38 @@ setInterval(() => {
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         Confirmar borrado
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: CONFIRMACIÓN GENÉRICA (reemplaza confirm() nativo) ══════ -->
+<div id="simple-confirm-overlay" class="app-modal-overlay" style="display:none">
+  <div class="app-modal-panel app-modal-panel--tight">
+    <div class="modal-icon-badge" id="simple-confirm-icon" style="--ic:var(--teal)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    </div>
+    <h3 id="simple-confirm-title" class="app-modal-title">¿Estás seguro?</h3>
+    <p id="simple-confirm-msg" class="app-modal-msg"></p>
+    <div class="app-modal-actions">
+      <button id="simple-confirm-cancel" class="btn btn-ghost" onclick="closeSimpleConfirm()">Cancelar</button>
+      <button id="simple-confirm-ok" class="btn btn-primary" onclick="_simpleConfirmCallback && _simpleConfirmCallback()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: INGRESO DE VALOR (reemplaza prompt() nativo) ══════ -->
+<div id="simple-prompt-overlay" class="app-modal-overlay" style="display:none">
+  <div class="app-modal-panel app-modal-panel--tight">
+    <div class="modal-icon-badge" style="--ic:var(--teal)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <h3 id="simple-prompt-title" class="app-modal-title">Ingresa un valor</h3>
+    <p id="simple-prompt-msg" class="app-modal-msg"></p>
+    <input id="simple-prompt-input" class="app-modal-confirm-input app-modal-confirm-input--teal" type="text" inputmode="decimal" autocomplete="off"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();_simplePromptCallback && _simplePromptCallback();}">
+    <div class="app-modal-actions">
+      <button class="btn btn-ghost" onclick="closeSimplePrompt()">Cancelar</button>
+      <button id="simple-prompt-ok" class="btn btn-primary" onclick="_simplePromptCallback && _simplePromptCallback()">Aceptar</button>
     </div>
   </div>
 </div>
