@@ -56,6 +56,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    height: 30px;
     padding: 6px 14px 6px 8px;
     border-radius: 20px;
     border: 1px solid rgba(77,151,255,0.2);
@@ -72,6 +73,30 @@
   .drive-status-bar.connected { border-color: rgba(45,108,224,0.4); color: var(--green); background: rgba(45,108,224,0.07); }
   .drive-status-bar.syncing   { border-color: rgba(77,151,255,0.4); color: var(--teal);  background: rgba(77,151,255,0.07); }
   .drive-status-bar.error     { border-color: rgba(255,109,92,0.4); color: var(--coral); background: rgba(255,109,92,0.07); }
+
+  /* Badge "SYNC" (>30 min sin sincronizar) — misma altura que el botón de
+     conectar de al lado, y clicable para forzar una sincronización ya. */
+  .stale-sync-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,152,0,0.35);
+    background: rgba(255,152,0,0.15);
+    color: #ff9800;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .stale-sync-badge:hover  { background: rgba(255,152,0,0.28); border-color: rgba(255,152,0,0.6); }
+  .stale-sync-badge:active { transform: scale(0.95); }
 
   .drive-dot {
     width: 8px; height: 8px;
@@ -1391,6 +1416,74 @@
     overflow-x: auto;
     border-radius: var(--radius-sm);
   }
+
+  /* ──────────────── PAGINACIÓN (historial detal / mayorista) ────────────────
+     Barra minimalista compartida: sin píldoras grandes, solo números
+     discretos con la página activa resaltada y flechas sutiles. */
+  .pg-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 2px 4px;
+  }
+  .pg-info {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .pg-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .pg-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .pg-arrow:hover:not(:disabled) { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+  .pg-arrow:disabled { opacity: 0.28; cursor: not-allowed; }
+  .pg-nums {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0 2px;
+  }
+  .pg-num {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Roboto Mono', monospace;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .pg-num:hover { background: rgba(255,255,255,0.07); color: var(--text-secondary); }
+  .pg-num.active {
+    background: rgba(77,151,255,0.16);
+    color: var(--teal-bright);
+    font-weight: 700;
+  }
+  .pg-ellipsis { color: var(--text-muted); font-size: 12px; padding: 0 2px; }
 
   table {
     width: 100%;
@@ -3253,7 +3346,7 @@
           <span id="drive-status-text">CONECTAR</span>
           <span id="drive-pending-badge" style="display:none;background:rgba(231,181,99,0.25);color:#e7b563;border:1px solid rgba(231,181,99,0.4);border-radius:10px;font-size:9px;font-weight:800;padding:1px 6px;margin-left:4px;letter-spacing:0.4px">PENDIENTE</span>
         </button>
-        <span id="stale-sync-badge" style="display:none;background:rgba(255,152,0,0.15);color:#ff9800;border:1px solid rgba(255,152,0,0.35);border-radius:10px;font-size:9px;font-weight:700;padding:2px 7px;letter-spacing:0.3px;cursor:default" title="Hace más de 30 min sin sincronizar">⚠ SYNC</span>
+        <button id="stale-sync-badge" class="stale-sync-badge" style="display:none" onclick="syncNow()" title="Hace más de 30 min sin sincronizar — clic para sincronizar ahora">⚠ SYNC</button>
       </div>
     </div>
     <div class="header-time" style="position:relative;z-index:1;margin-left:auto;text-align:right">
@@ -3508,12 +3601,12 @@
         </div>
       </div>
       <!-- Paginación -->
-      <div id="hist-pagination" style="display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 0 4px">
-        <span id="hist-page-info" style="font-size:12px;color:var(--text-muted)"></span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-ghost btn-sm" id="hist-prev-btn" onclick="histPagePrev()">← Anterior</button>
-          <span id="hist-page-nums" style="display:flex;gap:4px"></span>
-          <button class="btn btn-ghost btn-sm" id="hist-next-btn" onclick="histPageNext()">Siguiente →</button>
+      <div id="hist-pagination" class="pg-bar" style="display:none">
+        <span id="hist-page-info" class="pg-info"></span>
+        <div class="pg-nav">
+          <button class="pg-arrow" id="hist-prev-btn" onclick="histPagePrev()" aria-label="Página anterior">‹</button>
+          <span id="hist-page-nums" class="pg-nums"></span>
+          <button class="pg-arrow" id="hist-next-btn" onclick="histPageNext()" aria-label="Página siguiente">›</button>
         </div>
       </div>
     </div>
@@ -3571,6 +3664,15 @@
         <div class="empty-state" id="may-empty">
           <div class="icon">📦</div>
           <p>No hay ventas mayoristas registradas.<br>¡Regístralas en la pestaña Mayoristas!</p>
+        </div>
+      </div>
+      <!-- Paginación -->
+      <div id="may-pagination" class="pg-bar" style="display:none">
+        <span id="may-page-info" class="pg-info"></span>
+        <div class="pg-nav">
+          <button class="pg-arrow" id="may-prev-btn" onclick="mayPagePrev()" aria-label="Página anterior">‹</button>
+          <span id="may-page-nums" class="pg-nums"></span>
+          <button class="pg-arrow" id="may-next-btn" onclick="mayPageNext()" aria-label="Página siguiente">›</button>
         </div>
       </div>
     </div>
@@ -4189,7 +4291,7 @@
 
     <!-- Nota interna -->
     <div class="card section" style="padding-top:14px;padding-bottom:14px">
-      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block">📝 Nota interna (opcional)</label>
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block">📝 Nota interna</label>
       <input type="text" id="may-nota-input" placeholder="Ej: paga contraentrega, entrega en bodega norte…" autocomplete="off" style="width:100%">
     </div>
 
@@ -5390,26 +5492,21 @@ function getMayPeriodLabel() {
   }
 }
 
-function renderMayorista() {
-  const tbody = document.getElementById('may-tbody');
-  const empty = document.getElementById('may-empty');
+// ── Paginación historial mayorista ────────────
+const MAY_PER_PAGE = 25;
+let mayCurrentPage = 1;
+let _mayListaFiltrada = [];
+let _mayUltimaFirmaFiltro = null;
 
-  // Actualizar pill de período
-  const pillEl = document.getElementById('may-period-pill');
-  if (pillEl) pillEl.textContent = getMayPeriodLabel();
+function mayPagePrev() { if (mayCurrentPage > 1) { mayCurrentPage--; _renderMayPage(); } }
+function mayPageNext() {
+  const total = Math.ceil(_mayListaFiltrada.length / MAY_PER_PAGE);
+  if (mayCurrentPage < total) { mayCurrentPage++; _renderMayPage(); }
+}
+function mayGoPage(p) { mayCurrentPage = p; _renderMayPage(); }
 
-  let lista = getMayFiltered();
-
-  document.getElementById('badge-may-hist').textContent = mayorista.length;
-
-  if (lista.length === 0) {
-    if (tbody) tbody.innerHTML = '';
-    if (empty) empty.style.display = 'block';
-    return;
-  }
-  if (empty) empty.style.display = 'none';
-
-  tbody.innerHTML = lista.map((v) => `
+function _mayRowHtml(v) {
+  return `
     <tr>
       <td><span class="badge badge-teal">${mayorista.length - mayorista.indexOf(v)}</span></td>
       <td style="font-size:12px;color:var(--text-secondary)">${escHtml(v.fecha)}</td>
@@ -5432,12 +5529,82 @@ function renderMayorista() {
         <button class="btn btn-danger btn-sm" onclick='eliminarVentaMayorista("${v.id}")' title="Eliminar">🗑</button>
       </td>
     </tr>
-  `).join('');
+  `;
+}
+
+function _renderMayPage() {
+  const lista  = _mayListaFiltrada;
+  const total  = lista.length;
+  const pages  = Math.ceil(total / MAY_PER_PAGE);
+  const start  = (mayCurrentPage - 1) * MAY_PER_PAGE;
+  const slice  = lista.slice(start, start + MAY_PER_PAGE);
+  const tbody  = document.getElementById('may-tbody');
+  const pgDiv  = document.getElementById('may-pagination');
+  const infoEl = document.getElementById('may-page-info');
+  const numsEl = document.getElementById('may-page-nums');
+  const prevBtn= document.getElementById('may-prev-btn');
+  const nextBtn= document.getElementById('may-next-btn');
+
+  tbody.innerHTML = slice.map(_mayRowHtml).join('');
 
   // Eventos editar con data attributes
   tbody.querySelectorAll('.may-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => abrirEdicionMayorista(btn.dataset.id));
   });
+
+  // Paginación UI
+  if (pages <= 1) {
+    pgDiv.style.display = 'none';
+  } else {
+    pgDiv.style.display = 'flex';
+    infoEl.textContent = `Mostrando ${start+1}–${Math.min(start+MAY_PER_PAGE,total)} de ${total} ventas`;
+    prevBtn.disabled = mayCurrentPage === 1;
+    nextBtn.disabled = mayCurrentPage === pages;
+    const range = [];
+    for (let p = 1; p <= pages; p++) {
+      if (p === 1 || p === pages || Math.abs(p - mayCurrentPage) <= 2) range.push(p);
+    }
+    let last = 0;
+    numsEl.innerHTML = range.map(p => {
+      const ellipsis = last && p - last > 1 ? `<span class="pg-ellipsis">…</span>` : '';
+      last = p;
+      return `${ellipsis}<button onclick="mayGoPage(${p})" class="pg-num ${p===mayCurrentPage?'active':''}">${p}</button>`;
+    }).join('');
+  }
+}
+
+function renderMayorista() {
+  const tbody = document.getElementById('may-tbody');
+  const empty = document.getElementById('may-empty');
+
+  // Actualizar pill de período
+  const pillEl = document.getElementById('may-period-pill');
+  if (pillEl) pillEl.textContent = getMayPeriodLabel();
+
+  let lista = getMayFiltered();
+
+  document.getElementById('badge-may-hist').textContent = mayorista.length;
+
+  if (lista.length === 0) {
+    if (tbody) tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    document.getElementById('may-pagination').style.display = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  _mayListaFiltrada = lista;
+
+  // Solo volvemos a la página 1 si el filtro de período realmente cambió;
+  // si el render vino de otra causa (editar, sincronizar), mantenemos la página.
+  const firmaFiltro = `${mayPeriod}|${mayCustomDesde}|${mayCustomHasta}`;
+  if (firmaFiltro !== _mayUltimaFirmaFiltro) {
+    mayCurrentPage = 1;
+    _mayUltimaFirmaFiltro = firmaFiltro;
+  } else {
+    const totalPages = Math.max(1, Math.ceil(lista.length / MAY_PER_PAGE));
+    mayCurrentPage = Math.min(Math.max(1, mayCurrentPage), totalPages);
+  }
+  _renderMayPage();
 }
 
 // ── Edición de venta mayorista ────────────────
@@ -6798,9 +6965,9 @@ function _renderHistPage() {
     }
     let last = 0;
     numsEl.innerHTML = range.map(p => {
-      const ellipsis = last && p - last > 1 ? `<span style="color:var(--text-muted);padding:0 4px">…</span>` : '';
+      const ellipsis = last && p - last > 1 ? `<span class="pg-ellipsis">…</span>` : '';
       last = p;
-      return `${ellipsis}<button onclick="histGoPage(${p})" class="btn btn-sm ${p===histCurrentPage?'btn-primary':'btn-ghost'}" style="min-width:32px;padding:4px 8px">${p}</button>`;
+      return `${ellipsis}<button onclick="histGoPage(${p})" class="pg-num ${p===histCurrentPage?'active':''}">${p}</button>`;
     }).join('');
   }
 }
@@ -11370,9 +11537,9 @@ function _actualizarStaleBadge() {
   if (!badge) return;
   if (!driveToken || !_lastSyncTs) { badge.style.display = 'none'; return; }
   const minsSinSync = Math.floor((Date.now() - _lastSyncTs) / 60000);
-  badge.style.display = minsSinSync >= 30 ? 'inline' : 'none';
+  badge.style.display = minsSinSync >= 30 ? 'flex' : 'none';
   badge.title = minsSinSync >= 30
-    ? `Hace ${minsSinSync} min sin sincronizar con Drive`
+    ? `Hace ${minsSinSync} min sin sincronizar — clic para sincronizar ahora`
     : '';
 }
 
