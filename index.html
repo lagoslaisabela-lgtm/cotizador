@@ -2440,15 +2440,19 @@
 
   #cli-profile-panel {
     position: fixed;
-    top: 0; right: 0; bottom: 0;
-    width: min(460px, 100vw);
-    background: var(--surface);
-    border-left: 1px solid var(--card-border);
+    top: 16px; right: 16px; bottom: 16px;
+    width: min(440px, calc(100vw - 32px));
+    background: rgba(10,14,22,0.82);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
     z-index: 501;
     display: flex; flex-direction: column;
-    transform: translateX(100%);
+    transform: translateX(calc(100% + 32px));
     transition: transform 0.3s cubic-bezier(.4,0,.2,1);
     overflow: hidden;
+    box-shadow: 0 24px 60px -16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07);
   }
   #cli-profile-panel.open { transform: translateX(0); }
 
@@ -2456,7 +2460,8 @@
     padding: 20px 24px 16px;
     border-bottom: 1px solid var(--card-border);
     display: flex; align-items: flex-start; gap: 14px;
-    background: rgba(6,15,30,0.6);
+    background: linear-gradient(135deg, rgba(77,151,255,0.1), rgba(45,108,224,0.03));
+    border-radius: var(--radius) var(--radius) 0 0;
     flex-shrink: 0;
   }
   .profile-avatar {
@@ -2648,11 +2653,19 @@
     border-top: 1px solid var(--card-border);
     display: flex; gap: 10px; justify-content: flex-end;
     flex-shrink: 0;
-    background: rgba(6,15,30,0.6);
+    background: rgba(255,255,255,0.02);
+    border-radius: 0 0 var(--radius) var(--radius);
   }
 
   @media (max-width: 480px) {
-    #cli-profile-panel { width: 100vw; }
+    #cli-profile-panel {
+      top: 0; right: 0; bottom: 0; left: 0;
+      width: 100vw;
+      border-radius: 0;
+      border: none;
+      transform: translateX(100%);
+    }
+    .profile-header, .profile-footer { border-radius: 0; }
     .profile-edit-grid { grid-template-columns: 1fr; }
     .profile-info-grid { grid-template-columns: 1fr; }
   }
@@ -2756,6 +2769,233 @@
     transform: scale(1);
   }
   #ev-fs-float-btn.visible:hover { transform: scale(1.08) translateY(-2px); border-color: rgba(77,151,255,0.7); }
+
+  /* ──────────────── BOTÓN FLOTANTE: REGISTRO POR PIEZA (Mayorista) ──────────────── */
+  /* Solo visible en la pestaña Mayorista — ver showTab() */
+  #pieces-float-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 300;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 28px;
+    border: 1px solid rgba(77,151,255,0.5);
+    background: linear-gradient(140deg, rgba(77,151,255,0.2), rgba(4,10,20,0.9));
+    color: var(--teal-bright);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 18px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 6px 22px -6px rgba(0,0,0,0.55), 0 0 16px rgba(77,151,255,0.22), inset 0 1px 0 rgba(255,255,255,0.1);
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    user-select: none;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.7);
+  }
+  #pieces-float-btn.visible { opacity: 1; pointer-events: all; transform: scale(1); }
+  #pieces-float-btn.visible:hover { transform: scale(1.06) translateY(-3px); border-color: rgba(77,151,255,0.75); }
+  #pieces-float-btn .badge-count {
+    display: none;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 10px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 10px; font-weight: 800;
+    align-items: center; justify-content: center;
+  }
+  #pieces-float-btn .badge-count.show { display: inline-flex; }
+
+  /* ──────────────── MODAL: REGISTRO POR PIEZA (Mayorista) ──────────────── */
+  .pieces-modal {
+    width: min(560px, calc(100vw - 32px));
+    max-height: 86vh;
+    background: rgba(8,11,17,0.97);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .pieces-modal-header {
+    padding: 18px 20px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    background: linear-gradient(135deg, rgba(77,151,255,0.1), rgba(45,108,224,0.03));
+    border-bottom: 1px solid var(--card-border);
+    flex-shrink: 0;
+  }
+  .pieces-modal-header h3 { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
+  .pieces-modal-header p  { font-size: 12.5px; color: var(--text-muted); }
+  .pieces-modal-body { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .pieces-modal-body::-webkit-scrollbar { width: 4px; }
+  .pieces-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+  .pieces-sessions-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .pieces-session-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 8px 7px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pieces-session-chip:hover { border-color: rgba(77,151,255,0.4); }
+  .pieces-session-chip.selected {
+    background: rgba(77,151,255,0.16);
+    border-color: var(--teal);
+    color: var(--text-primary);
+  }
+  .pieces-session-chip .n {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 1px 6px;
+    font-size: 10.5px;
+    color: var(--text-muted);
+  }
+  .pieces-session-chip.selected .n { background: rgba(77,151,255,0.3); color: var(--teal-bright); }
+  .pieces-session-close {
+    display: flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1;
+  }
+  .pieces-session-close:hover { background: rgba(255,109,92,0.2); color: var(--coral); }
+  .pieces-session-add {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.25);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .pieces-session-add:hover { border-color: var(--teal); color: var(--teal-bright); background: rgba(77,151,255,0.08); }
+
+  .pieces-entry-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pieces-species-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+  .piece-species-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 13px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    font-size: 12.5px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .piece-species-chip:hover { border-color: var(--sc, var(--teal)); }
+  .piece-species-chip.selected {
+    background: color-mix(in srgb, var(--sc, var(--teal)) 18%, transparent);
+    border-color: var(--sc, var(--teal));
+    color: var(--text-primary);
+    box-shadow: 0 0 0 1px var(--sc, var(--teal)) inset;
+  }
+  .pieces-entry-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pieces-entry-row input[type="text"] {
+    flex: 1; min-width: 110px;
+  }
+  .pieces-entry-row .btn { flex-shrink: 0; white-space: nowrap; }
+  .pieces-unit-toggle {
+    display: flex; flex-shrink: 0;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .pieces-unit-btn {
+    border: none;
+    background: var(--input-bg);
+    color: var(--text-muted);
+    font-size: 13px; font-weight: 700;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pieces-unit-btn + .pieces-unit-btn { border-left: 1px solid var(--input-border); }
+  .pieces-unit-btn.selected { background: rgba(77,151,255,0.18); color: var(--teal-bright); }
+
+  .pieces-list-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .pieces-list-header {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+  .pieces-clear-btn {
+    background: none; border: none; color: var(--coral);
+    font-size: 11.5px; font-weight: 700; cursor: pointer;
+    text-transform: none; letter-spacing: 0;
+  }
+  .pieces-clear-btn:hover { text-decoration: underline; }
+  .pieces-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .pieces-list::-webkit-scrollbar { width: 4px; }
+  .pieces-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  .piece-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--sc, var(--teal));
+    animation: pieceRowIn 0.2s ease;
+  }
+  @keyframes pieceRowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+  .piece-row .piece-emoji { font-size: 16px; flex-shrink: 0; }
+  .piece-row .piece-name  { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; }
+  .piece-row .piece-weight{ font-family: 'Roboto Mono', monospace; font-size: 13px; color: var(--teal-pale); flex-shrink: 0; }
+  .piece-row .piece-del   {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 14px; padding: 2px 4px; flex-shrink: 0; transition: color 0.15s;
+  }
+  .piece-row .piece-del:hover { color: var(--coral); }
+
+  .pieces-summary {
+    flex-shrink: 0;
+    padding: 16px 20px 18px;
+    border-top: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pieces-summary-rows { display: flex; flex-direction: column; gap: 4px; }
+  .pieces-summary-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px; color: var(--text-secondary);
+  }
+  .pieces-summary-row .n { color: var(--text-muted); font-family: 'Roboto Mono', monospace; }
+  .pieces-summary-total {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 8px; border-top: 1px dashed var(--card-border);
+    font-size: 13px; font-weight: 700; color: var(--text-primary);
+  }
+  .pieces-summary-total strong { font-family: 'Roboto Mono', monospace; font-size: 18px; color: var(--green); }
+
+  @media (max-width: 480px) {
+    .pieces-modal { max-height: 92vh; }
+  }
 
   /* ──────────────── EVISCERADO FULLSCREEN ──────────────── */
   #ev-fullscreen-overlay {
@@ -3301,6 +3541,11 @@
 
 <!-- Botón flotante: pantalla completa de eviscerado (solo visible en esa pestaña) -->
 <button id="ev-fs-float-btn" onclick="toggleEvFullscreen()" title="Pantalla completa">⛶</button>
+
+<!-- Botón flotante: registro de peces individuales (solo visible en Mayorista) -->
+<button id="pieces-float-btn" onclick="abrirRegistroPiezas()" title="Registrar peces por su peso">
+  🐟 Por pesas <span class="badge-count" id="pieces-float-count">0</span>
+</button>
 
 <div id="top-bar">
 <header>
@@ -4869,6 +5114,9 @@
 <div class="autocomplete-list" id="ac-may-tel-list"></div>
 <div class="autocomplete-list" id="ac-may-cc-list"></div>
 
+<!-- AUTOCOMPLETE FLOTANTE REGISTRO POR PESAS -->
+<div class="autocomplete-list" id="ac-pieces-nombre-list"></div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -5082,6 +5330,9 @@ function showTab(tab) {
   // Botón flotante de pantalla completa: solo visible en Eviscerado y fuera del modo fullscreen
   const evFsBtn = document.getElementById('ev-fs-float-btn');
   if (evFsBtn) evFsBtn.classList.toggle('visible', tab === 'eviscerado' && !evFullscreenOpen);
+  // Botón flotante de registro por pesas: solo visible en Mayorista
+  const piecesBtn = document.getElementById('pieces-float-btn');
+  if (piecesBtn) piecesBtn.classList.toggle('visible', tab === 'mayorista');
   // El render de contenido puede tardar un poco en pestañas con historial grande
   // (Clientes, Eviscerado). Lo dejamos para el siguiente frame para que el
   // navegador ya haya pintado el cambio de pestaña y no se sienta "pegado".
@@ -5302,7 +5553,11 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
     pagoCon: pagoVal || null,
     devuelta: pagoVal > 0 ? pagoVal - total : null,
     // Saldo pendiente por cobrar (ver nota en _guardarOrdenReal)
-    saldoPendiente: Math.max(0, total - pagoVal)
+    saldoPendiente: Math.max(0, total - pagoVal),
+    // Historial de pesas: si esta venta se armó (total o parcialmente) con el
+    // Registro por Pesas, queda guardado el detalle pez por pez para poder
+    // consultarlo después desde el historial.
+    piezas: _piezasParaVentaPendiente.length > 0 ? _piezasParaVentaPendiente : undefined,
   };
 
   mayorista.unshift(venta);
@@ -5312,11 +5567,395 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
   renderDashboard();
   renderMayorista();
   scheduleDriveSync();
+  _piezasParaVentaPendiente = [];
+  _savePiezasPendiente();
   resetMayorista(true);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  REGISTRO POR PESAS (Mayorista) — permite pesar e ir sumando varios
+//  peces (de la misma o de distinta especie) uno por uno, con varias
+//  "sesiones" simultáneas (una por cliente) para no perder el hilo si
+//  se están pesando pedidos de más de un comprador a la vez, y luego
+//  volcar el total acumulado de una sesión a la venta mayorista.
+// ═══════════════════════════════════════════════════════════
+const PIECES_KEY = 'aquacot_piezas_temp';
+const KG_A_LB     = 2; // convención del negocio: 1 kg = 2 lb exactas (no el factor real 2.20462)
+
+// Cada sesión: { id, cliente: {nombre, tel, cc}, piezas: [{id, especieId, peso, unidad}] }
+let sesionesPesaje = _cargarSesionesPesaje();
+let _sesionActivaId = sesionesPesaje[0]?.id || null;
+let _piezaEspecieSel = ESPECIES[0].id;
+let _piezaUnidadSel  = 'lb';
+// Peces ya "usados" en el formulario de mayorista (vía usarPiezasEnVentaMayorista)
+// que quedarán adjuntos como historial de pesas a la próxima venta que se guarde.
+let _piezasParaVentaPendiente = JSON.parse(safeStorage.getItem(PIECES_KEY + '_pendiente') || '[]');
+
+function _cargarSesionesPesaje() {
+  let raw;
+  try { raw = JSON.parse(safeStorage.getItem(PIECES_KEY) || '[]'); } catch { return []; }
+  if (!Array.isArray(raw)) return [];
+  // Blindaje: si viene de una versión anterior de la app (un array plano de
+  // peces, sin sesiones), lo migramos a una única sesión sin cliente asignado.
+  if (raw.length > 0 && !raw[0].piezas) {
+    return [{ id: _genSesionId(), cliente: { nombre: '', tel: '', cc: '' }, piezas: raw }];
+  }
+  return raw;
+}
+
+function _genSesionId() { return 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+
+function _savePiezas() { safeStorage.setItem(PIECES_KEY, JSON.stringify(sesionesPesaje)); }
+function _savePiezasPendiente() { safeStorage.setItem(PIECES_KEY + '_pendiente', JSON.stringify(_piezasParaVentaPendiente)); }
+
+function _sesionActiva() {
+  return sesionesPesaje.find(s => s.id === _sesionActivaId) || null;
+}
+
+function _nuevaSesionPesaje(nombreInicial = '') {
+  const s = { id: _genSesionId(), cliente: { nombre: nombreInicial, tel: '', cc: '' }, piezas: [] };
+  sesionesPesaje.push(s);
+  _sesionActivaId = s.id;
+  _savePiezas();
+  return s;
+}
+
+function agregarSesionPesaje() {
+  _nuevaSesionPesaje('');
+  _renderSesionesTabs();
+  _sincronizarClienteInputConSesion();
+  _renderPiezas();
+  document.getElementById('pieces-client-input')?.focus();
+}
+
+function _cambiarSesionPesaje(id) {
+  _sesionActivaId = id;
+  _renderSesionesTabs();
+  _sincronizarClienteInputConSesion();
+  _renderPiezas();
+}
+
+function _sincronizarClienteInputConSesion() {
+  const clienteInput = document.getElementById('pieces-client-input');
+  const s = _sesionActiva();
+  if (clienteInput) clienteInput.value = s?.cliente?.nombre || '';
+}
+
+function eliminarSesionPesaje(id, ev) {
+  if (ev) ev.stopPropagation();
+  const s = sesionesPesaje.find(x => x.id === id);
+  if (!s) return;
+  const doDelete = () => {
+    sesionesPesaje = sesionesPesaje.filter(x => x.id !== id);
+    if (_sesionActivaId === id) {
+      _sesionActivaId = sesionesPesaje.length > 0 ? sesionesPesaje[0].id : null;
+      if (!_sesionActivaId) _nuevaSesionPesaje('');
+    }
+    _savePiezas();
+    _renderSesionesTabs();
+    _sincronizarClienteInputConSesion();
+    _renderPiezas();
+  };
+  if (s.piezas.length > 0) {
+    showConfirm('Se perderán los peces registrados en esta sesión.', doDelete, { title: '¿Cerrar esta sesión?', confirmText: 'Cerrar sesión', danger: true });
+  } else {
+    doDelete();
+  }
+}
+
+function _renderSesionesTabs() {
+  const wrap = document.getElementById('pieces-sessions-bar');
+  if (!wrap) return;
+  const chips = sesionesPesaje.map(s => {
+    const nombre = (s.cliente?.nombre || '').trim() || 'Sin nombre';
+    const activo = s.id === _sesionActivaId;
+    return `
+      <button type="button" class="pieces-session-chip ${activo ? 'selected' : ''}" onclick="_cambiarSesionPesaje('${s.id}')">
+        👤 ${escHtml(nombre)}
+        ${s.piezas.length > 0 ? `<span class="n">${s.piezas.length}</span>` : ''}
+        <span class="pieces-session-close" onclick="eliminarSesionPesaje('${s.id}', event)" title="Cerrar esta sesión">×</span>
+      </button>`;
+  }).join('');
+  wrap.innerHTML = chips + `<button type="button" class="pieces-session-add" onclick="agregarSesionPesaje()" title="Nueva sesión (otro cliente)">+</button>`;
+}
+
+function _buildPiecesSpeciesPicker() {
+  const wrap = document.getElementById('pieces-species-picker');
+  if (!wrap) return;
+  wrap.innerHTML = ESPECIES.filter(e => e.id !== 'otro').map(e => `
+    <button type="button" class="piece-species-chip ${e.id === _piezaEspecieSel ? 'selected' : ''}"
+      style="--sc:${e.color || 'var(--teal)'}" onclick="_seleccionarPiezaEspecie('${e.id}')">
+      ${e.emoji || '🐟'} ${e.nombre}
+    </button>
+  `).join('');
+}
+
+function _seleccionarPiezaEspecie(id) {
+  _piezaEspecieSel = id;
+  _buildPiecesSpeciesPicker();
+}
+
+function _seleccionarPiezaUnidad(unidad) {
+  _piezaUnidadSel = unidad;
+  document.querySelectorAll('#pieces-unit-toggle .pieces-unit-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.unidad === unidad);
+  });
+  const input = document.getElementById('pieces-weight-input');
+  if (input) { input.placeholder = 'Peso'; input.focus(); }
+}
+
+function abrirRegistroPiezas() {
+  if (sesionesPesaje.length === 0) {
+    _nuevaSesionPesaje(document.getElementById('may-nombre')?.value || '');
+  } else if (!_sesionActivaId || !sesionesPesaje.find(s => s.id === _sesionActivaId)) {
+    _sesionActivaId = sesionesPesaje[0].id;
+  }
+  _buildPiecesSpeciesPicker();
+  _renderSesionesTabs();
+  _sincronizarClienteInputConSesion();
+  _renderPiezas();
+  const overlay = document.getElementById('pieces-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  setTimeout(() => document.getElementById('pieces-weight-input')?.focus(), 80);
+}
+
+function cerrarRegistroPiezas() {
+  const overlay = document.getElementById('pieces-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function agregarPez() {
+  const s = _sesionActiva();
+  if (!s) return;
+  const input = document.getElementById('pieces-weight-input');
+  const { valor: pesoIngresado } = evaluarLbs(input?.value || '');
+  if (!pesoIngresado || pesoIngresado <= 0) { toast('Ingresa un peso válido', true); input?.focus(); return; }
+  const especie = ESPECIES.find(e => e.id === _piezaEspecieSel) || ESPECIES[0];
+
+  s.piezas.push({
+    id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    especieId: especie.id,
+    peso: pesoIngresado,          // en la unidad elegida (lb o kg)
+    unidad: _piezaUnidadSel,
+  });
+  _savePiezas();
+  if (input) input.value = '';
+  _renderSesionesTabs();
+  _renderPiezas();
+  input?.focus();
+}
+
+function quitarPez(pezId) {
+  const s = _sesionActiva();
+  if (!s) return;
+  s.piezas = s.piezas.filter(p => p.id !== pezId);
+  _savePiezas();
+  _renderSesionesTabs();
+  _renderPiezas();
+}
+
+function vaciarRegistroPiezas() {
+  const s = _sesionActiva();
+  if (!s || s.piezas.length === 0) return;
+  showConfirm('Se perderán todos los peces registrados en esta sesión.', () => {
+    s.piezas = [];
+    _savePiezas();
+    _renderSesionesTabs();
+    _renderPiezas();
+    toast('Lista vaciada');
+  }, { title: '¿Vaciar la lista de peces?', confirmText: 'Vaciar', danger: true });
+}
+
+function _pesoEnLb(p) {
+  return p.unidad === 'kg' ? p.peso * KG_A_LB : p.peso;
+}
+
+function _precioRefEspecie(especieId) {
+  // Usa el precio que el usuario ya tiene puesto en el formulario de Mayorista
+  // para esa especie si existe; si no, cae al precio de referencia guardado.
+  const inputEl = document.getElementById(`may-precio-${especieId}`);
+  const desdeForm = parseFloat(inputEl?.value);
+  if (desdeForm > 0) return desdeForm;
+  const mem = mayPreciosMemoria[especieId];
+  if (mem !== undefined && mem !== '' && parseFloat(mem) > 0) return parseFloat(mem);
+  const e = ESPECIES.find(x => x.id === especieId);
+  return e?.precio || 0;
+}
+
+function _agruparPiezasPorEspecie(piezas) {
+  const porEspecie = {};
+  (piezas || []).forEach(p => {
+    if (!porEspecie[p.especieId]) porEspecie[p.especieId] = { pesoLb: 0, count: 0 };
+    porEspecie[p.especieId].pesoLb += _pesoEnLb(p);
+    porEspecie[p.especieId].count  += 1;
+  });
+  return porEspecie;
+}
+
+function _renderPiezas() {
+  const listEl  = document.getElementById('pieces-list');
+  const emptyEl = document.getElementById('pieces-empty');
+  const clearBtn= document.getElementById('pieces-clear-btn');
+  const summary = document.getElementById('pieces-summary');
+  const countEl = document.getElementById('pieces-float-count');
+  // Si el modal todavía no existe en el DOM (p. ej. se llama muy temprano),
+  // no hacemos nada en vez de romper con un TypeError.
+  if (!listEl || !emptyEl || !clearBtn || !summary) return;
+
+  // El contador del botón flotante suma los peces de TODAS las sesiones,
+  // no solo de la que está abierta en este momento.
+  const totalTodasSesiones = sesionesPesaje.reduce((acc, s) => acc + s.piezas.length, 0);
+  if (countEl) {
+    countEl.textContent = totalTodasSesiones;
+    countEl.classList.toggle('show', totalTodasSesiones > 0);
+  }
+
+  const s = _sesionActiva();
+  const piezas = s?.piezas || [];
+
+  if (piezas.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    clearBtn.style.display = 'none';
+    summary.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  clearBtn.style.display = 'block';
+
+  listEl.innerHTML = piezas.map(p => {
+    const e = ESPECIES.find(x => x.id === p.especieId) || ESPECIES[0];
+    return `
+      <div class="piece-row" style="--sc:${e.color || 'var(--teal)'}">
+        <span class="piece-emoji">${e.emoji || '🐟'}</span>
+        <span class="piece-name">${e.nombre}</span>
+        <span class="piece-weight">${p.peso.toFixed(2).replace(/\.?0+$/, '')} ${p.unidad}</span>
+        <button class="piece-del" onclick="quitarPez('${p.id}')" title="Quitar">🗑</button>
+      </div>`;
+  }).join('');
+
+  // Resumen agrupado por especie (siempre convertido a libras, que es lo
+  // que usa el resto de la app)
+  const porEspecie = _agruparPiezasPorEspecie(piezas);
+
+  let totalGeneral = 0;
+  const rowsHtml = Object.entries(porEspecie).map(([especieId, d]) => {
+    const e = ESPECIES.find(x => x.id === especieId) || ESPECIES[0];
+    const precio = _precioRefEspecie(especieId);
+    const sub = d.pesoLb * precio;
+    totalGeneral += sub;
+    return `
+      <div class="pieces-summary-row">
+        <span>${e.emoji || '🐟'} ${e.nombre} <span class="n">(${d.count} pz)</span></span>
+        <span class="n">${d.pesoLb.toFixed(1)} lb · ${fmt(sub)}</span>
+      </div>`;
+  }).join('');
+
+  const rowsEl = document.getElementById('pieces-summary-rows');
+  const totalEl = document.getElementById('pieces-summary-total-val');
+  if (rowsEl)  rowsEl.innerHTML = rowsHtml;
+  if (totalEl) totalEl.textContent = fmt(totalGeneral);
+  summary.style.display = 'flex';
+}
+
+function usarPiezasEnVentaMayorista() {
+  const s = _sesionActiva();
+  if (!s || s.piezas.length === 0) { toast('No hay peces registrados en esta sesión', true); return; }
+
+  // El cliente de esta sesión pasa al formulario real de mayorista
+  const mayNombre = document.getElementById('may-nombre');
+  const mayTel    = document.getElementById('may-tel');
+  const mayCc     = document.getElementById('may-cc');
+  if (mayNombre && s.cliente?.nombre) mayNombre.value = s.cliente.nombre;
+  if (mayTel    && s.cliente?.tel)    mayTel.value    = s.cliente.tel;
+  if (mayCc     && s.cliente?.cc)     mayCc.value      = s.cliente.cc;
+
+  const porEspecie = _agruparPiezasPorEspecie(s.piezas);
+  Object.entries(porEspecie).forEach(([especieId, d]) => {
+    const qtyEl = document.getElementById(`may-qty-${especieId}`);
+    if (!qtyEl) return;
+    // Suma sobre lo que ya hubiera en el formulario, para no pisar cantidades
+    // que el cajero haya escrito a mano antes de abrir el registro por pesas.
+    const { valor: qtyPrevia } = evaluarLbs(qtyEl.value || '');
+    const nuevaQty = qtyPrevia + d.pesoLb;
+    qtyEl.value = nuevaQty.toFixed(2).replace(/\.?0+$/, '');
+  });
+
+  calcularMayorista();
+  _piezasParaVentaPendiente = _piezasParaVentaPendiente.concat(s.piezas);
+  _savePiezasPendiente();
+
+  // Esta sesión ya se convirtió en la venta que quedó armada en el
+  // formulario — se cierra, y las demás sesiones (otros clientes) siguen
+  // esperando intactas para cuando se retome el registro por pesas.
+  sesionesPesaje = sesionesPesaje.filter(x => x.id !== s.id);
+  if (sesionesPesaje.length === 0) _nuevaSesionPesaje('');
+  else _sesionActivaId = sesionesPesaje[0].id;
+  _savePiezas();
+
+  _renderSesionesTabs();
+  _sincronizarClienteInputConSesion();
+  _renderPiezas();
+  cerrarRegistroPiezas();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  toast('📦 Peces agregados a la venta mayorista');
+}
+
+function verHistorialPiezas(ventaId) {
+  const v = mayorista.find(x => String(x.id) === String(ventaId));
+  if (!v || !v.piezas || v.piezas.length === 0) { toast('Esta venta no tiene historial de pesas', true); return; }
+
+  const tituloEl = document.getElementById('pieces-history-title');
+  const subEl    = document.getElementById('pieces-history-sub');
+  const listEl   = document.getElementById('pieces-history-list');
+  const rowsEl   = document.getElementById('pieces-history-summary-rows');
+  const totalEl  = document.getElementById('pieces-history-summary-total');
+  if (!tituloEl || !subEl || !listEl || !rowsEl || !totalEl) return;
+
+  tituloEl.textContent = `⚖️ Historial de pesas — ${v.nombre}`;
+  subEl.textContent    = `${v.fecha} · ${v.piezas.length} peces registrados`;
+
+  listEl.innerHTML = v.piezas.map(p => {
+    const e = ESPECIES.find(x => x.id === p.especieId) || ESPECIES[0];
+    return `
+      <div class="piece-row" style="--sc:${e.color || 'var(--teal)'}">
+        <span class="piece-emoji">${e.emoji || '🐟'}</span>
+        <span class="piece-name">${e.nombre}</span>
+        <span class="piece-weight">${p.peso.toFixed(2).replace(/\.?0+$/, '')} ${p.unidad || 'lb'}</span>
+      </div>`;
+  }).join('');
+
+  const porEspecie = {};
+  v.piezas.forEach(p => {
+    if (!porEspecie[p.especieId]) porEspecie[p.especieId] = { pesoLb: 0, count: 0 };
+    porEspecie[p.especieId].pesoLb += (p.unidad === 'kg' ? p.peso * KG_A_LB : p.peso);
+    porEspecie[p.especieId].count  += 1;
+  });
+  let totalLb = 0;
+  rowsEl.innerHTML = Object.entries(porEspecie).map(([especieId, d]) => {
+    const e = ESPECIES.find(x => x.id === especieId) || ESPECIES[0];
+    totalLb += d.pesoLb;
+    return `
+      <div class="pieces-summary-row">
+        <span>${e.emoji || '🐟'} ${e.nombre} <span class="n">(${d.count} pz)</span></span>
+        <span class="n">${d.pesoLb.toFixed(1)} lb</span>
+      </div>`;
+  }).join('');
+  totalEl.textContent = `${totalLb.toFixed(1)} lb en total`;
+
+  document.getElementById('pieces-history-overlay').style.display = 'flex';
+}
+
+function cerrarHistorialPiezas() {
+  const overlay = document.getElementById('pieces-history-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+
 function resetMayorista(silent = false) {
   const doReset = () => {
+    _piezasParaVentaPendiente = [];
+    _savePiezasPendiente();
     document.getElementById('may-nombre').value = '';
     document.getElementById('may-tel').value    = '';
     document.getElementById('may-cc').value     = '';
@@ -5491,6 +6130,7 @@ function _mayRowHtml(v) {
       }</td>
       <td style="white-space:nowrap">
         ${_saldoPendienteOrden(v) > 0 ? `<button class="btn btn-success btn-sm" onclick='saldarPendiente("${v.id}","mayorista")' title="Registrar abono o saldar deuda">💰</button>` : ''}
+        ${v.piezas && v.piezas.length > 0 ? `<button class="btn btn-ghost btn-sm" onclick='verHistorialPiezas("${v.id}")' title="Ver historial de pesas (${v.piezas.length} peces)">⚖️</button>` : ''}
         <button class="btn btn-ghost btn-sm may-edit-btn" data-id="${v.id}" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm" onclick='eliminarVentaMayorista("${v.id}")' title="Eliminar">🗑</button>
       </td>
@@ -10939,7 +11579,7 @@ function acMaySelect(nombre, tel, cc) {
 }
 
 // Función genérica para mostrar un dropdown de mayorista
-function _showMayAcList(listId, anchorId, sugs, query, displayField) {
+function _showMayAcList(listId, anchorId, sugs, query, displayField, onSelect = acMaySelect) {
   const list   = document.getElementById(listId);
   const anchor = document.getElementById(anchorId);
   if (!list || !anchor) return;
@@ -10971,7 +11611,7 @@ function _showMayAcList(listId, anchorId, sugs, query, displayField) {
   }).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(el => {
-    el.addEventListener('mousedown', () => acMaySelect(
+    el.addEventListener('mousedown', () => onSelect(
       decodeURIComponent(el.dataset.nombre),
       decodeURIComponent(el.dataset.tel),
       decodeURIComponent(el.dataset.cc)
@@ -11036,6 +11676,51 @@ function acMayCcKeydown(e) {
   else if (e.key === 'Escape') { list.style.display = 'none'; acMayCcIdx = -1; }
 }
 
+// ── Autocompletar de cliente en el modal "Registro por Pesas" ──
+// Reutiliza las mismas sugerencias/lógica del autocompletar de mayorista,
+// pero guarda el cliente en la SESIÓN activa (no toca el formulario real de
+// mayorista todavía — eso solo pasa al transferir esa sesión con
+// "Usar en Venta Mayorista", ya que puede haber varias sesiones/clientes
+// abiertas a la vez).
+let acPiezasNombreIdx = -1;
+function acPiezasNombre(val) {
+  acPiezasNombreIdx = -1;
+  _showMayAcList('ac-pieces-nombre-list', 'pieces-client-anchor',
+    getMayoristasSugeridos(val, 'nombre'), val, 'nombre', acPiezasSelect);
+  const s = _sesionActiva();
+  if (s) {
+    s.cliente.nombre = val;
+    _savePiezas();
+    _renderSesionesTabs();
+  }
+}
+function acPiezasNombreKeydown(e) {
+  const list  = document.getElementById('ac-pieces-nombre-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (list.style.display === 'none' || !items.length) return;
+  if (e.key === 'ArrowDown')  { e.preventDefault(); acPiezasNombreIdx = Math.min(acPiezasNombreIdx+1, items.length-1); _acMayHighlight('ac-pieces-nombre-list', acPiezasNombreIdx); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acPiezasNombreIdx = Math.max(acPiezasNombreIdx-1, -1); _acMayHighlight('ac-pieces-nombre-list', acPiezasNombreIdx); }
+  else if (e.key === 'Enter' && acPiezasNombreIdx >= 0) { e.preventDefault(); items[acPiezasNombreIdx].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') { list.style.display = 'none'; acPiezasNombreIdx = -1; }
+}
+// Selección de una sugerencia dentro del modal de Registro por Pesas: guarda
+// nombre/tel/cc en la sesión activa (no en el formulario de mayorista).
+function acPiezasSelect(nombre, tel, cc) {
+  const s = _sesionActiva();
+  if (s) {
+    if (nombre) s.cliente.nombre = nombre;
+    if (tel)    s.cliente.tel    = tel;
+    if (cc)     s.cliente.cc     = cc;
+    _savePiezas();
+  }
+  const clienteInput = document.getElementById('pieces-client-input');
+  if (clienteInput && nombre) clienteInput.value = nombre;
+  document.getElementById('ac-pieces-nombre-list').style.display = 'none';
+  acPiezasNombreIdx = -1;
+  _renderSesionesTabs();
+}
+
+
 // ── Highlight ─────────────────────────────────
 function _acMayHighlight(listId, idx) {
   const items = document.getElementById(listId).querySelectorAll('.autocomplete-item');
@@ -11045,12 +11730,12 @@ function _acMayHighlight(listId, idx) {
 
 // Cerrar al hacer clic fuera de cualquier dropdown mayorista
 document.addEventListener('click', e => {
-  const mayIds = ['ac-may-nombre-list','ac-may-tel-list','ac-may-cc-list'];
-  const anchors = ['may-nombre-anchor','may-nombre','may-tel','may-cc'];
+  const mayIds = ['ac-may-nombre-list','ac-may-tel-list','ac-may-cc-list','ac-pieces-nombre-list'];
+  const anchors = ['may-nombre-anchor','may-nombre','may-tel','may-cc','pieces-client-anchor'];
   const dentroDeAlguno = mayIds.concat(anchors).some(id => e.target.closest('#'+id));
   if (!dentroDeAlguno) {
     mayIds.forEach(id => { document.getElementById(id).style.display = 'none'; });
-    acMayNombreIdx = -1; acMayTelIdx = -1; acMayCcIdx = -1;
+    acMayNombreIdx = -1; acMayTelIdx = -1; acMayCcIdx = -1; acPiezasNombreIdx = -1;
   }
 });
 
@@ -11422,8 +12107,6 @@ function buildEvCard(c, isDone) {
         <div>
           <div class="ev-card-name">${c.nombre}</div>
           <div class="ev-card-meta">
-            ${c.tel  ? `📱 ${c.tel}` : ''}
-            ${c.cc   ? `<span>&nbsp;·&nbsp;CC ${c.cc}</span>` : ''}
             ${!isDone ? timerChipHtml : ''}
           </div>
         </div>
@@ -12101,6 +12784,12 @@ document.addEventListener('keydown', e => {
   }
   if (document.getElementById('danger-confirm-overlay')?.style.display !== 'none') {
     closeDangerConfirm(); return;
+  }
+  if (document.getElementById('pieces-overlay')?.style.display !== 'none') {
+    cerrarRegistroPiezas(); return;
+  }
+  if (document.getElementById('pieces-history-overlay')?.style.display !== 'none') {
+    cerrarHistorialPiezas(); return;
   }
   if (document.getElementById('datos-faltantes-overlay')?.style.display !== 'none') {
     _datosFaltantesCancelar(); return;
@@ -13523,6 +14212,7 @@ function _restaurarFormularioDesdeSesion() {
 
 buildSpeciesGrid();
 buildMaySpeciesGrid();
+_renderPiezas();
 updateBadge();
 updateEvBadge();
 iniciarFloatBtnInterval();
@@ -14075,6 +14765,91 @@ setInterval(() => {
     <div class="app-modal-actions">
       <button class="btn btn-ghost" onclick="closeSimplePrompt()">Cancelar</button>
       <button id="simple-prompt-ok" class="btn btn-primary" onclick="_simplePromptCallback && _simplePromptCallback()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: REGISTRO POR PESAS (Mayorista) ══════ -->
+<div id="pieces-overlay" class="app-modal-overlay" style="display:none" onclick="if(event.target===this) cerrarRegistroPiezas()">
+  <div class="pieces-modal" onclick="event.stopPropagation()">
+    <div class="pieces-modal-header">
+      <div>
+        <h3>🐟 Registro por Pesas</h3>
+        <p>Pesa varios clientes a la vez — cambia de pestaña sin perder lo ya registrado</p>
+      </div>
+      <button class="app-modal-close" onclick="cerrarRegistroPiezas()" aria-label="Cerrar" style="position:static;flex-shrink:0">×</button>
+    </div>
+
+    <div class="pieces-modal-body">
+      <div class="pieces-sessions-bar" id="pieces-sessions-bar"></div>
+
+      <div class="pieces-entry-card">
+        <div class="form-group" style="margin:0" id="pieces-client-anchor">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:6px;display:block">Cliente</label>
+          <input type="text" id="pieces-client-input" placeholder="Ej: Distribuidora Pérez" autocomplete="off"
+            oninput="acPiezasNombre(this.value)" onkeydown="acPiezasNombreKeydown(event)"
+            onfocus="if(this.value.length>=2) acPiezasNombre(this.value)">
+        </div>
+        <div class="pieces-species-picker" id="pieces-species-picker"></div>
+        <div class="pieces-entry-row">
+          <input type="text" inputmode="decimal" id="pieces-weight-input" placeholder="Peso" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPez();}">
+          <div class="pieces-unit-toggle" id="pieces-unit-toggle">
+            <button type="button" class="pieces-unit-btn selected" data-unidad="lb" onclick="_seleccionarPiezaUnidad('lb')">lb</button>
+            <button type="button" class="pieces-unit-btn" data-unidad="kg" onclick="_seleccionarPiezaUnidad('kg')">kg</button>
+          </div>
+          <button class="btn btn-primary" onclick="agregarPez()">+ Agregar pez</button>
+        </div>
+      </div>
+
+      <div class="pieces-list-wrap">
+        <div class="pieces-list-header">
+          <span>Peces registrados</span>
+          <button class="pieces-clear-btn" onclick="vaciarRegistroPiezas()" id="pieces-clear-btn" style="display:none">Vaciar lista</button>
+        </div>
+        <div id="pieces-list" class="pieces-list"></div>
+        <div class="empty-state" id="pieces-empty" style="padding:28px 16px">
+          <div class="icon" style="font-size:32px">🐟</div>
+          <p style="font-size:13px">Aún no has registrado ningún pez.<br>Elige la especie, escribe el peso y dale "Agregar pez".</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pieces-summary" id="pieces-summary" style="display:none">
+      <div class="pieces-summary-rows" id="pieces-summary-rows"></div>
+      <div class="pieces-summary-total">
+        <span>Total estimado</span>
+        <strong id="pieces-summary-total-val">$0</strong>
+      </div>
+      <button class="btn btn-success" style="width:100%" onclick="usarPiezasEnVentaMayorista()">
+        📦 Usar en Venta Mayorista →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: HISTORIAL DE PESAS (solo lectura, ventas ya guardadas) ══════ -->
+<div id="pieces-history-overlay" class="app-modal-overlay" style="display:none" onclick="if(event.target===this) cerrarHistorialPiezas()">
+  <div class="pieces-modal" onclick="event.stopPropagation()" style="max-width:440px">
+    <div class="pieces-modal-header">
+      <div>
+        <h3 id="pieces-history-title">⚖️ Historial de pesas</h3>
+        <p id="pieces-history-sub"></p>
+      </div>
+      <button class="app-modal-close" onclick="cerrarHistorialPiezas()" aria-label="Cerrar" style="position:static;flex-shrink:0">×</button>
+    </div>
+    <div class="pieces-modal-body">
+      <div class="pieces-list-wrap">
+        <div class="pieces-list-header"><span>Peces registrados</span></div>
+        <div id="pieces-history-list" class="pieces-list"></div>
+      </div>
+    </div>
+    <div class="pieces-summary" style="display:flex">
+      <div class="pieces-summary-rows" id="pieces-history-summary-rows"></div>
+      <div class="pieces-summary-total">
+        <span>Total pesado</span>
+        <strong id="pieces-history-summary-total">0 lb</strong>
+      </div>
     </div>
   </div>
 </div>
