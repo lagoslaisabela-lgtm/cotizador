@@ -2980,12 +2980,41 @@
     background: rgba(255,255,255,0.02);
     display: flex; flex-direction: column; gap: 10px;
   }
-  .pieces-summary-rows { display: flex; flex-direction: column; gap: 4px; }
+  .pieces-summary-rows { display: flex; flex-direction: column; gap: 10px; }
+  .pieces-summary-row-full {
+    display: flex; flex-direction: column; gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .pieces-summary-row-full:last-child { border-bottom: none; padding-bottom: 0; }
   .pieces-summary-row {
     display: flex; align-items: center; justify-content: space-between;
     font-size: 12.5px; color: var(--text-secondary);
   }
+  .pieces-summary-row strong { font-family: 'Roboto Mono', monospace; color: var(--text-primary); }
   .pieces-summary-row .n { color: var(--text-muted); font-family: 'Roboto Mono', monospace; }
+  .pieces-price-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--text-muted);
+  }
+  .pieces-price-wrap {
+    display: inline-flex; align-items: center; gap: 3px;
+    color: var(--teal-pale);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+  }
+  .pieces-price-input {
+    width: 64px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    padding: 3px 6px;
+    text-align: right;
+  }
+  .pieces-price-input:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(77,151,255,0.15); }
   .pieces-summary-total {
     display: flex; align-items: center; justify-content: space-between;
     padding-top: 8px; border-top: 1px dashed var(--card-border);
@@ -3387,28 +3416,142 @@
   .asis-name-row .nombre { font-weight: 600; color: var(--text-primary); }
   .asis-name-row .meta { font-size: 11px; color: var(--text-muted); }
 
-  /* ── FISH CONFETTI (on cobrar) ── */
-  .fish-particle {
+  /* ── SUCCESS BURST (al registrar una venta) ── */
+  .success-ring {
     position: fixed;
-    font-size: 24px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 8887;
+    border: 2px solid rgba(46,232,129,0.55);
+    box-shadow: 0 0 20px rgba(46,232,129,0.25);
+    animation: ringPulse 0.75s cubic-bezier(.16,.84,.44,1) forwards;
+  }
+  @keyframes ringPulse {
+    0%   { transform: scale(0.3); opacity: 0.9; }
+    100% { transform: scale(2.8); opacity: 0; }
+  }
+
+  .success-spark {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 8888;
+    will-change: transform, opacity;
+    animation: sparkFly var(--dur,0.8s) cubic-bezier(.16,.84,.44,1) forwards;
+  }
+  @keyframes sparkFly {
+    0%   { transform: translate(0,0) scale(0); opacity: 1; }
+    18%  { transform: translate(calc(var(--dx,0px)*0.2), calc(var(--dy,0px)*0.2)) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx,0px), var(--dy,0px)) scale(0.25); opacity: 0; }
+  }
+
+  .success-check-badge {
+    position: fixed;
+    z-index: 8889;
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2ee881, #0dbf8f);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 12px 30px -6px rgba(34,197,94,0.6), 0 0 0 6px rgba(46,232,129,0.12);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: checkPop 0.9s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  .success-check-badge svg { width: 26px; height: 26px; overflow: visible; }
+  .success-check-badge svg path {
+    stroke: #04150c;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: checkDraw 0.3s ease 0.22s forwards;
+  }
+  @keyframes checkPop {
+    0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0; }
+    35%  { transform: translate(-50%,-50%) scale(1.08); opacity: 1; }
+    65%  { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+    82%  { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%,-50%) scale(0.85); opacity: 0; }
+  }
+  @keyframes checkDraw { to { stroke-dashoffset: 0; } }
+
+  @keyframes ventaSuccessPulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.95); }
+    70%  { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(46,232,129,0.18), 0 10px 26px -6px rgba(34,197,94,0.5); }
+    100% { transform: scale(1); }
+  }
+  .venta-success { animation: ventaSuccessPulse 0.55s cubic-bezier(.34,1.56,.64,1); }
+
+  /* ── HOLD ANIMATION (al poner una orden/venta en espera) ──
+     Misma familia visual que el success burst, pero en tono dorado y con
+     movimiento descendente/calmado (guardar para después), no ascendente
+     ni festivo como al cobrar. */
+  .hold-ring {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 8887;
+    border: 2px solid rgba(231,181,99,0.5);
+    box-shadow: 0 0 16px rgba(231,181,99,0.2);
+    animation: holdRingPulse 0.7s cubic-bezier(.16,.84,.44,1) forwards;
+  }
+  @keyframes holdRingPulse {
+    0%   { transform: scale(0.3); opacity: 0.85; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  .hold-badge {
+    position: fixed;
+    z-index: 8889;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e7b563, #b4823a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 10px 26px -6px rgba(231,181,99,0.5), 0 0 0 6px rgba(231,181,99,0.12);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: holdDrop 0.85s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes holdDrop {
+    0%   { transform: translate(-50%,-50%) translateY(0) scale(0.5); opacity: 0; }
+    28%  { transform: translate(-50%,-50%) translateY(-6px) scale(1.05); opacity: 1; }
+    100% { transform: translate(-50%,-50%) translateY(36px) scale(0.6); opacity: 0; }
+  }
+
+  @keyframes holdPulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.95); }
+    70%  { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(231,181,99,0.16), 0 8px 22px -6px rgba(231,181,99,0.4); }
+    100% { transform: scale(1); }
+  }
+  .hold-success { animation: holdPulse 0.5s cubic-bezier(.34,1.56,.64,1); }
+
+  /* ── SPARKLE ANIMATION ✨ (al oprimir Limpiar) ── */
+  .sparkle-particle {
+    position: fixed;
     pointer-events: none;
     z-index: 8888;
     user-select: none;
-    animation: fishFly var(--dur,1.1s) cubic-bezier(.25,.8,.25,1) forwards;
     will-change: transform, opacity;
+    animation: sparkleTwinkle var(--dur,0.75s) cubic-bezier(.25,.8,.25,1) forwards;
   }
-  @keyframes fishFly {
-    0%   { transform: translate(0,0) scale(0.4) rotate(var(--rot0,0deg)); opacity:1; }
-    55%  { opacity:1; }
-    100% { transform: translate(var(--dx,0px),var(--dy,-200px)) scale(1.1) rotate(var(--rot1,360deg)); opacity:0; }
+  @keyframes sparkleTwinkle {
+    0%   { transform: translate(0,0) scale(0) rotate(var(--rot0,0deg)); opacity: 0; }
+    25%  { transform: translate(calc(var(--dx,0px)*0.35), calc(var(--dy,0px)*0.35)) scale(1.15) rotate(var(--rot1,180deg)); opacity: 1; }
+    60%  { opacity: 1; }
+    100% { transform: translate(var(--dx,0px), var(--dy,0px)) scale(0.4) rotate(var(--rot2,360deg)); opacity: 0; }
   }
-  @keyframes cobrarpulse {
-    0%   { transform: scale(1);    box-shadow: 0 4px 16px rgba(45,108,224,0.25); }
-    35%  { transform: scale(0.93); box-shadow: 0 2px 10px rgba(45,108,224,0.2); }
-    65%  { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(34,197,94,0.22), 0 10px 30px rgba(34,197,94,0.5); }
-    100% { transform: scale(1);    box-shadow: 0 4px 16px rgba(45,108,224,0.25); }
+  @keyframes limpiarPulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.95); }
+    70%  { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(77,151,255,0.16), 0 6px 18px -6px rgba(77,151,255,0.35); }
+    100% { transform: scale(1); }
   }
-  .cobrar-success { animation: cobrarpulse 0.6s cubic-bezier(.34,1.56,.64,1); }
+  .limpiar-success { animation: limpiarPulse 0.45s cubic-bezier(.34,1.56,.64,1); }
 
   /* Keyframes compartidos por los modales de la app (ver .app-modal-overlay /
      .app-modal-panel / .modal-icon-badge.pulse más abajo) */
@@ -3716,8 +3859,8 @@
           </div>
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="resetForm()">✨ Limpiar</button>
-          <button class="btn btn-ghost" onclick="ponerEnEspera()" title="Guardar temporalmente para registrar otra orden">⏸️ En espera</button>
+          <button class="btn btn-primary" id="btn-limpiar" onclick="resetForm()">✨ Limpiar</button>
+          <button class="btn btn-ghost" id="btn-espera" onclick="ponerEnEspera()" title="Guardar temporalmente para registrar otra orden">⏸️ En espera</button>
           <button class="btn btn-success" id="btn-cobrar" onclick="guardarOrden()">💵 Cobrar</button>
         </div>
       </div>
@@ -4489,9 +4632,9 @@
           </div>
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="resetMayorista()">✨ Limpiar</button>
-          <button class="btn btn-ghost" onclick="ponerEnEsperaMay()" title="Guardar temporalmente para registrar otra venta">⏸️ En espera</button>
-          <button class="btn btn-success" onclick="guardarVentaMayorista()">🫰🏻 Cobrar</button>
+          <button class="btn btn-primary" id="btn-limpiar-may" onclick="resetMayorista()">✨ Limpiar</button>
+          <button class="btn btn-ghost" id="btn-espera-may" onclick="ponerEnEsperaMay()" title="Guardar temporalmente para registrar otra venta">⏸ En espera</button>
+          <button class="btn btn-success" id="btn-registrar-may" onclick="guardarVentaMayorista()">💾 Registrar Venta</button>
         </div>
       </div>
     </div>
@@ -5564,6 +5707,7 @@ function _guardarVentaMayoristaReal(nombre, tel, cc, items, totalLibras, total, 
   safeStorage.setItem(MAYORISTA_KEY, JSON.stringify(mayorista));
   updateBadge();
   toast('✅ Venta mayorista registrada');
+  launchSuccessBurst(document.getElementById('btn-registrar-may'));
   renderDashboard();
   renderMayorista();
   scheduleDriveSync();
@@ -5613,7 +5757,7 @@ function _sesionActiva() {
 }
 
 function _nuevaSesionPesaje(nombreInicial = '') {
-  const s = { id: _genSesionId(), cliente: { nombre: nombreInicial, tel: '', cc: '' }, piezas: [] };
+  const s = { id: _genSesionId(), cliente: { nombre: nombreInicial, tel: '', cc: '' }, piezas: [], precios: {} };
   sesionesPesaje.push(s);
   _sesionActivaId = s.id;
   _savePiezas();
@@ -5782,6 +5926,26 @@ function _precioRefEspecie(especieId) {
   return e?.precio || 0;
 }
 
+// Precio a usar para una especie DENTRO de una sesión: si ese cliente tiene
+// un precio personalizado para esa especie (campo editable en el resumen),
+// se usa ese; si no, cae al precio de referencia normal.
+function _precioSesion(sesion, especieId) {
+  const custom = sesion?.precios?.[especieId];
+  if (custom !== undefined && custom !== null && custom !== '' && parseFloat(custom) > 0) return parseFloat(custom);
+  return _precioRefEspecie(especieId);
+}
+
+function _actualizarPrecioSesion(especieId, valor) {
+  const s = _sesionActiva();
+  if (!s) return;
+  if (!s.precios) s.precios = {};
+  const num = parseFloat(String(valor).replace(/[^\d.]/g, ''));
+  if (num > 0) s.precios[especieId] = num;
+  else delete s.precios[especieId]; // vacío/inválido → vuelve al precio de referencia
+  _savePiezas();
+  _renderPiezas();
+}
+
 function _agruparPiezasPorEspecie(piezas) {
   const porEspecie = {};
   (piezas || []).forEach(p => {
@@ -5823,7 +5987,7 @@ function _renderPiezas() {
   emptyEl.style.display = 'none';
   clearBtn.style.display = 'block';
 
-  listEl.innerHTML = piezas.map(p => {
+  listEl.innerHTML = [...piezas].reverse().map(p => {
     const e = ESPECIES.find(x => x.id === p.especieId) || ESPECIES[0];
     return `
       <div class="piece-row" style="--sc:${e.color || 'var(--teal)'}">
@@ -5841,13 +6005,21 @@ function _renderPiezas() {
   let totalGeneral = 0;
   const rowsHtml = Object.entries(porEspecie).map(([especieId, d]) => {
     const e = ESPECIES.find(x => x.id === especieId) || ESPECIES[0];
-    const precio = _precioRefEspecie(especieId);
+    const precio = _precioSesion(s, especieId);
     const sub = d.pesoLb * precio;
     totalGeneral += sub;
     return `
-      <div class="pieces-summary-row">
-        <span>${e.emoji || '🐟'} ${e.nombre} <span class="n">(${d.count} pz)</span></span>
-        <span class="n">${d.pesoLb.toFixed(1)} lb · ${fmt(sub)}</span>
+      <div class="pieces-summary-row-full">
+        <div class="pieces-summary-row">
+          <span>${e.emoji || '🐟'} ${e.nombre} <span class="n">(${d.count} pz · ${d.pesoLb.toFixed(1)} lb)</span></span>
+          <strong>${fmt(sub)}</strong>
+        </div>
+        <div class="pieces-price-row">
+          <span class="n">Precio para este cliente:</span>
+          <span class="pieces-price-wrap">$<input type="text" inputmode="decimal" class="pieces-price-input"
+            value="${precio}" onchange="_actualizarPrecioSesion('${especieId}', this.value)"
+            onclick="this.select()">/lb</span>
+        </div>
       </div>`;
   }).join('');
 
@@ -5879,6 +6051,14 @@ function usarPiezasEnVentaMayorista() {
     const { valor: qtyPrevia } = evaluarLbs(qtyEl.value || '');
     const nuevaQty = qtyPrevia + d.pesoLb;
     qtyEl.value = nuevaQty.toFixed(2).replace(/\.?0+$/, '');
+    // Si a este cliente le pusiste un precio distinto para esta especie,
+    // se lo pasamos también al formulario (si no, el precio del formulario
+    // se deja tal cual estuviera, sin tocarlo).
+    const precioCustom = s.precios?.[especieId];
+    if (precioCustom !== undefined && precioCustom !== null && precioCustom !== '') {
+      const precioEl = document.getElementById(`may-precio-${especieId}`);
+      if (precioEl) precioEl.value = precioCustom;
+    }
   });
 
   calcularMayorista();
@@ -5915,7 +6095,7 @@ function verHistorialPiezas(ventaId) {
   tituloEl.textContent = `⚖️ Historial de pesas — ${v.nombre}`;
   subEl.textContent    = `${v.fecha} · ${v.piezas.length} peces registrados`;
 
-  listEl.innerHTML = v.piezas.map(p => {
+  listEl.innerHTML = [...v.piezas].reverse().map(p => {
     const e = ESPECIES.find(x => x.id === p.especieId) || ESPECIES[0];
     return `
       <div class="piece-row" style="--sc:${e.color || 'var(--teal)'}">
@@ -5992,7 +6172,7 @@ function resetMayorista(silent = false) {
     setMetodoPagoMay('efectivo');
     const mayPendienteChk = document.getElementById('may-pendiente-chk');
     if (mayPendienteChk) mayPendienteChk.checked = false;
-    if (!silent) toast('Formulario limpiado');
+    if (!silent) { toast('Formulario limpiado'); launchSparkleAnimation(document.getElementById('btn-limpiar-may')); }
   };
   if (silent) { doReset(); return; }
   showConfirm('Se perderán los datos no guardados.', doReset, { title: '¿Limpiar el formulario?', confirmText: 'Limpiar' });
@@ -6985,7 +7165,7 @@ function _guardarOrdenReal() {
   updateBadge();
   actualizarFloatBtn(); // ← actualizar botón flotante de inmediato
   toast('✅ Cobrado y Guardado');
-  launchFishConfetti();
+  launchSuccessBurst(document.getElementById('btn-cobrar'));
   renderDashboard();
   scheduleDriveSync();
   resetForm(true);
@@ -7067,6 +7247,7 @@ function ponerEnEspera() {
   resetForm(true);
   renderOrdenesEnEspera();
   toast('⏸ Orden puesta en espera — puedes registrar la siguiente');
+  launchHoldAnimation(document.getElementById('btn-espera'));
 }
 
 function recuperarOrdenEspera(id) {
@@ -7192,6 +7373,7 @@ function ponerEnEsperaMay() {
   resetMayorista(true);
   renderVentasEnEsperaMay();
   toast('⏸ Venta puesta en espera — puedes registrar la siguiente');
+  launchHoldAnimation(document.getElementById('btn-espera-may'));
 }
 
 function recuperarVentaEsperaMay(id) {
@@ -8357,7 +8539,7 @@ function resetForm(silent = false) {
     dev.className = 'devuelta-amount pending';
     const pendienteChk = document.getElementById('pendiente-chk');
     if (pendienteChk) pendienteChk.checked = false;
-    if (!silent) toast('Formulario limpiado');
+    if (!silent) { toast('Formulario limpiado'); launchSparkleAnimation(document.getElementById('btn-limpiar')); }
   };
   if (silent) { doReset(); return; }
   showConfirm('Se perderán los datos no guardados.', doReset, { title: '¿Limpiar el formulario?', confirmText: 'Limpiar' });
@@ -12949,48 +13131,139 @@ const _origToggleEvDone = toggleEvDone;
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
-//  FISH CONFETTI 🐟
+//  SUCCESS BURST ✨ (al registrar una venta)
 // ─────────────────────────────────────────────
-function launchFishConfetti() {
-  const FISH = ['🐟','🐠','🐡','🦈','🐬','🫧','💦','✨'];
-  const count = 28;
+function launchSuccessBurst(origenBtn) {
   const vw = window.innerWidth, vh = window.innerHeight;
-  // Origin: cerca del botón cobrar
-  const btnEl = document.getElementById('btn-cobrar') || document.querySelector('.btn-success');
+  // Origin: cerca del botón que disparó la animación (cobrar / registrar venta)
+  const btnEl = origenBtn || document.getElementById('btn-cobrar') || document.querySelector('.btn-success');
+  const ox = btnEl ? btnEl.getBoundingClientRect().left + btnEl.offsetWidth / 2 : vw / 2;
+  const oy = btnEl ? btnEl.getBoundingClientRect().top  + btnEl.offsetHeight / 2 : vh * 0.8;
+
+  // Anillo expansivo
+  const ringSize = 70;
+  const ring = document.createElement('div');
+  ring.className = 'success-ring';
+  ring.style.cssText = `left:${ox - ringSize/2}px; top:${oy - ringSize/2}px; width:${ringSize}px; height:${ringSize}px;`;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 780);
+
+  // Chispas de luz (puntos con glow, no emojis) saliendo en abanico
+  const COLORS = ['#2ee881', '#4d97ff', '#82bbff', '#0dbf8f', '#bcdcff'];
+  const count = 16;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
+    el.className = 'success-spark';
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+    const dist  = 60 + Math.random() * 100;
+    const dx    = Math.cos(angle) * dist;
+    const dy    = Math.sin(angle) * dist;
+    const size  = 5 + Math.random() * 6;
+    const dur   = 0.55 + Math.random() * 0.35;
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+    el.style.cssText = `
+      left:${ox}px; top:${oy}px;
+      width:${size}px; height:${size}px;
+      background: radial-gradient(circle, ${color}, transparent 70%);
+      box-shadow: 0 0 8px ${color};
+      --dx:${dx}px; --dy:${dy}px;
+      --dur:${dur}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), (dur + 0.1) * 1000);
+  }
+
+  // Insignia con un check que se dibuja, flotando sobre el botón
+  const badge = document.createElement('div');
+  badge.className = 'success-check-badge';
+  badge.style.cssText = `left:${ox}px; top:${oy - 52}px;`;
+  badge.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>`;
+  document.body.appendChild(badge);
+  setTimeout(() => badge.remove(), 950);
+
+  // Pulso en el botón
+  if (btnEl) {
+    btnEl.classList.add('venta-success');
+    setTimeout(() => btnEl.classList.remove('venta-success'), 600);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  HOLD ANIMATION ⏸ (al poner una orden/venta en espera)
+// ─────────────────────────────────────────────
+function launchHoldAnimation(origenBtn) {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const btnEl = origenBtn || document.querySelector('.btn-ghost');
+  const ox = btnEl ? btnEl.getBoundingClientRect().left + btnEl.offsetWidth / 2 : vw / 2;
+  const oy = btnEl ? btnEl.getBoundingClientRect().top  + btnEl.offsetHeight / 2 : vh * 0.8;
+
+  // Anillo suave (más pequeño y calmado que el de éxito)
+  const ringSize = 56;
+  const ring = document.createElement('div');
+  ring.className = 'hold-ring';
+  ring.style.cssText = `left:${ox - ringSize/2}px; top:${oy - ringSize/2}px; width:${ringSize}px; height:${ringSize}px;`;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 720);
+
+  // Insignia de pausa que sube un poco y luego "se guarda" bajando y desvaneciéndose
+  const badge = document.createElement('div');
+  badge.className = 'hold-badge';
+  badge.style.cssText = `left:${ox}px; top:${oy - 38}px;`;
+  badge.textContent = '⏸';
+  document.body.appendChild(badge);
+  setTimeout(() => badge.remove(), 900);
+
+  // Pulso en el botón (tono dorado, no verde)
+  if (btnEl) {
+    btnEl.classList.add('hold-success');
+    setTimeout(() => btnEl.classList.remove('hold-success'), 550);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SPARKLE ANIMATION ✨ (al oprimir Limpiar)
+// ─────────────────────────────────────────────
+function launchSparkleAnimation(origenBtn) {
+  const STARS = ['✨', '⭐', '💫', '🌟'];
+  const count = 12;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const btnEl = origenBtn || document.querySelector('.btn-primary');
   const ox = btnEl ? btnEl.getBoundingClientRect().left + btnEl.offsetWidth / 2 : vw / 2;
   const oy = btnEl ? btnEl.getBoundingClientRect().top  + btnEl.offsetHeight / 2 : vh * 0.8;
 
   for (let i = 0; i < count; i++) {
     const el = document.createElement('span');
-    el.className = 'fish-particle';
-    el.textContent = FISH[Math.floor(Math.random() * FISH.length)];
+    el.className = 'sparkle-particle';
+    el.textContent = STARS[Math.floor(Math.random() * STARS.length)];
 
-    const angle  = Math.random() * Math.PI * 2;
-    const dist   = 120 + Math.random() * 320;
-    const dx     = Math.cos(angle) * dist;
-    const dy     = Math.sin(angle) * dist - 100 - Math.random() * 180;
-    const dur    = 0.75 + Math.random() * 0.7;
-    const rot0   = (Math.random() - 0.5) * 60;
-    const rot1   = rot0 + (Math.random() - 0.5) * 540;
-    const size   = 18 + Math.floor(Math.random() * 14);
-    const delay  = Math.random() * 0.2;
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 50 + Math.random() * 110;
+    const dx    = Math.cos(angle) * dist;
+    const dy    = Math.sin(angle) * dist - 20 - Math.random() * 40;
+    const dur   = 0.55 + Math.random() * 0.35;
+    const rot0  = (Math.random() - 0.5) * 40;
+    const rot1  = rot0 + (Math.random() - 0.5) * 260;
+    const rot2  = rot1 + (Math.random() - 0.5) * 260;
+    const size  = 12 + Math.floor(Math.random() * 10);
+    const delay = Math.random() * 0.1;
 
     el.style.cssText = `
       left:${ox}px; top:${oy}px;
       font-size:${size}px;
       --dx:${dx}px; --dy:${dy}px;
       --dur:${dur}s;
-      --rot0:${rot0}deg; --rot1:${rot1}deg;
+      --rot0:${rot0}deg; --rot1:${rot1}deg; --rot2:${rot2}deg;
       animation-delay:${delay}s;
     `;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), (dur + delay + 0.1) * 1000);
   }
 
-  // Pulso verde en el botón cobrar
+  // Pulso azul en el botón
   if (btnEl) {
-    btnEl.classList.add('cobrar-success');
-    setTimeout(() => btnEl.classList.remove('cobrar-success'), 700);
+    btnEl.classList.add('limpiar-success');
+    setTimeout(() => btnEl.classList.remove('limpiar-success'), 500);
   }
 }
 
