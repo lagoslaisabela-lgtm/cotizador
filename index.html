@@ -6034,6 +6034,25 @@ function usarPiezasEnVentaMayorista() {
   const s = _sesionActiva();
   if (!s || s.piezas.length === 0) { toast('No hay peces registrados en esta sesión', true); return; }
 
+  // Blindaje: si el formulario ya tiene pesas de OTRO cliente sin guardar
+  // (transferidas antes y aún no registradas como venta), avisar antes de
+  // mezclarlas en la misma venta por accidente.
+  const nombreActualForm = (document.getElementById('may-nombre')?.value || '').trim();
+  const nombreSesion     = (s.cliente?.nombre || '').trim();
+  const formYaTieneAlgo  = _piezasParaVentaPendiente.length > 0;
+
+  if (formYaTieneAlgo && nombreActualForm && nombreSesion && nombreActualForm.toLowerCase() !== nombreSesion.toLowerCase()) {
+    showConfirm(
+      `El formulario ya tiene pesas de "${nombreActualForm}" sin guardar todavía. Si continúas, se mezclarán con las de "${nombreSesion}" en la misma venta.`,
+      () => _usarPiezasEnVentaMayoristaConfirmado(s),
+      { title: '¿Mezclar con otro cliente?', confirmText: 'Mezclar de todas formas', danger: true }
+    );
+    return;
+  }
+  _usarPiezasEnVentaMayoristaConfirmado(s);
+}
+
+function _usarPiezasEnVentaMayoristaConfirmado(s) {
   // El cliente de esta sesión pasa al formulario real de mayorista
   const mayNombre = document.getElementById('may-nombre');
   const mayTel    = document.getElementById('may-tel');
@@ -12973,6 +12992,9 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('pieces-history-overlay')?.style.display !== 'none') {
     cerrarHistorialPiezas(); return;
   }
+  if (document.getElementById('pendientes-overlay')?.style.display !== 'none') {
+    cerrarResumenPendientes(); return;
+  }
   if (document.getElementById('datos-faltantes-overlay')?.style.display !== 'none') {
     _datosFaltantesCancelar(); return;
   }
@@ -15128,7 +15150,7 @@ setInterval(() => {
 </div>
 
 <!-- ══════ MODAL: RESUMEN DE CUENTAS POR COBRAR ══════ -->
-<div id="pendientes-overlay" class="app-modal-overlay" style="display:none;--mo-border:rgba(255,109,92,0.35)">
+<div id="pendientes-overlay" class="app-modal-overlay" style="display:none;--mo-border:rgba(255,109,92,0.35)" onclick="if(event.target===this) cerrarResumenPendientes()">
   <div class="app-modal-panel" style="max-width:480px;text-align:left;position:relative">
     <button class="app-modal-close" onclick="cerrarResumenPendientes()" aria-label="Cerrar">×</button>
     <h3 class="app-modal-title" style="color:var(--coral);text-align:left">⏳ Cuentas por cobrar</h3>
