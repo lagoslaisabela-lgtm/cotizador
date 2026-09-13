@@ -10550,7 +10550,7 @@ function guardarEdicion() {
 //    La confidencialidad real la da la contraseña de sincronización (SYNC_PASS_KEY),
 //    que el usuario escribe una vez por dispositivo y NUNCA queda en este archivo.
 const SYNC_ENDPOINT   = 'https://script.google.com/macros/s/AKfycby3NG8Tsva-j34gmLZQz988qQPaT1QW3qe9PtklBOl1a2AUhxh7G_mumamnab3pagjI8w/exec';
-const AUTH_SYNC_TOKEN = '457d62b3c17b\nada740a38-5181-4951-a259isa8384*[pÑlk]';
+const AUTH_SYNC_TOKEN = '457d62b3dsgsgs74594387&73743qhufbewfjnakdasjfbdskab8-5181-4951-a259isa8384*[pÑlk]';
 const SYNC_PASS_KEY   = 'aquacot_sync_pass';
 const DRIVE_TOKEN_KEY = 'aquacot_drive_token'; // legado, se limpia si existe
 const DELETED_IDS_KEY      = 'aquacot_deleted_ids';
@@ -12414,7 +12414,7 @@ function buildEvCard(c, isDone) {
     <div class="ev-card ${isDone ? 'done' : ''}">
       <div class="ev-card-header">
         <div>
-          <div class="ev-card-name">${c.nombre}</div>
+          <div class="ev-card-name">${escHtml(c.nombre)}</div>
           <div class="ev-card-meta">
             ${!isDone ? timerChipHtml : ''}
           </div>
@@ -12433,7 +12433,7 @@ function buildEvCard(c, isDone) {
           <span class="label">Total libras (orden)</span>
           <span class="val">${totalLbsAll.toFixed(1)} lb</span>
         </div>
-        ${c.nota ? `<div style="margin-top:4px;font-size:12px;color:var(--text-secondary);background:rgba(231,181,99,0.08);border:1px solid rgba(231,181,99,0.2);border-radius:8px;padding:6px 10px">📝 ${c.nota}</div>` : ''}
+        ${c.nota ? `<div style="margin-top:4px;font-size:12px;color:var(--text-secondary);background:rgba(231,181,99,0.08);border:1px solid rgba(231,181,99,0.2);border-radius:8px;padding:6px 10px">📝 ${escHtml(c.nota)}</div>` : ''}
       </div>
 
       <div class="ev-species-list">${pills}</div>
@@ -14811,7 +14811,7 @@ async function _verificarPasswordTab() {
   if (!val) return;
 
   const hash = await _hashStr(val); // reutiliza _hashStr del sistema de precios
-  if (hash === _PRICES_HASH) {      // misma contraseña 2xT3mE0s
+  if (hash === _PRICES_HASH) {      // misma contraseña que precios/zona de peligro
     const dest = _tabPendiente;     // guardar destino ANTES de limpiar
     closeLockTab();
     // Restaurar el texto del modal para uso futuro como bloqueo de pestaña
