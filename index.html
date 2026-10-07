@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- PWA: tema y apariencia nativa -->
-<meta name="theme-color" content="#040b16">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lagos Isabela">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="Sistema de cotización y control de ventas — Lagos La Isabela">
 <!-- PWA manifest inline (evita archivo externo) -->
-<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Lagos%20La%20Isabela%22%2C%22short_name%22%3A%22Lagos%22%2C%22description%22%3A%22Cotizador%20y%20control%20de%20ventas%22%2C%22start_url%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23040b16%22%2C%22theme_color%22%3A%22%23040b16%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A//www.w3.org/2000/svg%2527%2520viewBox%253D%25270%25200%2520100%2520100%2527%253E%253Crect%2520width%253D%2527100%2527%2520height%253D%2527100%2527%2520rx%253D%252720%2527%2520fill%253D%2527%2523040b16%2527/%253E%253Ctext%2520x%253D%252750%2527%2520y%253D%252768%2527%2520font-size%253D%252760%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2590%259F%253C/text%253E%253C/svg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/svg%2Bxml%22%7D%5D%7D">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Lagos%20La%20Isabela%22%2C%22short_name%22%3A%22Lagos%22%2C%22description%22%3A%22Cotizador%20y%20control%20de%20ventas%22%2C%22start_url%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A//www.w3.org/2000/svg%2527%2520viewBox%253D%25270%25200%2520100%2520100%2527%253E%253Crect%2520width%253D%2527100%2527%2520height%253D%2527100%2527%2520rx%253D%252720%2527%2520fill%253D%2527%2523040b16%2527/%253E%253Ctext%2520x%253D%252750%2527%2520y%253D%252768%2527%2520font-size%253D%252760%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2590%259F%253C/text%253E%253C/svg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/svg%2Bxml%22%7D%5D%7D">
 <!-- CSP — bloquea scripts externos no autorizados -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
@@ -27,7 +27,7 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>🐟 Lagos La Isabela</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23040b16'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23000000'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -231,7 +231,7 @@
     --card-bg:       rgba(255,255,255,0.045);
     --card-border:   rgba(255,255,255,0.14);
     --input-bg:      rgba(0,0,0,0.4);
-    --input-border:  rgba(255,255,255,0.16);
+    --input-border:  rgba(77,151,255,0.25);
     --shadow-teal:   0 0 30px rgba(77,151,255,0.18);
     --radius:        18px;
     --radius-sm:     10px;
@@ -657,10 +657,13 @@
   input[type="text"],
   input[type="number"],
   input[type="tel"],
+  input[type="password"],
+  input[type="email"],
+  input[type="datetime-local"],
   input[type="date"] {
     width: 100%;
     background: var(--input-bg);
-    border: 1px solid rgba(77,151,255,0.25);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     color: var(--text-primary);
@@ -730,13 +733,15 @@
 
   /* Ícono del calendario nativo teñido en teal para que combine con el
      resto de los acentos de la app (flecha de los <select>, etc). */
-  input[type="date"]::-webkit-calendar-picker-indicator {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.75;
-    filter: invert(48%) sepia(85%) saturate(1000%) hue-rotate(150deg) brightness(97%) contrast(101%);
+    filter: invert(52%) sepia(93%) saturate(2000%) hue-rotate(196deg) brightness(101%) contrast(101%);
     transition: opacity 0.15s;
   }
-  input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
   /* ──────────────── SELECTS (menús desplegables) ────────────────
      Estilo base aplicado a TODO <select> de la app, para que el
@@ -748,7 +753,7 @@
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234d97ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
     background-size: 14px;
     border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
@@ -894,7 +899,7 @@
   /* Select "¿Qué especie es?" que reemplaza el título en la tarjeta "Otro Pescado" */
   .species-otro-select {
     appearance: none; -webkit-appearance: none; -moz-appearance: none;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234d97ff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
     background-size: 12px;
     border: none;
     color: var(--text-primary);
@@ -1060,7 +1065,7 @@
     margin-top: 16px;
     padding: 14px 16px;
     border-radius: var(--radius-sm);
-    background: rgba(4,11,22,0.32);
+    background: rgba(0,0,0,0.32);
     border: 1px solid rgba(77,151,255,0.15);
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   }
@@ -2009,9 +2014,9 @@
     border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-family: inherit;
-    font-size: 13px;
-    padding: 9px 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    padding: 10px 14px;
     color-scheme: dark;
     transition: border-color 0.18s;
   }
@@ -2020,6 +2025,92 @@
     border-color: var(--teal);
     box-shadow: 0 0 0 3px rgba(77,151,255,0.15);
   }
+
+  /* ──────────────── CALENDARIO PROPIO (date / datetime-local) ────────────────
+     El popup nativo del navegador no se puede estilizar, así que la app
+     dibuja el suyo con las mismas variables que el resto de modales. */
+  .dp-pop {
+    position: fixed; z-index: 9990; width: 292px;
+    background: linear-gradient(180deg, rgba(20,24,32,0.98), rgba(9,11,16,0.99));
+    border: 1px solid rgba(77,151,255,0.35);
+    border-radius: 16px; padding: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.65), 0 0 30px rgba(77,151,255,0.12);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-primary);
+    animation: sbFadeIn 0.15s ease; user-select: none; -webkit-user-select: none;
+  }
+  .dp-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .dp-nav {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; cursor: pointer;
+    background: var(--input-bg); border: 1px solid var(--input-border);
+    color: var(--teal-bright); font-size: 16px; line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .15s, background .15s;
+  }
+  .dp-nav:hover { border-color: var(--teal); background: rgba(77,151,255,0.12); }
+  .dp-sel {
+    flex: 1; min-width: 0; width: auto; cursor: pointer;
+    background-color: var(--input-bg); border: 1px solid var(--input-border);
+    border-radius: 9px; color: var(--text-primary); font: 600 13px 'Plus Jakarta Sans', sans-serif;
+    padding: 6px 8px; color-scheme: dark;
+  }
+  .dp-sel:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(77,151,255,0.15); }
+  .dp-sel option { background: #0b0e13; color: var(--text-primary); }
+  .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .dp-dow {
+    text-align: center; font-size: 11px; font-weight: 700; padding: 4px 0 6px;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .dp-day {
+    height: 34px; border-radius: 9px; border: 1px solid transparent; cursor: pointer;
+    background: transparent; color: var(--text-primary); padding: 0;
+    font: 600 13px 'Roboto Mono', monospace; transition: background .12s, border-color .12s;
+  }
+  .dp-day:hover:not(:disabled) { background: rgba(77,151,255,0.16); border-color: rgba(77,151,255,0.4); }
+  .dp-day.out { color: var(--text-muted); opacity: .45; }
+  .dp-day.today { border-color: var(--teal); color: var(--teal-bright); }
+  .dp-day.sel, .dp-day.sel:hover {
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    border-color: var(--teal); color: #fff; box-shadow: 0 2px 10px rgba(77,151,255,0.35);
+  }
+  .dp-day:disabled { opacity: .2; cursor: not-allowed; }
+  .dp-time {
+    display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--card-border);
+  }
+  .dp-time .dp-sel { flex: 1; font-family: 'Roboto Mono', monospace; text-align: center; }
+  .dp-time .dp-colon { color: var(--text-muted); font-weight: 700; }
+  .dp-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; }
+  .dp-link {
+    background: transparent; border: none; cursor: pointer; padding: 6px 8px; border-radius: 8px;
+    font: 700 12px 'Plus Jakarta Sans', sans-serif; color: var(--teal-bright);
+    transition: background .15s;
+  }
+  .dp-link:hover { background: rgba(77,151,255,0.12); }
+  .dp-link.danger { color: var(--coral); }
+  .dp-link.danger:hover { background: rgba(255,109,92,0.12); }
+  .dp-ok {
+    background: linear-gradient(135deg, var(--teal), var(--green)); color: #fff; border: none;
+    border-radius: 9px; padding: 6px 16px; font: 700 12px 'Plus Jakarta Sans', sans-serif; cursor: pointer;
+  }
+
+  /* Campos numéricos sin las flechitas nativas del navegador */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+  /* Tooltips propios (reemplazan el globito blanco nativo de title="") */
+  .app-tip {
+    position: fixed; z-index: 9995; max-width: 260px; pointer-events: none;
+    padding: 6px 11px; border-radius: 9px;
+    background: rgba(12,15,21,0.97); color: var(--text-primary);
+    border: 1px solid rgba(77,151,255,0.35);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.55), 0 0 18px rgba(77,151,255,0.10);
+    font: 600 12px/1.35 'Plus Jakarta Sans', sans-serif;
+    opacity: 0; transform: translateY(3px);
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .app-tip.on { opacity: 1; transform: translateY(0); }
 
   .date-range-inputs .sep {
     font-size: 12px;
@@ -2657,7 +2748,7 @@
     border-radius: var(--radius-sm);
     color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px; padding: 8px 12px;
+    font-size: 15px; padding: 10px 14px;
     outline: none; transition: border-color 0.2s;
     width: 100%; box-sizing: border-box;
   }
@@ -3433,7 +3524,7 @@
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+    background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234d97ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
     background-size: 14px;
     border: 1px solid var(--input-border);
     color: var(--text-primary); border-radius: 8px; padding: 7px 32px 7px 12px;
@@ -3660,13 +3751,18 @@
   .app-modal-overlay {
     display: none;
     position: fixed; inset: 0; z-index: 1100;
-    background: var(--mo-bg, rgba(4,11,22,0.88));
+    background: var(--mo-bg, rgba(0,0,0,0.88));
     backdrop-filter: blur(var(--mo-blur, 12px)) saturate(var(--mo-sat, 1));
     -webkit-backdrop-filter: blur(var(--mo-blur, 12px)) saturate(var(--mo-sat, 1));
     align-items: center; justify-content: center;
     padding: 16px;
     animation: sbFadeIn 0.2s ease;
   }
+  /* Diálogos que se abren ENCIMA de otros modales (ej. registrar abono desde
+     "Cuentas por cobrar"): deben quedar por encima del resto de overlays. */
+  #simple-prompt-overlay,
+  #simple-confirm-overlay,
+  #danger-confirm-overlay { z-index: 1200; }
   .app-modal-panel {
     background: var(--card-bg);
     border: 1px solid var(--mo-border, var(--card-border));
@@ -4836,7 +4932,7 @@
         <div style="display:flex;flex-direction:column;gap:10px">
           <input id="sync-pass-input" type="password" autocomplete="off"
             placeholder="Contraseña de sincronización (mín. 8 caracteres)"
-            style="width:100%;box-sizing:border-box;background:var(--input-bg);border:1px solid var(--input-border);border-radius:10px;color:var(--text-primary);padding:11px 14px;font-size:14px;outline:none;font-family:'DM Sans',sans-serif">
+            style="width:100%;box-sizing:border-box;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);padding:10px 14px;font-size:15px;outline:none;font-family:'Plus Jakarta Sans',sans-serif">
           <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="driveConnect(document.getElementById('sync-pass-input').value)">
             🔐 Activar sincronización
           </button>
@@ -4882,7 +4978,7 @@
           <input id="prices-pwd-input" type="password" placeholder="Contraseña"
             autocomplete="off"
             onkeydown="if(event.key==='Enter') _verificarPasswordPrecios()"
-            style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:8px 12px;font-size:14px;outline:none">
+            style="flex:1;min-width:0;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);padding:10px 14px;font-size:15px;outline:none;font-family:'Plus Jakarta Sans',sans-serif">
           <button class="btn btn-primary btn-sm" onclick="_verificarPasswordPrecios()">Entrar</button>
         </div>
         <span id="prices-pwd-error" style="display:none;font-size:12px;color:var(--coral);font-weight:600"></span>
@@ -4917,7 +5013,7 @@
           <input id="danger-pwd-input" type="password" placeholder="Contraseña"
             autocomplete="off"
             onkeydown="if(event.key==='Enter') _verificarPasswordDanger()"
-            style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-primary);padding:8px 12px;font-size:14px;outline:none">
+            style="flex:1;min-width:0;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);color:var(--text-primary);padding:10px 14px;font-size:15px;outline:none;font-family:'Plus Jakarta Sans',sans-serif">
           <button class="btn btn-primary btn-sm" onclick="_verificarPasswordDanger()">Entrar</button>
         </div>
         <span id="danger-pwd-error" style="display:none;font-size:12px;color:var(--coral);font-weight:600"></span>
@@ -5138,10 +5234,6 @@
           <input type="text" id="prof-residencia" placeholder="Ej: Cali, Valle del Cauca" oninput="marcarCambio()">
         </div>
         <div class="profile-edit-field full">
-          <label>Correo electrónico</label>
-          <input type="email" id="prof-email" placeholder="Ej: cliente@correo.com" oninput="marcarCambio()">
-        </div>
-        <div class="profile-edit-field full">
           <label>Notas</label>
           <textarea id="prof-notas" placeholder="Preferencias, observaciones, información adicional…" oninput="marcarCambio()"></textarea>
         </div>
@@ -5341,7 +5433,7 @@
 // ─────────────────────────────────────────────
 //  DATOS
 // ─────────────────────────────────────────────
-const APP_VERSION = '6.8.0';
+const APP_VERSION = '6.9.0';
 const PRICES_KEY  = 'aquacot_prices_v1';
 
 // Precios por defecto (hardcoded como referencia inicial)
@@ -9369,11 +9461,7 @@ function abrirPerfilCliente(cid, ckey) {
       <div class="profile-info-label">🪪 CC / NIT</div>
       <div class="profile-info-value mono ${c.cc ? '' : 'muted'}" id="prof-val-cc">${escHtml(c.cc) || '—'}</div>
     </div>
-    <div class="profile-info-item" id="prof-card-email" onclick="_editContactCard('email')">
-      <div class="profile-info-label">✉️ Correo</div>
-      <div class="profile-info-value ${perfil.email ? '' : 'muted'}" id="prof-val-email">${escHtml(perfil.email) || '—'}</div>
-    </div>
-    <div class="profile-info-item" id="prof-card-residencia" onclick="_editContactCard('residencia')">
+    <div class="profile-info-item full" id="prof-card-residencia" onclick="_editContactCard('residencia')">
       <div class="profile-info-label">📍 Residencia</div>
       <div class="profile-info-value ${perfil.residencia ? '' : 'muted'}" id="prof-val-residencia">${escHtml(perfil.residencia) || '—'}</div>
     </div>
@@ -9442,7 +9530,6 @@ function abrirPerfilCliente(cid, ckey) {
   document.getElementById('prof-genero').value      = perfil.genero     || '';
   document.getElementById('prof-nacimiento').value  = perfil.nacimiento || '';
   document.getElementById('prof-residencia').value  = perfil.residencia || '';
-  document.getElementById('prof-email').value       = perfil.email      || '';
   document.getElementById('prof-notas').value       = perfil.notas      || '';
 
   // Edad en tiempo real
@@ -9525,7 +9612,6 @@ function marcarCambio() {
 const _CONTACT_FIELDS = {
   tel:        { label:'📞 Celular',    type:'tel',   mono:true,  source:'client' },
   cc:         { label:'🪪 CC / NIT',   type:'text',  mono:true,  source:'client', inputmode:'numeric' },
-  email:      { label:'✉️ Correo',     type:'email', mono:false, source:'perfil' },
   residencia: { label:'📍 Residencia', type:'text',  mono:false, source:'perfil' },
 };
 
@@ -9630,7 +9716,7 @@ function _guardarContactField(field, newVal, source) {
     _propagarDatosAMayorista(nombreAnterior, { [field]: newVal });
 
   } else {
-    // email o residencia — guardar en perfil
+    // residencia — guardar en perfil
     dirEntry.perfil = { ...(dirEntry.perfil || {}), [field]: newVal };
     dirEntry.lastUpdated = now;
   }
@@ -9750,9 +9836,9 @@ function guardarPerfilCliente() {
     genero:      document.getElementById('prof-genero').value,
     nacimiento:  document.getElementById('prof-nacimiento').value,
     residencia:  document.getElementById('prof-residencia').value.trim(),
-    email:       document.getElementById('prof-email').value.trim(),
     notas:       document.getElementById('prof-notas').value.trim(),
   };
+  delete dirEntry.perfil.email; // campo eliminado en v6.9: se descarta el valor antiguo
   dirEntry.lastUpdated = new Date().toISOString();
 
   safeStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
@@ -12803,7 +12889,7 @@ function renderChart15dias() {
   const textMuted  = 'rgba(210,228,245,0.42)';
   const gridColor  = 'rgba(148,178,255,0.10)';
   const axisColor  = 'rgba(148,178,255,0.18)';
-  const FONT       = "'DM Sans', sans-serif";
+  const FONT       = "'Plus Jakarta Sans', sans-serif";
   const FONT_MONO  = "'Roboto Mono', monospace";
 
   if (chart15Instance) { chart15Instance.destroy(); chart15Instance = null; }
@@ -13635,7 +13721,7 @@ function _cdCtx(id) {
   return { ctx, W: cssW, H: cssH };
 }
 
-const _cdFont = "'Outfit', 'Roboto Mono', sans-serif";
+const _cdFont = "'Plus Jakarta Sans', 'Roboto Mono', sans-serif";
 
 // ── Chart: Top 10 valor ───────────────────────────────────
 
@@ -13975,7 +14061,7 @@ function _cdChartHoras(clts) {
   clts.forEach(c => c.horas.forEach((v,i) => { counts[i] += v; }));
   const maxC = Math.max(...counts,1);
 
-  const ML=10, MR=10, MT=8, MB=24;
+  const ML=10, MR=10, MT=26, MB=24;  // MT=26 deja espacio al label del peak
   const chartW=W-ML-MR, chartH=H-MT-MB;
 
   // Build smooth line
@@ -14002,9 +14088,13 @@ function _cdChartHoras(clts) {
   const peakIdx = counts.indexOf(Math.max(...counts));
   ctx.beginPath(); ctx.arc(pts[peakIdx].x,pts[peakIdx].y,4,0,Math.PI*2);
   ctx.fillStyle='#e7b563'; ctx.fill();
-  ctx.fillStyle='rgba(244,245,246,0.9)'; ctx.font=`bold 10px ${_cdFont}`;
+  // Label del pico: hora + cantidad de compras, siempre dentro del canvas
+  const peakTxt = `${String(peakIdx).padStart(2,'0')}h · ${counts[peakIdx]}`;
+  ctx.fillStyle='rgba(244,245,246,0.95)'; ctx.font=`bold 11px ${_cdFont}`;
   ctx.textAlign='center'; ctx.textBaseline='bottom';
-  ctx.fillText(`${String(peakIdx).padStart(2,'0')}h`, pts[peakIdx].x, pts[peakIdx].y-5);
+  const tw = ctx.measureText(peakTxt).width;
+  const lx = Math.max(tw/2+2, Math.min(W-tw/2-2, pts[peakIdx].x));
+  ctx.fillText(peakTxt, lx, Math.max(13, pts[peakIdx].y-7));
 
   // X labels every 6h
   [0,6,12,18,23].forEach(h => {
@@ -14882,7 +14972,7 @@ window.onerror = function(msg, src, line, col, err) {
     border-radius:12px;padding:12px 20px;z-index:9999;
     display:flex;align-items:center;gap:12px;
     box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:480px;width:92%;
-    font-family:'DM Sans',sans-serif;font-size:13px;color:#f8d0d0;
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:#f8d0d0;
   `;
   banner.innerHTML = `
     <span style="font-size:22px">⚠️</span>
@@ -15114,6 +15204,251 @@ setInterval(() => {
 
   window.addEventListener('resize', () => { if (activeSelect) positionMenu(activeSelect); });
   window.addEventListener('scroll', () => { if (activeSelect) closeMenu(); }, true);
+})();
+
+// ══════ CALENDARIO PROPIO: reemplaza el popup nativo de input[type=date] y
+// input[type=datetime-local] con uno que usa el estilo de la app. El <input>
+// sigue siendo el mismo (mismo .value y eventos input/change), así que el
+// resto del código no cambia. Funciona también con inputs creados por JS.
+(function initAppDatePicker() {
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const DOW   = ['L','M','M','J','V','S','D']; // semana inicia en lunes
+  const pad = n => String(n).padStart(2, '0');
+  const SEL = 'input[type="date"],input[type="datetime-local"]';
+  let pop = null, inp = null, vy = 0, vm = 0, sel = null, hh = 0, mi = 0, withTime = false;
+
+  function parse(el) {
+    const v = el.value || '';
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    return m ? { y:+m[1], m:+m[2]-1, d:+m[3], h:+(m[4]||0), n:+(m[5]||0) } : null;
+  }
+  const ymd = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+
+  function commit() {
+    if (!inp || !sel) return;
+    const v = withTime ? `${ymd(sel.y,sel.m,sel.d)}T${pad(hh)}:${pad(mi)}` : ymd(sel.y,sel.m,sel.d);
+    if (inp.value !== v) {
+      inp.value = v;
+      inp.dispatchEvent(new Event('input',  { bubbles:true }));
+      inp.dispatchEvent(new Event('change', { bubbles:true }));
+    }
+  }
+
+  function render() {
+    const today = new Date();
+    const minS = (inp.min || '').slice(0,10), maxS = (inp.max || '').slice(0,10);
+    const first = new Date(vy, vm, 1);
+    const offset = (first.getDay() + 6) % 7;         // lunes = 0
+    const start = new Date(vy, vm, 1 - offset);
+    const yNow = today.getFullYear();
+    const y0 = Math.min(1900, vy), y1 = Math.max(yNow + 10, vy);
+
+    let h = `<div class="dp-head">
+      <button type="button" class="dp-nav" data-a="prev" aria-label="Mes anterior">‹</button>
+      <select class="dp-sel" data-a="month">${MESES.map((n,i)=>`<option value="${i}"${i===vm?' selected':''}>${n}</option>`).join('')}</select>
+      <select class="dp-sel" data-a="year" style="flex:0 0 74px">${Array.from({length:y1-y0+1},(_,i)=>y1-i).map(y=>`<option value="${y}"${y===vy?' selected':''}>${y}</option>`).join('')}</select>
+      <button type="button" class="dp-nav" data-a="next" aria-label="Mes siguiente">›</button>
+    </div><div class="dp-grid">${DOW.map(d=>`<div class="dp-dow">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const ds = ymd(d.getFullYear(), d.getMonth(), d.getDate());
+      const cls = ['dp-day'];
+      if (d.getMonth() !== vm) cls.push('out');
+      if (ds === ymd(today.getFullYear(), today.getMonth(), today.getDate())) cls.push('today');
+      if (sel && ds === ymd(sel.y, sel.m, sel.d)) cls.push('sel');
+      const dis = (minS && ds < minS) || (maxS && ds > maxS);
+      h += `<button type="button" class="${cls.join(' ')}" data-a="day" data-ds="${ds}"${dis?' disabled':''}>${d.getDate()}</button>`;
+    }
+    h += `</div>`;
+
+    if (withTime) {
+      const h12 = (hh % 12) || 12, pm = hh >= 12;
+      h += `<div class="dp-time">
+        <select class="dp-sel" data-a="hour">${Array.from({length:12},(_,i)=>i+1).map(n=>`<option value="${n}"${n===h12?' selected':''}>${pad(n)}</option>`).join('')}</select>
+        <span class="dp-colon">:</span>
+        <select class="dp-sel" data-a="min">${Array.from({length:60},(_,i)=>i).map(n=>`<option value="${n}"${n===mi?' selected':''}>${pad(n)}</option>`).join('')}</select>
+        <select class="dp-sel" data-a="ampm"><option value="am"${pm?'':' selected'}>a. m.</option><option value="pm"${pm?' selected':''}>p. m.</option></select>
+      </div>`;
+    }
+
+    h += `<div class="dp-foot">
+      ${withTime ? '<button type="button" class="dp-link" data-a="now">Ahora</button>' : '<button type="button" class="dp-link" data-a="today">Hoy</button>'}
+      ${withTime ? '<button type="button" class="dp-ok" data-a="close">Listo</button>'
+                 : '<button type="button" class="dp-link danger" data-a="clear">Borrar</button>'}
+    </div>`;
+    pop.innerHTML = h;
+    place();
+  }
+
+  function place() {
+    if (!pop || !inp) return;
+    const r = inp.getBoundingClientRect(), w = pop.offsetWidth, ph = pop.offsetHeight;
+    let top = r.bottom + 6;
+    if (top + ph > innerHeight - 8 && r.top - ph - 6 > 8) top = r.top - ph - 6;
+    top = Math.max(8, Math.min(top, innerHeight - ph - 8));
+    const left = Math.max(8, Math.min(r.left, innerWidth - w - 8));
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+  }
+
+  function close() {
+    if (pop) { pop.remove(); pop = null; }
+    inp = null;
+  }
+
+  function open(el) {
+    if (inp === el && pop) return;
+    close();
+    inp = el;
+    withTime = el.type === 'datetime-local';
+    const cur = parse(el), now = new Date();
+    sel = cur ? { y:cur.y, m:cur.m, d:cur.d } : null;
+    hh = cur ? cur.h : now.getHours();
+    mi = cur ? cur.n : now.getMinutes();
+    vy = cur ? cur.y : now.getFullYear();
+    vm = cur ? cur.m : now.getMonth();
+    pop = document.createElement('div');
+    pop.className = 'dp-pop';
+    document.body.appendChild(pop);
+    render();
+  }
+
+  function pick(ds) {
+    const [y,m,d] = ds.split('-').map(Number);
+    sel = { y, m:m-1, d };
+    commit();
+    if (withTime) render(); else close();
+  }
+
+  document.addEventListener('click', e => {
+    const el = e.target.closest && e.target.closest(SEL);
+    if (el && !el.disabled && !el.readOnly) { e.preventDefault(); open(el); }
+  }, true);
+
+  // En la zona del ícono nativo se bloquea ya el mousedown para que el
+  // navegador no abra su selector; el resto del campo sigue editable a mano.
+  document.addEventListener('mousedown', e => {
+    const el = e.target.closest && e.target.closest(SEL);
+    if (el && !el.disabled && !el.readOnly) {
+      const r = el.getBoundingClientRect();
+      if (e.clientX > r.right - 34) e.preventDefault();
+    }
+    if (pop && !pop.contains(e.target) && !(e.target.closest && e.target.closest(SEL))) close();
+  }, true);
+
+  document.addEventListener('keydown', e => {
+    if (!pop) return;
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    else if (e.key === 'Enter' && e.target === inp) close();
+  }, true);
+
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, true);
+
+  document.addEventListener('click', e => {
+    if (!pop || !pop.contains(e.target)) return;
+    const b = e.target.closest('[data-a]');
+    if (!b || b.tagName === 'SELECT') return;
+    const a = b.dataset.a;
+    if (a === 'day') pick(b.dataset.ds);
+    else if (a === 'prev') { vm--; if (vm < 0) { vm = 11; vy--; } render(); }
+    else if (a === 'next') { vm++; if (vm > 11) { vm = 0; vy++; } render(); }
+    else if (a === 'today' || a === 'now') {
+      const n = new Date();
+      sel = { y:n.getFullYear(), m:n.getMonth(), d:n.getDate() };
+      if (a === 'now') { hh = n.getHours(); mi = n.getMinutes(); }
+      vy = sel.y; vm = sel.m; commit();
+      if (withTime) render(); else close();
+    }
+    else if (a === 'clear') {
+      if (inp.value) {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input',  { bubbles:true }));
+        inp.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+      close();
+    }
+    else if (a === 'close') close();
+  });
+
+  document.addEventListener('change', e => {
+    if (!pop || !pop.contains(e.target)) return;
+    const a = e.target.dataset.a, v = e.target.value;
+    if (a === 'month') { vm = +v; render(); }
+    else if (a === 'year') { vy = +v; render(); }
+    else if (a === 'hour' || a === 'ampm') {
+      const h12 = +pop.querySelector('[data-a="hour"]').value;
+      const pm = pop.querySelector('[data-a="ampm"]').value === 'pm';
+      hh = (h12 % 12) + (pm ? 12 : 0);
+      if (!sel) { const n = new Date(); sel = { y:n.getFullYear(), m:n.getMonth(), d:n.getDate() }; }
+      commit(); render();
+    }
+    else if (a === 'min') {
+      mi = +v;
+      if (!sel) { const n = new Date(); sel = { y:n.getFullYear(), m:n.getMonth(), d:n.getDate() }; }
+      commit(); render();
+    }
+  });
+})();
+
+// ══════ TOOLTIPS PROPIOS: muestran el atributo title="" con el estilo de la
+// app en lugar del globito nativo del navegador. Solo en dispositivos con
+// mouse (en táctiles no hay hover y se deja el comportamiento normal).
+(function initAppTooltips() {
+  if (!window.matchMedia || !matchMedia('(hover: hover)').matches) return;
+  const tip = document.createElement('div');
+  tip.className = 'app-tip';
+  tip.setAttribute('role', 'tooltip');
+  document.body.appendChild(tip);
+  let cur = null;
+
+  function place(el) {
+    const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    let top = r.top - h - 8;
+    if (top < 8) top = r.bottom + 8;
+    const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+  }
+  function show(el) {
+    const t = el.getAttribute('title');
+    if (!t || !t.trim()) return;
+    el.dataset.tip = t;
+    el.removeAttribute('title');   // evita que salga también el globito nativo
+    cur = el;
+    tip.textContent = t;
+    tip.classList.add('on');
+    place(el);
+  }
+  function hide() {
+    if (cur) {
+      if (cur.dataset.tip != null && !cur.hasAttribute('title')) cur.setAttribute('title', cur.dataset.tip);
+      delete cur.dataset.tip;
+      cur = null;
+    }
+    tip.classList.remove('on');
+  }
+
+  document.addEventListener('mouseover', e => {
+    if (cur && cur.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest('[title]');
+    if (el === cur) return;
+    hide();
+    if (el) show(el);
+  });
+  document.addEventListener('mouseout', e => {
+    if (cur && !cur.contains(e.relatedTarget)) hide();
+  });
+  document.addEventListener('focusin', e => {
+    const el = e.target.closest && e.target.closest('[title]');
+    if (el) { hide(); show(el); }
+  });
+  document.addEventListener('focusout', hide);
+  document.addEventListener('mousedown', hide, true);
+  document.addEventListener('keydown', hide, true);
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
 })();
 </script>
 <!-- ══════ MODAL: CONFIRMACIÓN ACCIÓN DESTRUCTIVA ══════ -->
